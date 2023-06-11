@@ -1,10 +1,8 @@
 package br.eti.allandemiranda.forex.models;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -12,12 +10,10 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-@Entity
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@Entity
 public class CandlestickModel implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
