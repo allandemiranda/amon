@@ -1,4 +1,4 @@
-package br.eti.allandemiranda.forex.repositories;
+package br.eti.allandemiranda.forex.exceptions;
 
 import lombok.experimental.StandardException;
 
