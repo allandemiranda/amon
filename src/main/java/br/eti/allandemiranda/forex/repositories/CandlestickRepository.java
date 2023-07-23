@@ -41,7 +41,7 @@ public class CandlestickRepository implements DataRepository<CandlestickEntity>,
   }
 
   @PostConstruct
-  public void init(){
+  public void init() {
     saveHeaders();
   }
 
@@ -55,11 +55,11 @@ public class CandlestickRepository implements DataRepository<CandlestickEntity>,
     // (CandlestickEntity) inputs[0], (LocalDateTime) inputs[1]
     LocalDateTime realDateTime = (LocalDateTime) inputs[1];
     CandlestickEntity candlestick = (CandlestickEntity) inputs[0];
-    return new Object[]{realDateTime.format(DateTimeFormatter.ISO_DATE_TIME),
-        candlestick.getDateTime().format(DateTimeFormatter.ISO_DATE_TIME),
-        String.valueOf(candlestick.getOpen()).replace(".", ","),
-        String.valueOf(candlestick.getHigh()).replace(".", ","),
-        String.valueOf(candlestick.getLow()).replace(".", ","),
-        String.valueOf(candlestick.getClose()).replace(".", ",")};
+    return new Object[]{realDateTime.format(DateTimeFormatter.ISO_DATE_TIME), candlestick.getDateTime().format(DateTimeFormatter.ISO_DATE_TIME),
+        getStringNumber(candlestick.getOpen()), getStringNumber(candlestick.getHigh()), getStringNumber(candlestick.getLow()), getStringNumber(candlestick.getClose())};
+  }
+
+  private @NotNull String getStringNumber(double number) {
+    return String.valueOf(number).replace(".", ",");
   }
 }
