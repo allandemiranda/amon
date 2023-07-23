@@ -31,7 +31,7 @@ public class CandlestickService implements DefaultService<CandlestickEntity, Can
       Candlestick merged = mergeCandleAndTicket(toModel(last), ticket.withDateTime(getCandleDateTime(ticket.dateTime())));
       candlestickRepository.updateData(toEntity(merged));
     }
-    candlestickRepository.saveRunTime(candlestickRepository.getLast(), ticket.dateTime());
+    candlestickRepository.saveRunTimeLine(candlestickRepository.getLast(), ticket.dateTime());
   }
 
   private @NotNull LocalDateTime getCandleDateTime(final @NotNull LocalDateTime ticketDateTime) {

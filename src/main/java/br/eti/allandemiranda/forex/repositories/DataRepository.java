@@ -6,9 +6,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Comparator;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Repository;
 
-@Repository
 public interface DataRepository<T extends DefaultEntity> {
 
   @NotNull Collection<T> getDataBase();
