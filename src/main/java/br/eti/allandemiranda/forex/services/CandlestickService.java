@@ -7,15 +7,21 @@ import br.eti.allandemiranda.forex.repositories.CandlestickRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
+import java.util.Objects;
 import lombok.Synchronized;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class CandlestickService implements DefaultService<CandlestickEntity, Candlestick> {
 
   private final CandlestickRepository candlestickRepository;
+  private LocalDateTime realDataTime = LocalDateTime.MIN;
 
   @Autowired
   protected CandlestickService(CandlestickRepository candlestickRepository) {
@@ -23,15 +29,55 @@ public class CandlestickService implements DefaultService<CandlestickEntity, Can
   }
 
   @Synchronized
-  public void setTicket(final @NotNull Ticket ticket) {
-    if (candlestickRepository.getDataBase().isEmpty()) {
-      candlestickRepository.addData(toEntity(new Candlestick(getCandleDateTime(ticket.dateTime()), ticket.bid(), ticket.bid(), ticket.bid(), ticket.bid())));
+  public void addTicket(final @NotNull Ticket ticket) {
+    if (ticket.dateTime().isAfter(getRealDataTime())) {
+      setRealDataTime(ticket.dateTime());
+      if (candlestickRepository.getDataBase().isEmpty()) {
+        candlestickRepository.addData(toEntity(new Candlestick(getCandleDateTime(ticket.dateTime()), ticket.bid(), ticket.bid(), ticket.bid(), ticket.bid())));
+      } else {
+        CandlestickEntity last = candlestickRepository.getLast();
+        Candlestick merged = mergeCandleAndTicket(toModel(last), ticket.withDateTime(getCandleDateTime(ticket.dateTime())));
+        candlestickRepository.updateData(toEntity(merged));
+      }
+//      candlestickRepository.saveRunTimeLine(candlestickRepository.getLast(), getRealDataTime());
     } else {
-      CandlestickEntity last = candlestickRepository.getLast();
-      Candlestick merged = mergeCandleAndTicket(toModel(last), ticket.withDateTime(getCandleDateTime(ticket.dateTime())));
-      candlestickRepository.updateData(toEntity(merged));
+      log.warn("Ticket {} with a data before current {}", ticket, realDataTime.format(DateTimeFormatter.ISO_DATE_TIME));
     }
-    candlestickRepository.saveRunTimeLine(candlestickRepository.getLast(), ticket.dateTime());
+  }
+
+  public long getCurrentMemorySize() {
+    return candlestickRepository.selectAll().size();
+  }
+
+  public LocalDateTime getRealDataTime() {
+    return this.realDataTime;
+  }
+
+  private void setRealDataTime(final @NotNull LocalDateTime realDataTime) {
+    this.realDataTime = realDataTime;
+  }
+
+  public LocalDateTime getCurrentDataTime() {
+    return candlestickRepository.getLast().getDateTime();
+  }
+
+  public Candlestick getLast() {
+    return toModel(candlestickRepository.getLast());
+  }
+
+  public double[] getCloseReversed(int period) {
+    return candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period).mapToDouble(CandlestickEntity::getClose)
+        .toArray();
+  }
+
+  public double[] getHighReversed(int period) {
+    return candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period).mapToDouble(CandlestickEntity::getHigh)
+        .toArray();
+  }
+
+  public double[] getLowReversed(int period) {
+    return candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period).mapToDouble(CandlestickEntity::getLow)
+        .toArray();
   }
 
   private @NotNull LocalDateTime getCandleDateTime(final @NotNull LocalDateTime ticketDateTime) {

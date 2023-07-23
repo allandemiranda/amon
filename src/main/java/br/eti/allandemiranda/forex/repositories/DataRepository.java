@@ -16,6 +16,7 @@ public interface DataRepository<T extends DefaultEntity> {
   }
 
   default void addData(@NotNull T entity) {
+    this.removeData(entity);
     this.getDataBase().add(entity);
     this.checkMemory();
   }
@@ -29,7 +30,6 @@ public interface DataRepository<T extends DefaultEntity> {
   }
 
   default void updateData(@NotNull T entity) {
-    this.removeData(entity);
     this.addData(entity);
   }
 

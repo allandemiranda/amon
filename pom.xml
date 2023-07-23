@@ -22,6 +22,11 @@
       <artifactId>spring-boot-starter</artifactId>
       <version>3.1.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.projectlombok</groupId>
@@ -29,18 +34,6 @@
       <version>1.18.28</version>
       <optional>true</optional>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-ticketsProcessor</artifactId>
-      <version>3.1.0</version>
-      <scope>ticketsProcessor</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.batch</groupId>
-      <artifactId>spring-batch-ticketsProcessor</artifactId>
-      <version>5.0.2</version>
-      <scope>ticketsProcessor</scope>
     </dependency>
 
     <!--extra-->
@@ -65,6 +58,11 @@
       <groupId>jakarta.validation</groupId>
       <artifactId>jakarta.validation-api</artifactId>
       <version>3.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.12.0</version>
     </dependency>
   </dependencies>
 

@@ -36,7 +36,9 @@ public class StringConfig {
     AtomicReference<Double> atomicBid = new AtomicReference<Double>(0D);
     AtomicReference<Double> atomicAsk = new AtomicReference<Double>(0D);
     try (final FileReader fileReader = new FileReader(inputFile); final CSVParser csvParser = CSVFormat.TDF.builder().setHeader(TicketHeaders.class).setSkipHeaderRecord(true).build().parse(fileReader)) {
-      StreamSupport.stream(csvParser.spliterator(), false).limit(1000).map(csvRecord -> {
+      StreamSupport.stream(csvParser.spliterator(), false)
+//          .limit(3000)
+          .map(csvRecord -> {
         String date = csvRecord.get(TicketHeaders.date);
         String time = csvRecord.get(TicketHeaders.time);
         String dataTime = date.replace(".", "-").concat("T").concat(time);
