@@ -7,6 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 @Accessors(fluent = true)
 @With
-public record Ticket(@NotNull LocalDateTime dateTime, double bid, double ask) {
+public record Ticket(@NotNull LocalDateTime dateTime, double bid, double ask) implements DefaultModel {
 
 }

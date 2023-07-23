@@ -9,8 +9,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.TreeSet;
 import lombok.Synchronized;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -21,10 +21,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class CandlestickRepository implements DataRepository<CandlestickEntity> {
 
+  private final Collection<CandlestickEntity> dataBase = new ArrayList<>();
+
   @Value("${candlestick.repository.output}")
   private File outputFile;
 
-  private TreeSet<CandlestickEntity> dataBase = new TreeSet<>();
+  @Value("${candlestick.repository.memory}")
+  private Integer memorySize;
 
   @Override
   @Synchronized
@@ -32,14 +35,17 @@ public class CandlestickRepository implements DataRepository<CandlestickEntity> 
     return dataBase;
   }
 
+  @Override
+  public long getMemorySide() {
+    return this.memorySize;
+  }
+
   private File getOutputFile() {
     return this.outputFile;
   }
 
-  @Override
   @PostConstruct
-  public void initDataBase() {
-    dataBase = new TreeSet<>();
+  public void init() {
     try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
       csvPrinter.printRecord("realDateTime", "dateTime", CandlestickHeaders.open, CandlestickHeaders.high, CandlestickHeaders.low, CandlestickHeaders.close);
     } catch (IOException e) {
@@ -56,11 +62,4 @@ public class CandlestickRepository implements DataRepository<CandlestickEntity> 
       throw new WriteFileException(e);
     }
   }
-
-  @Override
-  public @NotNull TreeSet<CandlestickEntity> selectAll() {
-    return new TreeSet<>(DataRepository.super.selectAll());
-  }
-
-
 }

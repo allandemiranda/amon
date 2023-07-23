@@ -5,17 +5,15 @@ import jakarta.persistence.Id;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Objects;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.With;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
-public class CandlestickEntity implements Serializable, DefaultEntity<CandlestickEntity> {
+public class CandlestickEntity implements Serializable, DefaultEntity {
 
   @Serial
   private static final long serialVersionUID = 1L;
@@ -26,21 +24,4 @@ public class CandlestickEntity implements Serializable, DefaultEntity<Candlestic
   private double high;
   private double low;
   private double close;
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    CandlestickEntity entity = (CandlestickEntity) o;
-    return Objects.equals(dateTime, entity.dateTime);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(dateTime);
-  }
 }

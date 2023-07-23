@@ -1,6 +1,6 @@
 package br.eti.allandemiranda.forex.configs;
 
-import br.eti.allandemiranda.forex.controllers.InputTickets;
+import br.eti.allandemiranda.forex.controllers.TicketsProcessor;
 import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.headers.TicketHeaders;
 import java.io.File;
@@ -23,11 +23,11 @@ public class StringConfig {
   @Value("${mock.ticket.input}")
   private File inputFile;
 
-  private final InputTickets inputTickets;
+  private final TicketsProcessor ticketsProcessor;
 
   @Autowired
-  public StringConfig(InputTickets inputTickets) {
-    this.inputTickets = inputTickets;
+  public StringConfig(TicketsProcessor ticketsProcessor) {
+    this.ticketsProcessor = ticketsProcessor;
   }
 
   @Bean
@@ -48,7 +48,7 @@ public class StringConfig {
         return new Ticket(localDateTime, bid, ask);
       }).forEach(ticket -> {
 
-        inputTickets.setTicket(ticket);
+        ticketsProcessor.socket(ticket);
       });
     } catch (IOException e) {
       throw new IllegalStateException(e);

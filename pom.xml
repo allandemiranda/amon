@@ -32,15 +32,15 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-inputTickets</artifactId>
+      <artifactId>spring-boot-starter-ticketsProcessor</artifactId>
       <version>3.1.0</version>
-      <scope>inputTickets</scope>
+      <scope>ticketsProcessor</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.batch</groupId>
-      <artifactId>spring-batch-inputTickets</artifactId>
+      <artifactId>spring-batch-ticketsProcessor</artifactId>
       <version>5.0.2</version>
-      <scope>inputTickets</scope>
+      <scope>ticketsProcessor</scope>
     </dependency>
 
     <!--extra-->
