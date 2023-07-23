@@ -1,20 +1,10 @@
 package br.eti.allandemiranda.forex.dtos;
 
-import lombok.Data;
-
-import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import lombok.experimental.Accessors;
+import org.jetbrains.annotations.NotNull;
 
-@Data
-public class Candlestick {
-    @NotNull
-    private LocalDateTime dateTime;
-    @NotNull
-    private double open;
-    @NotNull
-    private double high;
-    @NotNull
-    private double low;
-    @NotNull
-    private double close;
+@Accessors(fluent = true)
+public record Candlestick(@NotNull LocalDateTime dateTime, double open, double high, double low, double close) implements DefaultModel {
+
 }

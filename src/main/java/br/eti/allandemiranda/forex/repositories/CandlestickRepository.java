@@ -1,43 +1,63 @@
 package br.eti.allandemiranda.forex.repositories;
 
-import br.eti.allandemiranda.forex.exceptions.LoadFileException;
-import br.eti.allandemiranda.forex.models.CandlestickModel;
-import com.opencsv.CSVParserBuilder;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVReaderBuilder;
+import br.eti.allandemiranda.forex.entities.CandlestickEntity;
+import br.eti.allandemiranda.forex.repositories.headers.CandlestickHeaders;
+import jakarta.annotation.PostConstruct;
+import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Collection;
+import java.util.TreeSet;
+import lombok.Synchronized;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.stream.StreamSupport;
-
 @Repository
-public class CandlestickRepository implements LoadFile<CandlestickModel> {
+public class CandlestickRepository implements LoadFileRepository<CandlestickEntity> {
 
-    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+  private final TreeSet<CandlestickEntity> dataBase = new TreeSet<>();
 
-    //    @Parameter(names = "-dataMT5", description = "File in .csv with the historic", required = true)
-    @Value("file:c:/Users/allan/Downloads/EURUSD_M1_198901030000_202306081435.csv")
-    private File inputFile;
+  @Value("${candlestick.repository.input}")
+  private File inputFile;
 
-    @Override
-    public List<CandlestickModel> load() {
-        int skipHeader = 1;
-        CSVParserBuilder csvParserBuilder = new CSVParserBuilder().withSeparator('\t');
-        try (FileReader fileReader = new FileReader(inputFile); CSVReader csvReader = new CSVReaderBuilder(fileReader).withSkipLines(skipHeader).withCSVParser(csvParserBuilder.build()).build()) {
-            return StreamSupport.stream(csvReader.spliterator(), false)
-                    .map(strings -> {
-                        String dataTime = strings[0].replace(".", "-").concat("T").concat(strings[1]);
-                        return new CandlestickModel(LocalDateTime.parse(dataTime, DATE_TIME_FORMATTER), Double.parseDouble(strings[2]), Double.parseDouble(strings[3]), Double.parseDouble(strings[4]), Double.parseDouble(strings[5]));
-                    })
-                    .toList();
-        } catch (IOException e) {
-            throw new LoadFileException(e);
-        }
-    }
+  @Override
+//  @Synchronized
+  public @NotNull Collection<CandlestickEntity> getDataBase() {
+    return dataBase;
+  }
+
+  @Override
+  @PostConstruct
+  public void initDataBase() {
+    this.loadData().forEach(this::addData);
+  }
+
+  @Override
+  public @NotNull File getInputFile() {
+    return this.inputFile;
+  }
+
+  @Override
+  public @NotNull CSVFormat getInputCsvFormat() {
+    return CSVFormat.TDF.builder().setHeader(CandlestickHeaders.class).setSkipHeaderRecord(true).build();
+  }
+
+  @Override
+  public @NotNull CandlestickEntity getEntity(@NotNull CSVRecord csvRecord) {
+    CandlestickEntity entity = new CandlestickEntity();
+
+    String date = csvRecord.get(CandlestickHeaders.date);
+    String time = csvRecord.get(CandlestickHeaders.time);
+    String dataTime = date.replace(".", "-").concat("T").concat(time);
+    entity.setDateTime(LocalDateTime.parse(dataTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
+    entity.setOpen(Double.parseDouble(csvRecord.get(CandlestickHeaders.open)));
+    entity.setHigh(Double.parseDouble(csvRecord.get(CandlestickHeaders.high)));
+    entity.setLow(Double.parseDouble(csvRecord.get(CandlestickHeaders.low)));
+    entity.setClose(Double.parseDouble(csvRecord.get(CandlestickHeaders.close)));
+    return entity;
+  }
 }
