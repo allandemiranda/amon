@@ -1,4 +1,4 @@
-package br.eti.allandemiranda.forex.services;
+package br.eti.allandemiranda.forex.utils;
 
 import java.util.Arrays;
 import java.util.Objects;

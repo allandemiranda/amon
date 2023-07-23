@@ -7,6 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 @Accessors(fluent = true)
 @With
-public record Candlestick(@NotNull LocalDateTime dateTime, double open, double high, double low, double close) implements DefaultModel {
+public record Ticket(@NotNull LocalDateTime dateTime, double bid, double ask) {
 
 }

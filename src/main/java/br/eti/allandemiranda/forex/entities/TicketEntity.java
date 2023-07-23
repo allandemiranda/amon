@@ -9,23 +9,20 @@ import java.util.Objects;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.With;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
-public class CandlestickEntity implements Serializable, DefaultEntity<CandlestickEntity> {
+public class TicketEntity implements Serializable, DefaultEntity<CandlestickEntity> {
 
   @Serial
   private static final long serialVersionUID = 1L;
 
   @Id
   private LocalDateTime dateTime;
-  private double open;
-  private double high;
-  private double low;
-  private double close;
+  private double bid;
+  private double ask;
 
   @Override
   public boolean equals(Object o) {
@@ -35,7 +32,7 @@ public class CandlestickEntity implements Serializable, DefaultEntity<Candlestic
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CandlestickEntity entity = (CandlestickEntity) o;
+    TicketEntity entity = (TicketEntity) o;
     return Objects.equals(dateTime, entity.dateTime);
   }
 
