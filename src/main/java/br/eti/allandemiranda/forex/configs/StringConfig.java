@@ -1,6 +1,6 @@
 package br.eti.allandemiranda.forex.configs;
 
-import br.eti.allandemiranda.forex.controllers.TicketsProcessor;
+import br.eti.allandemiranda.forex.controllers.chart.TicketsProcessor;
 import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.headers.TicketHeaders;
 import java.io.File;
@@ -37,7 +37,7 @@ public class StringConfig {
     AtomicReference<Double> atomicAsk = new AtomicReference<Double>(0D);
     try (final FileReader fileReader = new FileReader(inputFile); final CSVParser csvParser = CSVFormat.TDF.builder().setHeader(TicketHeaders.class).setSkipHeaderRecord(true).build().parse(fileReader)) {
       StreamSupport.stream(csvParser.spliterator(), false)
-//          .limit(3000)
+          .limit(5000)
           .map(csvRecord -> {
         String date = csvRecord.get(TicketHeaders.date);
         String time = csvRecord.get(TicketHeaders.time);

@@ -49,7 +49,7 @@ public class ADXRepository implements DataRepository<ADXEntity>, SaveRunTimeRepo
   }
 
   @Override
-  public Object[] getLine(Object... inputs) {
+  public Object[] getLine(Object @NotNull ... inputs) {
     LocalDateTime realDateTime = (LocalDateTime) inputs[0];
     ADXEntity adx = (ADXEntity) inputs[1];
     SignalTrend trend = (SignalTrend) inputs[2];

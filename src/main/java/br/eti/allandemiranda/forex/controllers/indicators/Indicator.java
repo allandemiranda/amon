@@ -1,9 +1,8 @@
 package br.eti.allandemiranda.forex.controllers.indicators;
 
-import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 
 public interface Indicator {
-
-  void runCalculate();
-  SignalTrend getSignal();
+  void run();
+  @NotNull SignalTrend getSignal();
 }

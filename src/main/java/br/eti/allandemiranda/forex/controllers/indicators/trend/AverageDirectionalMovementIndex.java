@@ -8,9 +8,7 @@ import br.eti.allandemiranda.forex.services.CandlestickService;
 import java.util.Arrays;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
-import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,8 +35,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
   }
 
   @Override
-  @Synchronized
-  public void runCalculate() {
+  public void run() {
     if (candlestickService.getCurrentMemorySize() >= (getPeriod() * 2L)) {
 
       double[] close = candlestickService.getCloseReversed((getPeriod() * 2));
@@ -59,16 +56,15 @@ public class AverageDirectionalMovementIndex implements Indicator {
 
       double adxIndex = Arrays.stream(dx).sum() / getPeriod();
 
-      adxService.add(new ADX(candlestickService.getCurrentDataTime(), adxIndex, diPlus[0], diMinus[0]));
+      adxService.add(new ADX(candlestickService.getCandlestickDataTime(), adxIndex, diPlus[0], diMinus[0]));
     } else {
       log.debug("Can't get ADX, low memory side on Candlestick");
     }
   }
 
   @Override
-  @Synchronized
-  public SignalTrend getSignal(){
-    if(adxService.isReady()) {
+  public @NotNull SignalTrend getSignal() {
+    if (adxService.isReady()) {
       SignalTrend signalTrend = adxService.isUp() ? SignalTrend.Buy : SignalTrend.Sell;
       SignalTrend trend = adxService.getLast().adx() >= 75D ? signalTrend : SignalTrend.Neutral;
 
@@ -89,7 +85,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
       adxService.print(trend, candlestickService.getRealDataTime(), adxService.getLast(), candlestickService.getLast().close());
       return trend;
     } else {
-      return null;
+      return SignalTrend.Out;
     }
   }
 
