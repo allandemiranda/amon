@@ -1,6 +1,6 @@
 package br.eti.allandemiranda.forex.services;
 
-import br.eti.allandemiranda.forex.controllers.chart.TimeFrame;
+import br.eti.allandemiranda.forex.utils.TimeFrame;
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.entities.CandlestickEntity;
@@ -8,12 +8,12 @@ import br.eti.allandemiranda.forex.repositories.CandlestickRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,12 +21,18 @@ import org.springframework.stereotype.Service;
 public class CandlestickService {
 
   private final CandlestickRepository candlestickRepository;
+  private final TicketService ticketService;
+
   private LocalDateTime realDataTime = LocalDateTime.MIN;
   private LocalDateTime candlestickDataTime = LocalDateTime.MIN;
 
+  @Value("${candlestick.timeframe}")
+  private String timeFrame;
+
   @Autowired
-  private CandlestickService(final CandlestickRepository candlestickRepository) {
+  private CandlestickService(final CandlestickRepository candlestickRepository, final TicketService ticketService) {
     this.candlestickRepository = candlestickRepository;
+    this.ticketService = ticketService;
   }
 
   private static @NotNull LocalDateTime getInputCandleDateTime(final @NotNull LocalDateTime ticketDateTime, final @NotNull TimeFrame timeFrame) {
@@ -83,6 +89,10 @@ public class CandlestickService {
     return new Candlestick(entity.getDateTime(), entity.getOpen(), entity.getHigh(), entity.getLow(), entity.getClose());
   }
 
+  private @NotNull TimeFrame getTimeFrame() {
+    return TimeFrame.valueOf(this.timeFrame);
+  }
+
   public @NotNull LocalDateTime getRealDataTime() {
     return this.realDataTime;
   }
@@ -100,22 +110,19 @@ public class CandlestickService {
   }
 
   @Synchronized
-  public void addTicket(final @NotNull Ticket ticket, final @NotNull TimeFrame timeFrame) {
-    if (ticket.dateTime().isAfter(this.getRealDataTime())) {
-      this.setRealDataTime(ticket.dateTime());
-      this.setCandlestickRepository(getInputCandleDateTime(ticket.dateTime(), timeFrame));
-      if (this.candlestickRepository.getDataBase().isEmpty()) {
-        Candlestick model = new Candlestick(this.getCandlestickDataTime(), ticket.bid(), ticket.bid(), ticket.bid(), ticket.bid());
-        this.candlestickRepository.addData(toEntity(model));
-      } else {
-        CandlestickEntity last = this.candlestickRepository.getLast();
-        Candlestick merged = mergeCandleAndTicket(toModel(last), ticket.withDateTime(this.getCandlestickDataTime()));
-        this.candlestickRepository.updateData(toEntity(merged));
-      }
-      this.candlestickRepository.saveRunTimeLine(this.candlestickRepository.getLast(), this.getRealDataTime());
+  public void run() {
+    this.setRealDataTime(this.ticketService.getLocalDateTime());
+    this.setCandlestickRepository(getInputCandleDateTime(this.ticketService.getLocalDateTime(), this.getTimeFrame()));
+    if (this.candlestickRepository.getDataBase().isEmpty()) {
+      Candlestick model = new Candlestick(this.getCandlestickDataTime(), this.ticketService.getBid(), this.ticketService.getBid(), this.ticketService.getBid(),
+          this.ticketService.getBid());
+      this.candlestickRepository.addData(toEntity(model));
     } else {
-      log.warn("Ticket {} with a data before current {}", ticket, realDataTime.format(DateTimeFormatter.ISO_DATE_TIME));
+      CandlestickEntity last = this.candlestickRepository.getLast();
+      Candlestick merged = mergeCandleAndTicket(toModel(last), this.ticketService.getTicket().withDateTime(this.getCandlestickDataTime()));
+      this.candlestickRepository.updateData(toEntity(merged));
     }
+    this.candlestickRepository.saveRunTimeLine(this.candlestickRepository.getLast(), this.getRealDataTime());
   }
 
   public double getLastCloseValue() {

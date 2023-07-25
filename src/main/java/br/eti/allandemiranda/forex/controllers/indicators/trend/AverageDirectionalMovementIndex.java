@@ -1,10 +1,10 @@
 package br.eti.allandemiranda.forex.controllers.indicators.trend;
 
 import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
-import br.eti.allandemiranda.forex.controllers.indicators.SignalTrend;
 import br.eti.allandemiranda.forex.dtos.ADX;
 import br.eti.allandemiranda.forex.services.ADXService;
 import br.eti.allandemiranda.forex.services.CandlestickService;
+import br.eti.allandemiranda.forex.utils.SignalTrend;
 import java.util.Arrays;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;

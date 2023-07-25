@@ -2,9 +2,9 @@ package br.eti.allandemiranda.forex.controllers.indicators;
 
 import br.eti.allandemiranda.forex.controllers.indicators.trend.AverageDirectionalMovementIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.AverageTrueRange;
-import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.IndicatorsService;
+import br.eti.allandemiranda.forex.services.TicketService;
 import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -26,6 +26,7 @@ public class IndicatorsProcessor {
   private final Map<String, Indicator> indicators = new HashMap<>();
   private final IndicatorsService indicatorsService;
   private final CandlestickService candlestickService;
+  private final TicketService ticketService;
 
   @Value("${indicators.run.min}")
   private Integer interval;
@@ -33,11 +34,12 @@ public class IndicatorsProcessor {
 
   @Autowired
   private IndicatorsProcessor(final AverageDirectionalMovementIndex averageDirectionalMovementIndex, final AverageTrueRange averageTrueRange,
-      final IndicatorsService indicatorsService, final CandlestickService candlestickService) {
+      final IndicatorsService indicatorsService, final CandlestickService candlestickService, final TicketService ticketService) {
     this.averageDirectionalMovementIndex = averageDirectionalMovementIndex;
     this.averageTrueRange = averageTrueRange;
     this.indicatorsService = indicatorsService;
     this.candlestickService = candlestickService;
+    this.ticketService = ticketService;
   }
 
   @PostConstruct
@@ -56,8 +58,8 @@ public class IndicatorsProcessor {
   }
 
   @Synchronized
-  public void run(final @NotNull Ticket ticket) {
-    LocalDateTime ticketDataTime = ticket.dateTime();
+  public void run() {
+    LocalDateTime ticketDataTime = this.ticketService.getLocalDateTime();
     if (ChronoUnit.MINUTES.between(this.getLastTime(), ticketDataTime) >= interval) {
       this.setLastTime(ticketDataTime);
       indicators.entrySet().parallelStream().map(entry -> {

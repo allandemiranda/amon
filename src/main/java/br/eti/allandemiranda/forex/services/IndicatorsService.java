@@ -1,6 +1,6 @@
 package br.eti.allandemiranda.forex.services;
 
-import br.eti.allandemiranda.forex.controllers.indicators.SignalTrend;
+import br.eti.allandemiranda.forex.utils.SignalTrend;
 import br.eti.allandemiranda.forex.repositories.IndicatorsRepository;
 import java.time.LocalDateTime;
 import org.jetbrains.annotations.NotNull;

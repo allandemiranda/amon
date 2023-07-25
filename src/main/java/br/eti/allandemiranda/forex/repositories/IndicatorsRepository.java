@@ -1,6 +1,6 @@
 package br.eti.allandemiranda.forex.repositories;
 
-import br.eti.allandemiranda.forex.controllers.indicators.SignalTrend;
+import br.eti.allandemiranda.forex.utils.SignalTrend;
 import br.eti.allandemiranda.forex.exceptions.WriteFileException;
 import java.io.File;
 import java.io.FileWriter;
@@ -26,7 +26,7 @@ public class IndicatorsRepository {
 
   private final HashMap<String, SignalTrend> dataBase = new HashMap<>();
 
-  @Value("${adx.repository.output}")
+  @Value("${indicators.repository.output}")
   private File outputFile;
   private String[] headers = null;
 

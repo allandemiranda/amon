@@ -1,6 +1,6 @@
 package br.eti.allandemiranda.forex.repositories;
 
-import br.eti.allandemiranda.forex.controllers.indicators.SignalTrend;
+import br.eti.allandemiranda.forex.utils.SignalTrend;
 import br.eti.allandemiranda.forex.entities.ADXEntity;
 import br.eti.allandemiranda.forex.headers.ADXHeaders;
 import jakarta.annotation.PostConstruct;
