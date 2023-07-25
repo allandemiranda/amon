@@ -1,7 +1,6 @@
 package br.eti.allandemiranda.forex.controllers.indicators;
 
 import br.eti.allandemiranda.forex.controllers.indicators.trend.AverageDirectionalMovementIndex;
-import br.eti.allandemiranda.forex.controllers.indicators.trend.AverageTrueRange;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.IndicatorsService;
 import br.eti.allandemiranda.forex.services.TicketService;
@@ -22,7 +21,6 @@ import org.springframework.stereotype.Controller;
 public class IndicatorsProcessor {
 
   private final AverageDirectionalMovementIndex averageDirectionalMovementIndex;
-  private final AverageTrueRange averageTrueRange;
   private final Map<String, Indicator> indicators = new HashMap<>();
   private final IndicatorsService indicatorsService;
   private final CandlestickService candlestickService;
@@ -33,10 +31,9 @@ public class IndicatorsProcessor {
   private LocalDateTime lastTime = LocalDateTime.MIN;
 
   @Autowired
-  private IndicatorsProcessor(final AverageDirectionalMovementIndex averageDirectionalMovementIndex, final AverageTrueRange averageTrueRange,
-      final IndicatorsService indicatorsService, final CandlestickService candlestickService, final TicketService ticketService) {
+  private IndicatorsProcessor(final AverageDirectionalMovementIndex averageDirectionalMovementIndex, final IndicatorsService indicatorsService,
+      final CandlestickService candlestickService, final TicketService ticketService) {
     this.averageDirectionalMovementIndex = averageDirectionalMovementIndex;
-    this.averageTrueRange = averageTrueRange;
     this.indicatorsService = indicatorsService;
     this.candlestickService = candlestickService;
     this.ticketService = ticketService;
@@ -45,7 +42,6 @@ public class IndicatorsProcessor {
   @PostConstruct
   public void init() {
     this.indicators.put("ADX", averageDirectionalMovementIndex);
-    this.indicators.put("TEST", averageTrueRange);
     this.indicatorsService.printHeaders(Stream.concat(Stream.of("dataTime", "price"), this.indicators.keySet().stream()).toArray());
   }
 

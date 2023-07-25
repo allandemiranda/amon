@@ -35,7 +35,7 @@ public class IndicatorsRepository {
   }
 
   public void printHeaders(final @NotNull Object... inputs) {
-    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
       csvPrinter.printRecord(inputs);
     } catch (IOException e) {
       throw new WriteFileException(e);
@@ -54,7 +54,7 @@ public class IndicatorsRepository {
       return dataBase.getOrDefault(s, SignalTrend.out).toString();
     }).toArray();
     try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
-      csvPrinter.printRecord((Object) line);
+      csvPrinter.printRecord(line);
     } catch (IOException e) {
       throw new WriteFileException(e);
     }

@@ -28,13 +28,13 @@ public class TicketService {
   @Value("${ticket.repository.output}")
   private File outputFile;
 
-  private LocalDateTime localDateTime;
+  private LocalDateTime localDateTime = LocalDateTime.MIN;
   private Double bid;
   private Double ask;
 
   @PostConstruct
   public void init() {
-    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
       csvPrinter.printRecord((Object[]) TicketHeaders.values());
     } catch (IOException e) {
       throw new WriteFileException(e);
@@ -66,16 +66,16 @@ public class TicketService {
     this.localDateTime = localDateTime;
   }
 
-  public double getBid() {
-    return this.getTicket().bid();
+  public Double getBid() {
+    return this.bid;
   }
 
   private void setBid(final Double bid) {
     this.bid = bid;
   }
 
-  private double getAsk() {
-    return this.getTicket().ask();
+  private Double getAsk() {
+    return this.ask;
   }
 
   public void setAsk(final Double ask) {
