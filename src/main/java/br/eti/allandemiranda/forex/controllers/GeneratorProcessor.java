@@ -1,9 +1,9 @@
 package br.eti.allandemiranda.forex.controllers;
 
+import br.eti.allandemiranda.forex.controllers.chart.ChartProcessor;
 import br.eti.allandemiranda.forex.controllers.indicators.IndicatorsProcessor;
 import br.eti.allandemiranda.forex.controllers.order.OrderProcessor;
 import br.eti.allandemiranda.forex.dtos.Ticket;
-import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.TicketService;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -16,18 +16,18 @@ import org.springframework.stereotype.Controller;
 @Slf4j
 public class GeneratorProcessor {
 
-  private final CandlestickService candlestickService;
   private final IndicatorsProcessor indicatorsProcessor;
   private final TicketService ticketService;
   private final OrderProcessor orderProcessor;
+  private final ChartProcessor chartProcessor;
 
   @Autowired
-  private GeneratorProcessor(final CandlestickService candlestickService, final IndicatorsProcessor indicatorsProcessor, final TicketService ticketService,
-      final OrderProcessor orderProcessor) {
-    this.candlestickService = candlestickService;
+  private GeneratorProcessor(final IndicatorsProcessor indicatorsProcessor, final TicketService ticketService,
+      final OrderProcessor orderProcessor, final ChartProcessor chartProcessor) {
     this.indicatorsProcessor = indicatorsProcessor;
     this.ticketService = ticketService;
     this.orderProcessor = orderProcessor;
+    this.chartProcessor = chartProcessor;
   }
 
   @Synchronized
@@ -41,7 +41,7 @@ public class GeneratorProcessor {
       log.warn(e.getMessage());
     } finally {
       if (Objects.nonNull(ticket)) {
-        this.candlestickService.run();
+        this.chartProcessor.run();
         this.indicatorsProcessor.run();
         this.orderProcessor.run();
       }

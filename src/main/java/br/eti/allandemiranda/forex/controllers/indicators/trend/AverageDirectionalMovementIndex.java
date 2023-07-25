@@ -4,6 +4,7 @@ import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
 import br.eti.allandemiranda.forex.dtos.ADX;
 import br.eti.allandemiranda.forex.services.ADXService;
 import br.eti.allandemiranda.forex.services.CandlestickService;
+import br.eti.allandemiranda.forex.services.TicketService;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import java.util.Arrays;
 import java.util.stream.DoubleStream;
@@ -21,14 +22,16 @@ public class AverageDirectionalMovementIndex implements Indicator {
 
   private final ADXService adxService;
   private final CandlestickService candlestickService;
+  private final TicketService ticketService;
 
   @Value("${adx.parameters.period}")
   private Integer period;
 
   @Autowired
-  private AverageDirectionalMovementIndex(final ADXService adxService, final CandlestickService candlestickService) {
+  private AverageDirectionalMovementIndex(final ADXService adxService, final CandlestickService candlestickService, final TicketService ticketService) {
     this.adxService = adxService;
     this.candlestickService = candlestickService;
+    this.ticketService = ticketService;
   }
 
   private static double[] getTRSum(final double[] close, final double[] high, final double[] low, final int period) {
@@ -95,7 +98,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
 
       double adxIndex = Arrays.stream(dx).sum() / this.getPeriod();
 
-      this.adxService.add(new ADX(this.candlestickService.getCandlestickDataTime(), adxIndex, diPlus[0], diMinus[0]));
+      this.adxService.add(new ADX(this.candlestickService.getLastCandlestick().dateTime(), adxIndex, diPlus[0], diMinus[0]));
       return true;
     } else {
       log.debug("Can't get ADX, low memory side on Candlestick");
@@ -110,7 +113,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
     SignalTrend signalTrend = adxService.isDiPlusUpThanDiMinus() ? SignalTrend.buy : SignalTrend.sell;
     SignalTrend trend = adxService.getLast().adx() >= 75D ? signalTrend : SignalTrend.neutral;
 
-    adxService.print(trend, candlestickService.getRealDataTime(), adxService.getLast(), candlestickService.getLastCloseValue());
+    adxService.updateFile(trend, this.ticketService.getLocalDateTime(), adxService.getLast(), candlestickService.getLastCloseValue());
     return trend;
   }
 }

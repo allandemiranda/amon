@@ -31,7 +31,7 @@ public class ADXService {
     this.adxRepository.addData(toEntity(adx));
   }
 
-  public void print(final @NotNull SignalTrend signal, final @NotNull LocalDateTime realTime, final @NotNull ADX adx, final double price) {
+  public void updateFile(final @NotNull SignalTrend signal, final @NotNull LocalDateTime realTime, final @NotNull ADX adx, final double price) {
     this.adxRepository.saveRunTimeLine(realTime, toEntity(adx), signal, price);
   }
 
