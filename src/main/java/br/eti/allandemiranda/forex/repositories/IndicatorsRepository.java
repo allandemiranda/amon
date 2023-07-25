@@ -1,13 +1,14 @@
 package br.eti.allandemiranda.forex.repositories;
 
-import br.eti.allandemiranda.forex.utils.SignalTrend;
 import br.eti.allandemiranda.forex.exceptions.WriteFileException;
+import br.eti.allandemiranda.forex.utils.SignalTrend;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import lombok.Synchronized;
 import org.apache.commons.csv.CSVFormat;
@@ -63,5 +64,9 @@ public class IndicatorsRepository {
   @Synchronized
   public void add(final @NotNull String name, final @NotNull SignalTrend signal) {
     this.dataBase.put(name, signal);
+  }
+
+  public @NotNull Collection<SignalTrend> getSignals() {
+    return this.dataBase.values();
   }
 }
