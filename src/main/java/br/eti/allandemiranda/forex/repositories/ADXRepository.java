@@ -22,6 +22,10 @@ public class ADXRepository implements DataRepository<ADXEntity>, SaveRunTimeRepo
   @Value("${adx.repository.output}")
   private File outputFile;
 
+  private static @NotNull String getStringNumber(double number) {
+    return String.valueOf(number).replace(".", ",");
+  }
+
   @Override
   @Synchronized
   public @NotNull Collection<ADXEntity> getDataBase() {
@@ -34,7 +38,7 @@ public class ADXRepository implements DataRepository<ADXEntity>, SaveRunTimeRepo
   }
 
   @Override
-  public File getOutputFile() {
+  public @NotNull File getOutputFile() {
     return this.outputFile;
   }
 
@@ -45,7 +49,7 @@ public class ADXRepository implements DataRepository<ADXEntity>, SaveRunTimeRepo
 
   @Override
   public Object[] getHeaders() {
-    return new Object[]{"realDateTime", "dateTime", ADXHeaders.adx, ADXHeaders.diPlus, ADXHeaders.diMinus, "trend", "price"};
+    return new Object[]{ADXHeaders.realDateTime, ADXHeaders.candleDateTime, ADXHeaders.adx, ADXHeaders.diPlus, ADXHeaders.diMinus, ADXHeaders.trend, ADXHeaders.price};
   }
 
   @Override
@@ -56,9 +60,5 @@ public class ADXRepository implements DataRepository<ADXEntity>, SaveRunTimeRepo
     double price = (Double) inputs[3];
     return new Object[]{realDateTime.format(DateTimeFormatter.ISO_DATE_TIME), adx.getDateTime().format(DateTimeFormatter.ISO_DATE_TIME), getStringNumber(adx.getAdx()),
         getStringNumber(adx.getDiPlus()), getStringNumber(adx.getDiMinus()), trend, getStringNumber(price)};
-  }
-
-  private @NotNull String getStringNumber(double number) {
-    return String.valueOf(number).replace(".", ",");
   }
 }

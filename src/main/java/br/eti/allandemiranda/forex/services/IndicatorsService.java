@@ -21,7 +21,11 @@ public class IndicatorsService {
     this.repository.add(name, signal);
   }
 
-  public void updateFile(final @NotNull LocalDateTime dataTime) {
-    this.repository.updateFile(dataTime);
+  public void printHeaders(final @NotNull Object... inputs) {
+    this.repository.printHeaders(inputs);
+  }
+
+  public void updateFile(final @NotNull LocalDateTime dataTime, final double price) {
+    this.repository.updateFile(dataTime, price);
   }
 }

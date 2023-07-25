@@ -15,21 +15,21 @@ public interface DataRepository<T extends DefaultEntity> {
     return this.getDataBase();
   }
 
-  default void addData(@NotNull T entity) {
+  default void addData(final @NotNull T entity) {
     this.removeData(entity);
     this.getDataBase().add(entity);
     this.checkMemory();
   }
 
-  default void removeData(@NotNull LocalDateTime dateTime) {
+  default void removeData(final @NotNull LocalDateTime dateTime) {
     this.getDataBase().removeIf(entity -> entity.getDateTime().equals(dateTime));
   }
 
-  default void removeData(@NotNull T entity) {
+  default void removeData(final @NotNull T entity) {
     this.removeData(entity.getDateTime());
   }
 
-  default void updateData(@NotNull T entity) {
+  default void updateData(final @NotNull T entity) {
     this.addData(entity);
   }
 

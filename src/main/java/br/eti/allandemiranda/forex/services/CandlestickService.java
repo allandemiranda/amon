@@ -18,79 +18,27 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class CandlestickService implements DefaultService<CandlestickEntity, Candlestick> {
+public class CandlestickService {
 
   private final CandlestickRepository candlestickRepository;
   private LocalDateTime realDataTime = LocalDateTime.MIN;
+  private LocalDateTime candlestickDataTime = LocalDateTime.MIN;
 
   @Autowired
   private CandlestickService(final CandlestickRepository candlestickRepository) {
     this.candlestickRepository = candlestickRepository;
   }
 
-  @Synchronized
-  public void addTicket(final @NotNull Ticket ticket, final @NotNull TimeFrame timeFrame) {
-    if (ticket.dateTime().isAfter(this.getRealDataTime())) {
-      this.setRealDataTime(ticket.dateTime());
-      LocalDateTime candleDateTime = this.getCandleDateTime(ticket.dateTime(), timeFrame);
-      if (this.candlestickRepository.getDataBase().isEmpty()) {
-        Candlestick model = new Candlestick(candleDateTime, ticket.bid(), ticket.bid(), ticket.bid(), ticket.bid());
-        this.candlestickRepository.addData(this.toEntity(model));
-      } else {
-        CandlestickEntity last = this.candlestickRepository.getLast();
-        Candlestick merged = this.mergeCandleAndTicket(this.toModel(last), ticket.withDateTime(candleDateTime));
-        this.candlestickRepository.updateData(this.toEntity(merged));
-      }
-      this.candlestickRepository.saveRunTimeLine(this.candlestickRepository.getLast(), this.getRealDataTime());
-    } else {
-      log.warn("Ticket {} with a data before current {}", ticket, realDataTime.format(DateTimeFormatter.ISO_DATE_TIME));
-    }
-  }
-
-  public long getCurrentMemorySize() {
-    return this.candlestickRepository.selectAll().size();
-  }
-
-  public @NotNull LocalDateTime getRealDataTime() {
-    return this.realDataTime;
-  }
-
-  private void setRealDataTime(final @NotNull LocalDateTime realDataTime) {
-    this.realDataTime = realDataTime;
-  }
-
-  public @NotNull LocalDateTime getCandlestickDataTime() {
-    return this.candlestickRepository.getLast().getDateTime();
-  }
-
-  public @NotNull Candlestick getLast() {
-    return this.toModel(this.candlestickRepository.getLast());
-  }
-
-  public double[] getCloseReversed(final int period) {
-    return this.candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period)
-        .mapToDouble(CandlestickEntity::getClose).toArray();
-  }
-
-  public double[] getHighReversed(final int period) {
-    return this.candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period)
-        .mapToDouble(CandlestickEntity::getHigh).toArray();
-  }
-
-  public double[] getLowReversed(final int period) {
-    return this.candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period)
-        .mapToDouble(CandlestickEntity::getLow).toArray();
-  }
-
-  private @NotNull LocalDateTime getCandleDateTime(final @NotNull LocalDateTime ticketDateTime, final @NotNull TimeFrame timeFrame) {
+  private static @NotNull LocalDateTime getInputCandleDateTime(final @NotNull LocalDateTime ticketDateTime, final @NotNull TimeFrame timeFrame) {
     LocalDate localDate = ticketDateTime.toLocalDate();
     return switch (timeFrame) {
-      case M1, M5, M30, H1 -> throw new IllegalStateException("Not implemented");
+      //TODO implementar time frame para outros inputs
+      case M1, M5, M30, H1 -> throw new IllegalStateException("Not implemented, only M15");
       case M15 -> getDateTimeToM15(ticketDateTime, localDate);
     };
   }
 
-  private @NotNull LocalDateTime getDateTimeToM15(final @NotNull LocalDateTime ticketDateTime, final @NotNull LocalDate localDate) {
+  private static @NotNull LocalDateTime getDateTimeToM15(final @NotNull LocalDateTime ticketDateTime, final @NotNull LocalDate localDate) {
     if (ticketDateTime.getMinute() < 15) {
       LocalTime localTime = LocalTime.of(ticketDateTime.getHour(), 0);
       return LocalDateTime.of(localDate, localTime);
@@ -107,7 +55,7 @@ public class CandlestickService implements DefaultService<CandlestickEntity, Can
     return LocalDateTime.of(localDate, localTime);
   }
 
-  private @NotNull Candlestick mergeCandleAndTicket(final @NotNull Candlestick candlestick, final @NotNull Ticket ticket) {
+  private static @NotNull Candlestick mergeCandleAndTicket(final @NotNull Candlestick candlestick, final @NotNull Ticket ticket) {
     if (candlestick.dateTime().equals(ticket.dateTime())) {
       if (ticket.bid() > candlestick.high()) {
         return candlestick.withClose(ticket.bid()).withHigh(ticket.bid());
@@ -121,8 +69,7 @@ public class CandlestickService implements DefaultService<CandlestickEntity, Can
     }
   }
 
-  @Override
-  public @NotNull CandlestickEntity toEntity(@NotNull Candlestick model) {
+  private static @NotNull CandlestickEntity toEntity(@NotNull Candlestick model) {
     CandlestickEntity entity = new CandlestickEntity();
     entity.setDateTime(model.dateTime());
     entity.setLow(model.low());
@@ -132,8 +79,65 @@ public class CandlestickService implements DefaultService<CandlestickEntity, Can
     return entity;
   }
 
-  @Override
-  public @NotNull Candlestick toModel(@NotNull CandlestickEntity entity) {
+  private static @NotNull Candlestick toModel(@NotNull CandlestickEntity entity) {
     return new Candlestick(entity.getDateTime(), entity.getOpen(), entity.getHigh(), entity.getLow(), entity.getClose());
+  }
+
+  public @NotNull LocalDateTime getRealDataTime() {
+    return this.realDataTime;
+  }
+
+  private void setRealDataTime(final @NotNull LocalDateTime realDataTime) {
+    this.realDataTime = realDataTime;
+  }
+
+  public @NotNull LocalDateTime getCandlestickDataTime() {
+    return this.candlestickDataTime;
+  }
+
+  private void setCandlestickRepository(final @NotNull LocalDateTime candlestickDataTime) {
+    this.candlestickDataTime = candlestickDataTime;
+  }
+
+  @Synchronized
+  public void addTicket(final @NotNull Ticket ticket, final @NotNull TimeFrame timeFrame) {
+    if (ticket.dateTime().isAfter(this.getRealDataTime())) {
+      this.setRealDataTime(ticket.dateTime());
+      this.setCandlestickRepository(getInputCandleDateTime(ticket.dateTime(), timeFrame));
+      if (this.candlestickRepository.getDataBase().isEmpty()) {
+        Candlestick model = new Candlestick(this.getCandlestickDataTime(), ticket.bid(), ticket.bid(), ticket.bid(), ticket.bid());
+        this.candlestickRepository.addData(toEntity(model));
+      } else {
+        CandlestickEntity last = this.candlestickRepository.getLast();
+        Candlestick merged = mergeCandleAndTicket(toModel(last), ticket.withDateTime(this.getCandlestickDataTime()));
+        this.candlestickRepository.updateData(toEntity(merged));
+      }
+      this.candlestickRepository.saveRunTimeLine(this.candlestickRepository.getLast(), this.getRealDataTime());
+    } else {
+      log.warn("Ticket {} with a data before current {}", ticket, realDataTime.format(DateTimeFormatter.ISO_DATE_TIME));
+    }
+  }
+
+  public double getLastCloseValue() {
+    return this.candlestickRepository.getLast().getClose();
+  }
+
+  public long getCurrentMemorySize() {
+    return this.candlestickRepository.selectAll().size();
+  }
+
+  public double[] getCloseReversed(final int period) {
+    return this.candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period)
+        .mapToDouble(CandlestickEntity::getClose).toArray();
+  }
+
+  public double[] getHighReversed(final int period) {
+    return this.candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period)
+        .mapToDouble(CandlestickEntity::getHigh).toArray();
+  }
+
+  public double[] getLowReversed(final int period) {
+    return this.candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period)
+        .mapToDouble(CandlestickEntity::getLow).toArray();
   }
 }

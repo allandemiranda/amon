@@ -16,13 +16,19 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class CandlestickRepository implements DataRepository<CandlestickEntity>, SaveRunTimeRepository {
 
+  private static final String TARGET = ".";
+  private static final String REPLACEMENT = ",";
+
   private final Collection<CandlestickEntity> collection = new ArrayList<>();
 
   @Value("${candlestick.repository.output}")
   private File outputFile;
-
   @Value("${candlestick.repository.memory}")
   private Integer memorySize;
+
+  private static @NotNull String getStringNumber(double number) {
+    return String.valueOf(number).replace(TARGET, REPLACEMENT);
+  }
 
   @Override
   @Synchronized
@@ -47,19 +53,15 @@ public class CandlestickRepository implements DataRepository<CandlestickEntity>,
 
   @Override
   public Object[] getHeaders() {
-    return new Object[]{"realDateTime", "dateTime", CandlestickHeaders.open, CandlestickHeaders.high, CandlestickHeaders.low, CandlestickHeaders.close};
+    return new Object[]{CandlestickHeaders.realDateTime, CandlestickHeaders.candleDateTime, CandlestickHeaders.open, CandlestickHeaders.high, CandlestickHeaders.low,
+        CandlestickHeaders.close};
   }
 
   @Override
   public Object[] getLine(Object @NotNull ... inputs) {
-    // (CandlestickEntity) inputs[0], (LocalDateTime) inputs[1]
     LocalDateTime realDateTime = (LocalDateTime) inputs[1];
     CandlestickEntity candlestick = (CandlestickEntity) inputs[0];
     return new Object[]{realDateTime.format(DateTimeFormatter.ISO_DATE_TIME), candlestick.getDateTime().format(DateTimeFormatter.ISO_DATE_TIME),
         getStringNumber(candlestick.getOpen()), getStringNumber(candlestick.getHigh()), getStringNumber(candlestick.getLow()), getStringNumber(candlestick.getClose())};
-  }
-
-  private @NotNull String getStringNumber(double number) {
-    return String.valueOf(number).replace(".", ",");
   }
 }

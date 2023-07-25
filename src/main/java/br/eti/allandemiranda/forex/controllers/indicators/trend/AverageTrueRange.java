@@ -11,13 +11,14 @@ import org.springframework.stereotype.Controller;
 public class AverageTrueRange implements Indicator {
 
   @Override
-  public void run() {
+  public boolean run() {
     log.info("Run the AverageTrueRange");
+    return false;
   }
 
   @Override
   public @NotNull SignalTrend getSignal() {
     log.info("getSignal() the AverageTrueRange");
-    return SignalTrend.Out;
+    return SignalTrend.sell;
   }
 }

@@ -5,6 +5,7 @@ import lombok.With;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
+//TODO remover ao remover mock
 @Accessors(fluent = true)
 @With
 public record Ticket(@NotNull LocalDateTime dateTime, double bid, double ask) implements DefaultModel {
