@@ -109,11 +109,18 @@ public class AverageDirectionalMovementIndex implements Indicator {
   @Override
   @Synchronized
   public @NotNull SignalTrend getSignal() {
-    // TODO ajeitar esse getSinal
-    SignalTrend signalTrend = adxService.isDiPlusUpThanDiMinus() ? SignalTrend.buy : SignalTrend.sell;
-    SignalTrend trend = adxService.getLast().adx() >= 75D ? signalTrend : SignalTrend.neutral;
-
-    adxService.updateFile(trend, this.ticketService.getLocalDateTime(), adxService.getLast(), candlestickService.getLastCloseValue());
-    return trend;
+    if (adxService.getLast().adx() >= 50D && adxService.getLast().adx() < 75) {
+      SignalTrend signal = adxService.isDiPlusUpThanDiMinus() ? SignalTrend.buy : SignalTrend.sell;
+      adxService.updateFile(signal, this.ticketService.getLocalDateTime(), adxService.getLast(), candlestickService.getLastCloseValue());
+      return signal;
+    }
+    if (adxService.getLast().adx() >= 75D) {
+      SignalTrend trend = adxService.isDiPlusUpThanDiMinus() ? SignalTrend.buy : SignalTrend.sell;
+      SignalTrend signal = trend.equals(SignalTrend.buy) ? SignalTrend.strongBuy : SignalTrend.strongSell;
+      adxService.updateFile(signal, this.ticketService.getLocalDateTime(), adxService.getLast(), candlestickService.getLastCloseValue());
+      return signal;
+    }
+    adxService.updateFile(SignalTrend.neutral, this.ticketService.getLocalDateTime(), adxService.getLast(), candlestickService.getLastCloseValue());
+    return SignalTrend.neutral;
   }
 }

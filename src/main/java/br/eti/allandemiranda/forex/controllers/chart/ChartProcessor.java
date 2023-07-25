@@ -49,7 +49,7 @@ public class ChartProcessor {
   private static @NotNull LocalDateTime getInputCandleDateTime(final @NotNull LocalDateTime ticketDateTime, final @NotNull TimeFrame timeFrame) {
     LocalDate localDate = ticketDateTime.toLocalDate();
     return switch (timeFrame) {
-      //TODO implementar time frame para outros inputs
+      //TODO implement time frame for other inputs
       case M1, M5, M30, H1 -> throw new IllegalStateException("Not implemented, only M15");
       case M15 -> getDateTimeToM15(ticketDateTime, localDate);
     };
