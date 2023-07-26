@@ -74,7 +74,7 @@ public class TicketService {
     this.bid = bid;
   }
 
-  private Double getAsk() {
+  public Double getAsk() {
     return this.ask;
   }
 

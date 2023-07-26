@@ -2,8 +2,11 @@ package br.eti.allandemiranda.forex.controllers.order;
 
 import br.eti.allandemiranda.forex.dtos.Signal;
 import br.eti.allandemiranda.forex.services.IndicatorsService;
+import br.eti.allandemiranda.forex.services.OrderService;
 import br.eti.allandemiranda.forex.services.SignalService;
 import br.eti.allandemiranda.forex.services.TicketService;
+import br.eti.allandemiranda.forex.utils.OrderPosition;
+import br.eti.allandemiranda.forex.utils.OrderStatus;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import java.util.Arrays;
 import java.util.Map;
@@ -18,18 +21,19 @@ import org.springframework.stereotype.Controller;
 @Controller
 public class OrderProcessor {
 
-  @Value("${order.signaltoopen}")
-  private Integer openSequence;
-
   private final TicketService ticketService;
   private final IndicatorsService indicatorsService;
   private final SignalService signalService;
+  private final OrderService orderService;
+  @Value("${order.signaltoopen}")
+  private Integer openSequence;
 
   @Autowired
-  private OrderProcessor(final TicketService ticketService, final IndicatorsService indicatorsService, final SignalService signalService) {
+  private OrderProcessor(final TicketService ticketService, final IndicatorsService indicatorsService, final SignalService signalService, final OrderService orderService) {
     this.ticketService = ticketService;
     this.indicatorsService = indicatorsService;
     this.signalService = signalService;
+    this.orderService = orderService;
   }
 
   private static int getPowerNumber(final @NotNull SignalTrend signal, final int quantity) {
@@ -61,27 +65,48 @@ public class OrderProcessor {
 
   @Synchronized
   public void run() {
+    this.orderService.updateOrder(this.ticketService.getLocalDateTime(), this.ticketService.getAsk(), this.ticketService.getBid());
     this.updateSignal();
     this.updatePositionAble();
   }
-  public void updateSignal() {
+
+  private void updateSignal() {
     SignalTrend globalSignal = getGlobalSignal();
     this.signalService.add(new Signal(this.ticketService.getLocalDateTime(), globalSignal, this.ticketService.getBid()));
-
-
-
   }
 
   private void updatePositionAble() {
     SignalTrend[] lastSignals = this.signalService.getLastSequence(openSequence);
     long numFalse = IntStream.range(1, lastSignals.length).mapToObj(i -> lastSignals[0].equals(lastSignals[i])).filter(aBoolean -> !aBoolean).count();
-    if(numFalse  == 0L) {
+    if (numFalse == 0L) {
       this.openPosition(lastSignals[0]);
     }
   }
 
   private void openPosition(final @NotNull SignalTrend signalTrend) {
-
+    OrderStatus orderStatus = this.orderService.getOrder().status();
+    OrderPosition orderPosition = this.orderService.getOrder().position();
+    if (orderStatus.equals(OrderStatus.close)) {
+      switch (signalTrend) {
+        case buy, strongBuy -> this.orderService.openOrder(this.ticketService.getLocalDateTime(), OrderPosition.buy, this.ticketService.getAsk(), this.ticketService.getBid());
+        case sell, strongSell -> this.orderService.openOrder(this.ticketService.getLocalDateTime(), OrderPosition.sell, this.ticketService.getAsk(), this.ticketService.getBid());
+      }
+    } else {
+      switch (signalTrend) {
+        case buy, strongBuy -> {
+          if (orderPosition.equals(OrderPosition.sell)) {
+            this.orderService.closeOrder(this.ticketService.getLocalDateTime(), this.ticketService.getAsk(), this.ticketService.getBid());
+            this.orderService.openOrder(this.ticketService.getLocalDateTime(), OrderPosition.buy, this.ticketService.getAsk(), this.ticketService.getBid());
+          }
+        }
+        case sell, strongSell -> {
+          if (orderPosition.equals(OrderPosition.buy)) {
+            this.orderService.closeOrder(this.ticketService.getLocalDateTime(), this.ticketService.getAsk(), this.ticketService.getBid());
+            this.orderService.openOrder(this.ticketService.getLocalDateTime(), OrderPosition.sell, this.ticketService.getAsk(), this.ticketService.getBid());
+          }
+        }
+      }
+    }
   }
 
   private @NotNull SignalTrend getGlobalSignal() {
