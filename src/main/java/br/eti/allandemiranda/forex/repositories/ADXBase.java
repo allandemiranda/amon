@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class ADXRepository implements DataRepository<ADXEntity>, SaveRunTimeRepository {
+public class ADXBase implements DataBase<ADXEntity>, SaveRunTimeRepository {
 
   private final Collection<ADXEntity> collection = new ArrayList<>();
 

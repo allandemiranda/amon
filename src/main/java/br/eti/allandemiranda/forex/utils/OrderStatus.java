@@ -1,5 +1,5 @@
 package br.eti.allandemiranda.forex.utils;
 
 public enum OrderStatus {
-  open, close
+  OPEN, CLOSE_MANUAL, CLOSE_SL, CLOSE_TP
 }

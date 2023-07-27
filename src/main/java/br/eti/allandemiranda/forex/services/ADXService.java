@@ -3,7 +3,7 @@ package br.eti.allandemiranda.forex.services;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import br.eti.allandemiranda.forex.dtos.ADX;
 import br.eti.allandemiranda.forex.entities.ADXEntity;
-import br.eti.allandemiranda.forex.repositories.ADXRepository;
+import br.eti.allandemiranda.forex.repositories.ADXBase;
 import java.time.LocalDateTime;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +12,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class ADXService {
 
-  private final ADXRepository adxRepository;
+  private final ADXBase adxRepository;
 
   @Autowired
-  private ADXService(final ADXRepository adxRepository) {
+  private ADXService(final ADXBase adxRepository) {
     this.adxRepository = adxRepository;
   }
 

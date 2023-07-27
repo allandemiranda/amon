@@ -12,35 +12,17 @@ import lombok.Setter;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
-public class CandlestickEntity implements Serializable, DefaultEntity {
+public class TicketEntity implements Serializable, DefaultEntity {
 
   @Serial
   private static final long serialVersionUID = 1L;
 
   @Id
-  @Setter
   private LocalDateTime dateTime;
-  private double open;
-  private double high;
-  private double low;
-  private double close;
-
-  public void setOpen(final double open) {
-    this.open = open;
-    this.high = open;
-    this.low = open;
-    this.close = open;
-  }
-
-  public void setClose(final double close) {
-    this.close = close;
-    if(this.getClose() > this.getHigh()) {
-      this.high = close;
-    } else if(this.getClose() < this.getLow()) {
-      this.low = close;
-    }
-  }
+  private double bid;
+  private double ask;
 
   @Override
   public boolean equals(final Object o) {
@@ -50,7 +32,7 @@ public class CandlestickEntity implements Serializable, DefaultEntity {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final CandlestickEntity entity = (CandlestickEntity) o;
+    final TicketEntity entity = (TicketEntity) o;
     return Objects.equals(dateTime, entity.dateTime);
   }
 

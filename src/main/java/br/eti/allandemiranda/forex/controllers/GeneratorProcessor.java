@@ -7,45 +7,39 @@ import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.services.TicketService;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.Synchronized;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 @Controller
-@Slf4j
+@Getter(AccessLevel.PRIVATE)
 public class GeneratorProcessor {
 
-  private final IndicatorsProcessor indicatorsProcessor;
   private final TicketService ticketService;
-  private final OrderProcessor orderProcessor;
   private final ChartProcessor chartProcessor;
+  private final IndicatorsProcessor indicatorsProcessor;
+  private final OrderProcessor orderProcessor;
 
   @Autowired
-  private GeneratorProcessor(final IndicatorsProcessor indicatorsProcessor, final TicketService ticketService,
-      final OrderProcessor orderProcessor, final ChartProcessor chartProcessor) {
-    this.indicatorsProcessor = indicatorsProcessor;
+  private GeneratorProcessor(final TicketService ticketService, final ChartProcessor chartProcessor, final IndicatorsProcessor indicatorsProcessor,
+      final OrderProcessor orderProcessor) {
     this.ticketService = ticketService;
-    this.orderProcessor = orderProcessor;
     this.chartProcessor = chartProcessor;
+    this.indicatorsProcessor = indicatorsProcessor;
+    this.orderProcessor = orderProcessor;
   }
 
   @Synchronized
-  public void webSocket(LocalDateTime time, Double bid, Double ask) {
-    Ticket ticket = null;
-    try {
-      ticketService.add(new Ticket(time, bid, ask));
-      ticket = ticketService.getTicket();
-      ticketService.updateOutputFile();
-    } catch (Exception e) {
-      log.warn(e.getMessage());
-    } finally {
-      if (Objects.nonNull(ticket)) {
-        this.chartProcessor.run();
-        this.indicatorsProcessor.run();
-        this.orderProcessor.run();
-      }
+  public void webSocket(final LocalDateTime time, final Double bid, final Double ask) {
+    final Ticket ticket = new Ticket(Objects.isNull(time) ? LocalDateTime.now() : time, Objects.isNull(bid) ? Double.MIN_VALUE : bid,
+        Objects.isNull(ask) ? Double.MIN_VALUE : ask);
+    this.getTicketService().updateData(ticket);
+    if (Objects.nonNull(this.getTicketService().getCurrentTicket())) {
+      this.getChartProcessor().run();
+      this.getIndicatorsProcessor().run();
+      this.getOrderProcessor().run();
     }
   }
-
 }

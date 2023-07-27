@@ -1,67 +1,53 @@
 package br.eti.allandemiranda.forex.repositories;
 
+import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.entities.CandlestickEntity;
-import br.eti.allandemiranda.forex.headers.CandlestickHeaders;
-import jakarta.annotation.PostConstruct;
-import java.io.File;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.TreeSet;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.Synchronized;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class CandlestickRepository implements DataRepository<CandlestickEntity>, SaveRunTimeRepository {
+@Getter(AccessLevel.PRIVATE)
+@Slf4j
+public class CandlestickRepository {
 
-  private static final String TARGET = ".";
-  private static final String REPLACEMENT = ",";
+  private final TreeSet<CandlestickEntity> dataBase = new TreeSet<>();
 
-  private final Collection<CandlestickEntity> collection = new ArrayList<>();
-
-  @Value("${candlestick.repository.output}")
-  private File outputFile;
   @Value("${candlestick.repository.memory}")
-  private Integer memorySize;
+  private int memorySize;
 
-  private static @NotNull String getStringNumber(double number) {
-    return String.valueOf(number).replace(TARGET, REPLACEMENT);
+  public int getCacheSize() {
+    return this.getDataBase().size();
   }
 
-  @Override
   @Synchronized
-  public @NotNull Collection<CandlestickEntity> getDataBase() {
-    return collection;
+  public void addCandlestick(final @NotNull Candlestick candlestick) {
+    if (this.getCacheSize() == 0 || candlestick.dateTime().isAfter(this.getDataBase().last().getDateTime())) {
+      final CandlestickEntity entity = new CandlestickEntity();
+      entity.setDateTime(candlestick.dateTime());
+      entity.setOpen(candlestick.open());
+      this.getDataBase().add(entity);
+      if(this.getDataBase().size() > this.getMemorySize()) {
+        final CandlestickEntity older = this.getDataBase().first();
+        this.getDataBase().remove(older);
+      }
+    } else if (this.getDataBase().last().getDateTime().equals(candlestick.dateTime())) {
+      this.getDataBase().last().setClose(candlestick.close());
+    } else {
+      log.warn("Trying to add a old Candlestick on repository");
+    }
   }
 
-  @Override
-  public long getMemorySide() {
-    return this.memorySize;
+  public Candlestick @NotNull [] getCandlesticks() {
+    return this.getDataBase().stream().map(this::toModel).toArray(Candlestick[]::new);
   }
 
-  @Override
-  public File getOutputFile() {
-    return this.outputFile;
-  }
-
-  @PostConstruct
-  public void init() {
-    saveHeaders();
-  }
-
-  @Override
-  public Object[] getHeaders() {
-    return new Object[]{CandlestickHeaders.realDateTime, CandlestickHeaders.candleDateTime, CandlestickHeaders.open, CandlestickHeaders.high, CandlestickHeaders.low,
-        CandlestickHeaders.close};
-  }
-
-  @Override
-  public Object[] getLine(Object @NotNull ... inputs) {
-    LocalDateTime realDateTime = (LocalDateTime) inputs[1];
-    CandlestickEntity candlestick = (CandlestickEntity) inputs[0];
-    return new Object[]{realDateTime.format(DateTimeFormatter.ISO_DATE_TIME), candlestick.getDateTime().format(DateTimeFormatter.ISO_DATE_TIME),
-        getStringNumber(candlestick.getOpen()), getStringNumber(candlestick.getHigh()), getStringNumber(candlestick.getLow()), getStringNumber(candlestick.getClose())};
+  private @NotNull Candlestick toModel(final @NotNull CandlestickEntity output) {
+    return new Candlestick(output.getDateTime(), output.getOpen(), output.getHigh(), output.getLow(), output.getClose());
   }
 }

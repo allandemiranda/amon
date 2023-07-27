@@ -1,7 +1,7 @@
 package br.eti.allandemiranda.forex.configs;
 
 import br.eti.allandemiranda.forex.controllers.GeneratorProcessor;
-import br.eti.allandemiranda.forex.headers.TicketHeaders;
+import br.eti.allandemiranda.forex.headers.TicketHeader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Configuration;
 public class StringConfig {
 
   private final GeneratorProcessor generatorProcessor;
-  @Value("${mock.ticket.input}")
+  @Value("${config.mock.ticket.input}")
   private File inputFile;
 
   @Autowired
@@ -30,7 +30,7 @@ public class StringConfig {
   @Bean
   void processor() {
     // MOCKED
-    try (final FileReader fileReader = new FileReader(inputFile); final CSVParser csvParser = CSVFormat.TDF.builder().setHeader(TicketHeaders.class).setSkipHeaderRecord(true)
+    try (final FileReader fileReader = new FileReader(inputFile); final CSVParser csvParser = CSVFormat.TDF.builder().setHeader(TicketHeader.class).setSkipHeaderRecord(true)
         .build().parse(fileReader)) {
       StreamSupport.stream(csvParser.spliterator(), false)
 //          .limit(5000)

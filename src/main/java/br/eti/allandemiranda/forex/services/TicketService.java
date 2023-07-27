@@ -1,111 +1,89 @@
 package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.Ticket;
-import br.eti.allandemiranda.forex.exceptions.DataRepositoryException;
-import br.eti.allandemiranda.forex.exceptions.WriteFileException;
-import br.eti.allandemiranda.forex.headers.TicketHeaders;
+import br.eti.allandemiranda.forex.headers.TicketHeader;
+import br.eti.allandemiranda.forex.repositories.TicketRepository;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Objects;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.SneakyThrows;
+import lombok.Synchronized;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
+@Getter(AccessLevel.PRIVATE)
+@Slf4j
 public class TicketService {
 
-  private static final String TARGET = ".";
-  private static final String REPLACEMENT = ",";
+  private static final String OUTPUT_FILE_NAME = "tickets.csv";
 
-  @Value("${ticket.pip}")
-  private Double pip;
-  @Value("${ticket.repository.output}")
-  private File outputFile;
+  private final TicketRepository repository;
 
-  private LocalDateTime localDateTime = LocalDateTime.MIN;
-  private Double bid;
-  private Double ask;
+  @Value("${config.root.folder}")
+  private File outputFolder;
+  @Value("${ticket.debug:false}")
+  private boolean debugActive;
+  @Value("${ticket.digits:5}")
+  private int digits;
+
+  @Autowired
+  private TicketService(final TicketRepository repository) {
+    this.repository = repository;
+  }
+
+  private @NotNull File getOutputFile() {
+    return new File(this.getOutputFolder(), OUTPUT_FILE_NAME);
+  }
 
   @PostConstruct
-  public void init() {
-    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
-      csvPrinter.printRecord((Object[]) TicketHeaders.values());
-    } catch (IOException e) {
-      throw new WriteFileException(e);
-    }
+  private void init() {
+    this.printDebugHeader();
   }
 
-  public void updateOutputFile() {
-    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
-      csvPrinter.printRecord(localDateTime.format(DateTimeFormatter.ISO_DATE_TIME), String.valueOf(bid).replace(TARGET, REPLACEMENT),
-          String.valueOf(ask).replace(TARGET, REPLACEMENT));
-    } catch (IOException e) {
-      throw new WriteFileException(e);
-    }
-  }
-
-  private File getOutputFile() {
-    return this.outputFile;
-  }
-
-  private double getPip() {
-    return this.pip;
-  }
-
-  public LocalDateTime getLocalDateTime() {
-    return this.localDateTime;
-  }
-
-  private void setLocalDateTime(final @NotNull LocalDateTime localDateTime) {
-    this.localDateTime = localDateTime;
-  }
-
-  public Double getBid() {
-    return this.bid;
-  }
-
-  private void setBid(final Double bid) {
-    this.bid = bid;
-  }
-
-  public Double getAsk() {
-    return this.ask;
-  }
-
-  public void setAsk(final Double ask) {
-    this.ask = ask;
-  }
-
-  public double getSpread() {
-    return (getAsk() - getBid()) / getPip();
-  }
-
-  public void add(final @NotNull Ticket ticket) {
-    if (ticket.dateTime().isAfter(this.getLocalDateTime())) {
-      this.setLocalDateTime(ticket.dateTime());
-      if (Objects.nonNull(ticket.bid())) {
-        this.setBid(ticket.bid());
+  @SneakyThrows
+  private void printDebugHeader() {
+    if (this.isDebugActive()) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+        csvPrinter.printRecord(Arrays.stream(TicketHeader.values()).map(Enum::toString).toArray());
       }
-      if (Objects.nonNull(ticket.ask())) {
-        this.setAsk(ticket.ask());
-      }
-    } else {
-      throw new DataRepositoryException(String.format("Ticket with data %s before current %s", this.getLocalDateTime().format(DateTimeFormatter.ISO_DATE_TIME),
-          ticket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME)));
     }
   }
 
-  public @NotNull Ticket getTicket() {
-    if (Objects.isNull(this.bid) || Objects.isNull(this.ask)) {
-      throw new DataRepositoryException("Can't provide a incomplete ticket");
-    } else {
-      return new Ticket(this.getLocalDateTime(), this.getBid(), this.getAsk());
+  @SneakyThrows
+  public void updateDebugFile() {
+    final Ticket currentTicket = this.getRepository().getCurrentTicket();
+    if (this.isDebugActive() && Objects.nonNull(currentTicket)) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+        csvPrinter.printRecord(currentTicket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
+            String.valueOf(currentTicket.bid()).replace(".", ","), String.valueOf(currentTicket.ask()).replace(".", ","),
+            this.getCurrentSpread());
+      }
     }
+  }
+
+  public int getCurrentSpread() {
+    final Ticket currentTicket = this.getRepository().getCurrentTicket();
+    return (int) ((currentTicket.ask() - currentTicket.bid()) / (1 / (Math.pow(10, this.getDigits()))));
+  }
+
+  public Ticket getCurrentTicket() {
+    return this.getRepository().getCurrentTicket();
+  }
+
+  @Synchronized
+  public void updateData(final @NotNull Ticket ticket) {
+    this.getRepository().update(ticket);
+    this.updateDebugFile();
   }
 }

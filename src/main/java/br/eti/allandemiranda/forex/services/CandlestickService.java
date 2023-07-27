@@ -1,72 +1,75 @@
 package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.Candlestick;
-import br.eti.allandemiranda.forex.entities.CandlestickEntity;
+import br.eti.allandemiranda.forex.dtos.Ticket;
+import br.eti.allandemiranda.forex.headers.CandlestickHeader;
 import br.eti.allandemiranda.forex.repositories.CandlestickRepository;
+import jakarta.annotation.PostConstruct;
+import java.io.File;
+import java.io.FileWriter;
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import lombok.extern.slf4j.Slf4j;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.SneakyThrows;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
-@Slf4j
+@Getter(AccessLevel.PRIVATE)
 public class CandlestickService {
 
-  private final CandlestickRepository candlestickRepository;
+  private static final String OUTPUT_FILE_NAME = "candlestick.csv";
+
+  private final CandlestickRepository repository;
+
+  @Value("${config.root.folder}")
+  private File outputFolder;
+  @Value("${candlestick.debug:false}")
+  private boolean debugActive;
 
   @Autowired
-  private CandlestickService(final CandlestickRepository candlestickRepository) {
-    this.candlestickRepository = candlestickRepository;
+  private CandlestickService(final CandlestickRepository repository) {
+    this.repository = repository;
   }
 
-  private static @NotNull CandlestickEntity toEntity(@NotNull Candlestick model) {
-    CandlestickEntity entity = new CandlestickEntity();
-    entity.setDateTime(model.dateTime());
-    entity.setLow(model.low());
-    entity.setOpen(model.open());
-    entity.setHigh(model.high());
-    entity.setClose(model.close());
-    return entity;
+  private @NotNull File getOutputFile() {
+    return new File(this.getOutputFolder(), OUTPUT_FILE_NAME);
   }
 
-  private static @NotNull Candlestick toModel(@NotNull CandlestickEntity entity) {
-    return new Candlestick(entity.getDateTime(), entity.getOpen(), entity.getHigh(), entity.getLow(), entity.getClose());
+  @PostConstruct
+  private void init() {
+    this.printDebugHeader();
   }
 
-  public void updateFile(final @NotNull LocalDateTime realDataTime) {
-    this.candlestickRepository.saveRunTimeLine(this.candlestickRepository.getLast(), realDataTime);
+  @SneakyThrows
+  private void printDebugHeader() {
+    if (this.isDebugActive()) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+        csvPrinter.printRecord(Arrays.stream(CandlestickHeader.values()).map(Enum::toString).toArray());
+      }
+    }
   }
 
-  public @NotNull Candlestick getLastCandlestick() {
-    return toModel(this.candlestickRepository.getLast());
+  @SneakyThrows
+  public void updateDebugFile(final @NotNull LocalDateTime realTime) {
+    if (this.isDebugActive()) {
+      final Candlestick candlestick = this.getRepository().getCandlesticks()[this.getRepository().getCacheSize() - 1];
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), candlestick.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), candlestick.open(),
+            candlestick.high(), candlestick.low(), candlestick.close());
+      }
+    }
   }
 
-  public double getLastCloseValue() {
-    return this.candlestickRepository.getLast().getClose();
-  }
-
-  public long getCurrentMemorySize() {
-    return this.candlestickRepository.selectAll().size();
-  }
-
-  public void add(final @NotNull Candlestick candlestick) {
-    this.candlestickRepository.addData(toEntity(candlestick));
-  }
-
-  public double[] getCloseReversed(final int period) {
-    return this.candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period)
-        .mapToDouble(CandlestickEntity::getClose).toArray();
-  }
-
-  public double[] getHighReversed(final int period) {
-    return this.candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period)
-        .mapToDouble(CandlestickEntity::getHigh).toArray();
-  }
-
-  public double[] getLowReversed(final int period) {
-    return this.candlestickRepository.selectAll().stream().sorted(Comparator.comparing(CandlestickEntity::getDateTime).reversed()).limit(period)
-        .mapToDouble(CandlestickEntity::getLow).toArray();
+  public void addTicket(final @NotNull Ticket ticket) {
+    final double price = ticket.bid();
+    final Candlestick candlestick = new Candlestick(ticket.dateTime(), price, price, price, price);
+    this.getRepository().addCandlestick(candlestick);
   }
 }

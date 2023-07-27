@@ -1,0 +1,52 @@
+package br.eti.allandemiranda.forex.repositories;
+
+import br.eti.allandemiranda.forex.dtos.Ticket;
+import br.eti.allandemiranda.forex.entities.TicketEntity;
+import jakarta.annotation.PostConstruct;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Synchronized;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Repository;
+
+@Repository
+@Getter(AccessLevel.PRIVATE)
+@Slf4j
+public class TicketRepository {
+
+  private final TicketEntity data = new TicketEntity();
+
+  @PostConstruct
+  private void init() {
+    this.getData().setDateTime(LocalDateTime.MIN);
+    this.getData().setBid(Double.MIN_VALUE);
+    this.getData().setAsk(Double.MIN_VALUE);
+  }
+
+  @Synchronized
+  public void update(final @NotNull Ticket ticket) {
+    if (this.getData().getDateTime().isBefore(ticket.dateTime())) {
+      this.getData().setDateTime(ticket.dateTime());
+      if (ticket.bid() >= 0d) {
+        this.getData().setBid(ticket.bid());
+      }
+      if (ticket.ask() >= 0d) {
+        this.getData().setAsk(ticket.ask());
+      }
+    } else {
+      log.warn("DataTime {} from new ticket before or equal that current DataTime {}", ticket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
+          this.getData().getDateTime().format(DateTimeFormatter.ISO_DATE_TIME));
+    }
+  }
+
+  public Ticket getCurrentTicket() {
+    if (this.getData().getBid() >= 0d && this.getData().getAsk() >= 0d) {
+      return new Ticket(this.getData().getDateTime(), this.getData().getBid(), this.getData().getAsk());
+    } else {
+      return null;
+    }
+  }
+}

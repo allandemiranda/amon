@@ -1,5 +1,5 @@
 package br.eti.allandemiranda.forex.utils;
 
 public enum SignalTrend {
-  strongSell, sell, neutral, buy, strongBuy, out
+  STRONG_SELL, SELL, NEUTRAL, BUY, STRONG_BUY, OUT
 }

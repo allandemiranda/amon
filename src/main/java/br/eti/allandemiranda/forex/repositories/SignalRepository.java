@@ -1,47 +1,48 @@
 package br.eti.allandemiranda.forex.repositories;
 
+import br.eti.allandemiranda.forex.dtos.Signal;
 import br.eti.allandemiranda.forex.entities.SignalEntity;
-import br.eti.allandemiranda.forex.headers.SignalHeaders;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.TreeSet;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Synchronized;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class SignalRepository implements DataRepository<SignalEntity>, SaveRunTimeRepository {
+@Getter(AccessLevel.PRIVATE)
+@Slf4j
+public class SignalRepository {
 
-  private final Collection<SignalEntity> collection = new ArrayList<>();
+  private final TreeSet<SignalEntity> dataBase = new TreeSet<>();
 
-  @Value("${signal.repository.output}")
-  private File ouputFile;
   @Value("${signal.repository.memory}")
-  private Integer memorySize;
+  private int memorySize;
 
-  @Override
-  public @NotNull Collection<SignalEntity> getDataBase() {
-    return this.collection;
+  public int getCacheSize() {
+    return dataBase.size();
   }
 
-  @Override
-  public long getMemorySide() {
-    return this.memorySize;
+  @Synchronized
+  public void add(final @NotNull Signal signal) {
+    if (this.getCacheSize() == 0 || signal.dateTime().isAfter(this.getDataBase().last().getDateTime())) {
+      final SignalEntity entity = new SignalEntity();
+      entity.setDateTime(signal.dateTime());
+      entity.setTrend(signal.trend());
+      entity.setPrice(signal.price());
+      this.getDataBase().add(entity);
+      if (this.getDataBase().size() > this.getMemorySize()) {
+        final SignalEntity older = this.getDataBase().first();
+        this.getDataBase().remove(older);
+      }
+    } else {
+      log.warn("Trying to add a old Signal on repository");
+    }
   }
 
-  @Override
-  public File getOutputFile() {
-    return this.ouputFile;
-  }
-
-  @Override
-  public Object[] getHeaders() {
-    return SignalHeaders.values();
-  }
-
-  @Override
-  public Object[] getLine(Object... inputs) {
-    //TODO
-    return new Object[0];
+  public Signal @NotNull [] getSignals() {
+    return this.getDataBase().stream().map(entity -> new Signal(entity.getDateTime(), entity.getTrend(), entity.getPrice())).toArray(Signal[]::new);
   }
 }

@@ -7,5 +7,5 @@ public interface Indicator {
 
   boolean run();
 
-  @NotNull SignalTrend getSignal();
+  @NotNull SignalTrend getCurrentSignal();
 }
