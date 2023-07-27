@@ -77,8 +77,7 @@ public class OrderProcessor {
 
   private void updatePositionAble() {
     SignalTrend[] lastSignals = this.signalService.getLastSequence(openSequence);
-    long numFalse = IntStream.range(1, lastSignals.length).mapToObj(i -> lastSignals[0].equals(lastSignals[i])).filter(aBoolean -> !aBoolean).count();
-    if (numFalse == 0L) {
+    if (!lastSignals[0].equals(SignalTrend.neutral) && IntStream.range(1, lastSignals.length).allMatch(i -> lastSignals[0].equals(lastSignals[i]))) {
       this.openPosition(lastSignals[0]);
     }
   }
