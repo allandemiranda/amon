@@ -46,7 +46,7 @@ public class OrderService {
 
   public void updateTicket(final @NotNull Ticket ticket) {
     this.getRepository().updateTicket(ticket);
-    this.updateDebugFile();
+    this.updateDebugFile(this.getRepository());
   }
 
   public void updateTicket(final @NotNull Ticket ticket, final double takeProfit, final double stopLoss) {
@@ -56,18 +56,18 @@ public class OrderService {
     } else if (this.getRepository().getLastOrder().profit() <= stopLoss) {
       this.closePosition(ticket, OrderStatus.CLOSE_SL);
     } else {
-      this.updateDebugFile();
+      this.updateDebugFile(this.getRepository());
     }
   }
 
   public void openPosition(final @NotNull Ticket ticket, final @NotNull OrderPosition position) {
     this.getRepository().openPosition(ticket, position);
-    this.updateDebugFile();
+    this.updateDebugFile(this.getRepository());
   }
 
   public void closePosition(final @NotNull Ticket ticket, final @NotNull OrderStatus status) {
     this.getRepository().closePosition(ticket, status);
-    this.updateDebugFile();
+    this.updateDebugFile(this.getRepository());
   }
 
   private @NotNull File getOutputFile() {
@@ -89,8 +89,8 @@ public class OrderService {
   }
 
   @SneakyThrows
-  private void updateDebugFile() {
-    Order order = this.getRepository().getLastOrder();
+  private void updateDebugFile(final @NotNull OrderRepository repository) {
+    Order order = repository.getLastOrder();
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastUpdate().format(DateTimeFormatter.ISO_DATE_TIME), order.status(),

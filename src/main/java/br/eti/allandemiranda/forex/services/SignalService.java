@@ -44,7 +44,7 @@ public class SignalService {
 
   public void addGlobalSignal(final @NotNull Signal signal) {
     this.getRepository().add(signal);
-    this.updateDebugFile();
+    this.updateDebugFile(this.getRepository());
   }
 
   public Signal @NotNull [] getSignals() {
@@ -70,10 +70,10 @@ public class SignalService {
   }
 
   @SneakyThrows
-  private void updateDebugFile() {
+  private void updateDebugFile(final @NotNull SignalRepository repository) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        final Signal[] signals = this.getRepository().getSignals();
+        final Signal[] signals = repository.getSignals();
         final Signal signal = signals[signals.length - 1];
         csvPrinter.printRecord(signal.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), signal.trend(), signal.price());
       }

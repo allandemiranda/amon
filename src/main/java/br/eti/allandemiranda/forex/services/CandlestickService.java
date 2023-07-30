@@ -58,9 +58,9 @@ public class CandlestickService {
   }
 
   @SneakyThrows
-  public void updateDebugFile(final @NotNull LocalDateTime realTime) {
+  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull CandlestickRepository repository) {
     if (this.isDebugActive()) {
-      final Candlestick candlestick = this.getRepository().getCandlesticks()[this.getRepository().getCacheSize() - 1];
+      final Candlestick candlestick = repository.getCandlesticks()[repository.getCacheSize() - 1];
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), candlestick.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), candlestick.open(),
             candlestick.high(), candlestick.low(), candlestick.close());
@@ -72,5 +72,6 @@ public class CandlestickService {
     final double price = ticket.bid();
     final Candlestick candlestick = new Candlestick(ticket.dateTime(), price, price, price, price);
     this.getRepository().addCandlestick(candlestick);
+    this.updateDebugFile(ticket.dateTime(), this.getRepository());
   }
 }

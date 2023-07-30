@@ -1,50 +1,76 @@
 package br.eti.allandemiranda.forex.services;
 
+import br.eti.allandemiranda.forex.headers.ADXHeaders;
+import br.eti.allandemiranda.forex.repositories.ADXRepository;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
-import br.eti.allandemiranda.forex.dtos.ADX;
-import br.eti.allandemiranda.forex.entities.ADXEntity;
-import br.eti.allandemiranda.forex.repositories.ADXBase;
+import jakarta.annotation.PostConstruct;
+import java.io.File;
+import java.io.FileWriter;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.SneakyThrows;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
+@Getter(AccessLevel.PRIVATE)
 public class ADXService {
 
-  private final ADXBase adxRepository;
+  private static final String OUTPUT_FILE_NAME = "adx.csv";
+  private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
+
+  private final ADXRepository repository;
+
+  @Value("${config.root.folder}")
+  private File outputFolder;
+  @Value("${adx.debug:false}")
+  private boolean debugActive;
 
   @Autowired
-  protected ADXService(final ADXBase adxRepository) {
-    this.adxRepository = adxRepository;
+  protected ADXService(final ADXRepository repository) {
+    this.repository = repository;
   }
 
-  public @NotNull ADX getLast() {
-    return toModel(this.adxRepository.getLast());
+  public void addADX(final @NotNull LocalDateTime realTime, final @NotNull LocalDateTime candlestickTime, final double adx, final double diPlus, final double diMinus,
+      final @NotNull SignalTrend trend, final double price) {
+    this.getRepository().add(candlestickTime, adx, diPlus, diMinus);
+    this.updateDebugFile(realTime, repository, trend, price);
   }
 
-  public boolean isDiPlusUpThanDiMinus() {
-    return this.adxRepository.getLast().getDiPlus() >= this.adxRepository.getLast().getDiMinus();
+  @PostConstruct
+  private void init() {
+    this.printDebugHeader();
   }
 
-  public void add(final @NotNull ADX adx) {
-    this.adxRepository.addData(toEntity(adx));
+  private @NotNull File getOutputFile() {
+    return new File(this.getOutputFolder(), OUTPUT_FILE_NAME);
   }
 
-  public void updateFile(final @NotNull SignalTrend signal, final @NotNull LocalDateTime realTime, final @NotNull ADX adx, final double price) {
-    this.adxRepository.saveRunTimeLine(realTime, toEntity(adx), signal, price);
+  @SneakyThrows
+  private void printDebugHeader() {
+    if (this.isDebugActive()) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+        csvPrinter.printRecord(Arrays.stream(ADXHeaders.values()).map(Enum::toString).toArray());
+      }
+    }
   }
 
-  private static @NotNull ADXEntity toEntity(@NotNull ADX model) {
-    ADXEntity entity = new ADXEntity();
-    entity.setDateTime(model.dateTime());
-    entity.setAdx(model.adx());
-    entity.setDiPlus(model.diPlus());
-    entity.setDiMinus(model.diMinus());
-    return entity;
-  }
-
-  private static @NotNull ADX toModel(@NotNull ADXEntity entity) {
-    return new ADX(entity.getDateTime(), entity.getAdx(), entity.getDiPlus(), entity.getDiMinus());
+  @SneakyThrows
+  private void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull ADXRepository repository, final @NotNull SignalTrend trend, final double price) {
+    if (this.isDebugActive()) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), repository.getADX().dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
+            String.valueOf(repository.getADX().adx()).replace(".", ","), String.valueOf(repository.getADX().diPlus()).replace(".", ","),
+            String.valueOf(repository.getADX().diMinus()).replace(".", ","), trend,
+            String.valueOf(price).replace(".", ","));
+      }
+    }
   }
 }

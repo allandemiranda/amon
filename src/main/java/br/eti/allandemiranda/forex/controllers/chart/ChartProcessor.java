@@ -87,7 +87,6 @@ public class ChartProcessor {
     final Ticket ticket = this.ticketService.getCurrentTicket();
     final Ticket ticketReformed = new Ticket(getCandleDateTime(ticket.dateTime(), this.getTimeFrame()), ticket.bid(), ticket.ask());
     this.candlestickService.addTicket(ticketReformed);
-    this.candlestickService.updateDebugFile(ticket.dateTime());
   }
 
   private @NotNull TimeFrame getTimeFrame() {

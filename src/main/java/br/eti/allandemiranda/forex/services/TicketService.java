@@ -60,8 +60,8 @@ public class TicketService {
   }
 
   @SneakyThrows
-  private void updateDebugFile() {
-    final Ticket currentTicket = this.getRepository().getCurrentTicket();
+  private void updateDebugFile(final @NotNull TicketRepository repository) {
+    final Ticket currentTicket = repository.getCurrentTicket();
     if (this.isDebugActive() && Objects.nonNull(currentTicket)) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(currentTicket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), String.valueOf(currentTicket.bid()).replace(".", ","),
@@ -82,6 +82,6 @@ public class TicketService {
   @Synchronized
   public void updateData(final @NotNull Ticket ticket) {
     this.getRepository().update(ticket);
-    this.updateDebugFile();
+    this.updateDebugFile(this.getRepository());
   }
 }
