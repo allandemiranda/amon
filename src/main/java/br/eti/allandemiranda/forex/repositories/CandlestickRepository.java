@@ -53,4 +53,12 @@ public class CandlestickRepository {
   private @NotNull Candlestick toModel(final @NotNull CandlestickEntity output) {
     return new Candlestick(output.getDateTime(), output.getOpen(), output.getHigh(), output.getLow(), output.getClose());
   }
+
+  public LocalDateTime getLastDataTime() {
+    if (this.getDataBase().isEmpty()) {
+      return LocalDateTime.MIN;
+    } else {
+      return this.getDataBase().last().getDateTime();
+    }
+  }
 }

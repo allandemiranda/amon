@@ -1,23 +1,24 @@
 package br.eti.allandemiranda.forex.controllers.indicators.trend;
 
 import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
-import br.eti.allandemiranda.forex.dtos.ADX;
+import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.services.ADXService;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.TicketService;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
+import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.Synchronized;
-import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 
 @Controller
-@Slf4j
+@Getter(AccessLevel.PRIVATE)
 public class AverageDirectionalMovementIndex implements Indicator {
 
   private final ADXService adxService;
@@ -25,7 +26,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
   private final TicketService ticketService;
 
   @Value("${adx.parameters.period}")
-  private Integer period;
+  private int period;
 
   @Autowired
   protected AverageDirectionalMovementIndex(final ADXService adxService, final CandlestickService candlestickService, final TicketService ticketService) {
@@ -34,93 +35,84 @@ public class AverageDirectionalMovementIndex implements Indicator {
     this.ticketService = ticketService;
   }
 
-  private static double[] getTRSum(final double[] close, final double[] high, final double[] low, final int period) {
-    return IntStream.range(0, period).mapToDouble(
-        j -> IntStream.range(j, period + j).mapToDouble(i -> DoubleStream.of(high[i] - low[i], Math.abs(high[i] - close[i]), Math.abs(low[i] - close[i + 1])).max().getAsDouble())
-            .sum()).toArray();
-  }
-
-  private static double[] getDMPlusSum(final double[] high, final double[] low, final int period) {
-    return IntStream.range(0, period).mapToDouble(
-        j -> IntStream.range(j, period + j).mapToDouble(i -> high[i] - high[i + 1] > low[i + 1] - low[i] ? DoubleStream.of(high[i] - high[i + 1], 0D).max().getAsDouble() : 0D)
-            .sum()).toArray();
-  }
-
-  private static double[] getDMMinusSum(final double[] high, final double[] low, final int period) {
-    return IntStream.range(0, period).mapToDouble(
-            j -> IntStream.range(j, period + j).mapToDouble(i -> low[i + 1] - low[i] > high[i] - high[1] ? DoubleStream.of(low[i + 1] - low[i], 0D).max().getAsDouble() : 0D).sum())
-        .toArray();
-  }
-
-  private static double[] getDIPlus(final double @NotNull [] dmPlus, final double[] trSum) {
-    return IntStream.range(0, dmPlus.length).mapToDouble(i -> 100 * (dmPlus[i] / trSum[i])).toArray();
-  }
-
-  private static double[] getDIMinus(final double @NotNull [] dmMinus, final double[] trSum) {
-    return IntStream.range(0, dmMinus.length).mapToDouble(i -> 100 * (dmMinus[i] / trSum[i])).toArray();
-  }
-
-  private static double[] getDIDiff(final double @NotNull [] diPlus, final double[] diMinus) {
-    return IntStream.range(0, diPlus.length).mapToDouble(i -> Math.abs(diPlus[i] - diMinus[i])).toArray();
-  }
-
-  private static double[] getDiSum(final double @NotNull [] diPlus, final double[] diMinus) {
-    return IntStream.range(0, diPlus.length).mapToDouble(i -> diPlus[i] + diMinus[i]).toArray();
-  }
-
-  private static double[] getDX(final double @NotNull [] diDiff, final double[] diSum) {
-    return IntStream.range(0, diDiff.length).mapToDouble(i -> 100 * (diDiff[i] / diSum[i])).toArray();
-  }
-
-  private int getPeriod() {
-    return this.period;
+  private static double @NotNull [] getDx(final Candlestick @NotNull [] chart) {
+    final double tr = IntStream.range(1, chart.length).parallel().mapToDouble(i -> {
+      final Candlestick candlestick = chart[i];
+      final Candlestick lastCandlestick = chart[i - 1];
+      final double pOne = Math.abs(candlestick.high() - lastCandlestick.close());
+      final double pTwo = Math.abs(candlestick.low() - lastCandlestick.close());
+      final double pThree = candlestick.high() - candlestick.low();
+      return Math.max(Math.max(pOne, pTwo), pThree);
+    }).sum();
+    final double dmPlus = IntStream.range(1, chart.length).parallel().mapToDouble(i -> {
+      final Candlestick candlestick = chart[i];
+      final Candlestick lastCandlestick = chart[i - 1];
+      final double highValue = candlestick.high() - lastCandlestick.high();
+      final double lowValue = lastCandlestick.low() - candlestick.low();
+      if (highValue > lowValue) {
+        return Math.max(highValue, 0d);
+      } else {
+        return 0d;
+      }
+    }).sum();
+    final double dmMinus = IntStream.range(1, chart.length).parallel().mapToDouble(i -> {
+      final Candlestick candlestick = chart[i];
+      final Candlestick lastCandlestick = chart[i - 1];
+      final double highValue = candlestick.high() - lastCandlestick.high();
+      final double lowValue = lastCandlestick.low() - candlestick.low();
+      if (lowValue > highValue) {
+        return Math.max(lowValue, 0d);
+      } else {
+        return 0d;
+      }
+    }).sum();
+    final double diPlus = 100 * (dmPlus / tr);
+    final double diMinus = 100 * (dmMinus / tr);
+    final double diDiff = Math.abs(diPlus - diMinus);
+    final double diSum = diPlus + diMinus;
+    final double dx = 100 * (diDiff / diSum);
+    return new double[]{dx, diPlus, diMinus};
   }
 
   @Override
   @Synchronized
   public boolean run() {
-    if (this.candlestickService.getCurrentMemorySize() >= (this.getPeriod() * 2L)) {
-      double[] close = this.candlestickService.getCloseReversed((this.getPeriod() * 2));
-      double[] high = this.candlestickService.getHighReversed((this.getPeriod() * 2));
-      double[] low = this.candlestickService.getLowReversed((this.getPeriod() * 2));
-
-      double[] trSum = getTRSum(close, high, low, this.getPeriod());
-      double[] dmPlusSum = getDMPlusSum(high, low, this.getPeriod());
-      double[] dmMinusSum = getDMMinusSum(high, low, this.getPeriod());
-
-      double[] diPlus = getDIPlus(dmPlusSum, trSum);
-      double[] diMinus = getDIMinus(dmMinusSum, trSum);
-
-      double[] diDiff = getDIDiff(diPlus, diMinus);
-      double[] diSum = getDiSum(diPlus, diMinus);
-
-      double[] dx = getDX(diDiff, diSum);
-
-      double adxIndex = Arrays.stream(dx).sum() / this.getPeriod();
-
-      this.adxService.add(new ADX(this.candlestickService.getLastCandlestick().dateTime(), adxIndex, diPlus[0], diMinus[0]));
+    if (this.getCandlestickService().getCacheMemorySize() >= (this.getPeriod() * 2)) {
+      final Candlestick[] chart = this.getCandlestickService().getCandlesticks(this.getPeriod() * 2);
+      final double[][] adxs = IntStream.range(0, this.getPeriod()).mapToObj(i -> {
+        final Candlestick[] tmp = Arrays.stream(chart, i, this.getPeriod() + i + 1).toArray(Candlestick[]::new);
+        return getDx(tmp);
+      }).toArray(double[][]::new);
+      final double adxValue = Arrays.stream(adxs).mapToDouble(value -> value[0]).sum() / adxs.length;
+      final double diPlus = adxs[adxs.length - 1][1];
+      final double diMinus = adxs[adxs.length - 1][2];
+      this.adxService.addADX(this.getCandlestickService().getLastDataTime(), adxValue, diPlus, diMinus);
       return true;
     } else {
-      log.debug("Can't get ADX, low memory side on Candlestick");
       return false;
     }
   }
 
   @Override
   @Synchronized
-  public @NotNull SignalTrend getSignal() {
-    if (adxService.getLast().adx() >= 50D && adxService.getLast().adx() < 75) {
-      SignalTrend signal = adxService.isDiPlusUpThanDiMinus() ? SignalTrend.buy : SignalTrend.sell;
-      adxService.updateFile(signal, this.ticketService.getLocalDateTime(), adxService.getLast(), candlestickService.getLastCloseValue());
-      return signal;
+  public @NotNull SignalTrend getCurrentSignal() {
+    if (this.getAdxService().getADX().dateTime().equals(LocalDateTime.MIN)) {
+      return SignalTrend.OUT;
+    } else {
+      final LocalDateTime realTime = this.getTicketService().getCurrentTicket().dateTime();
+      final double price = this.getTicketService().getCurrentTicket().bid();
+      if (this.getAdxService().getADX().diPlus() == this.getAdxService().getADX().diMinus() || this.getAdxService().getADX().adx() < 50d) {
+        this.getAdxService().updateDebugFile(realTime, SignalTrend.NEUTRAL, price);
+        return SignalTrend.NEUTRAL;
+      } else if (this.getAdxService().getADX().adx() < 75) {
+        final SignalTrend trend = this.getAdxService().getADX().diPlus() > this.getAdxService().getADX().diMinus() ? SignalTrend.BUY : SignalTrend.SELL;
+        this.getAdxService().updateDebugFile(realTime, trend, price);
+        return trend;
+      } else {
+        final SignalTrend trend = this.getAdxService().getADX().diPlus() > this.getAdxService().getADX().diMinus() ? SignalTrend.STRONG_BUY : SignalTrend.STRONG_SELL;
+        this.getAdxService().updateDebugFile(realTime, trend, price);
+        return trend;
+      }
     }
-    if (adxService.getLast().adx() >= 75D) {
-      SignalTrend trend = adxService.isDiPlusUpThanDiMinus() ? SignalTrend.buy : SignalTrend.sell;
-      SignalTrend signal = trend.equals(SignalTrend.buy) ? SignalTrend.strongBuy : SignalTrend.strongSell;
-      adxService.updateFile(signal, this.ticketService.getLocalDateTime(), adxService.getLast(), candlestickService.getLastCloseValue());
-      return signal;
-    }
-    adxService.updateFile(SignalTrend.neutral, this.ticketService.getLocalDateTime(), adxService.getLast(), candlestickService.getLastCloseValue());
-    return SignalTrend.neutral;
   }
 }

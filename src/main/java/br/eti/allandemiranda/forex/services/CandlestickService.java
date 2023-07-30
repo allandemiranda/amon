@@ -2,6 +2,7 @@ package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.Ticket;
+import br.eti.allandemiranda.forex.exceptions.ServiceException;
 import br.eti.allandemiranda.forex.headers.CandlestickHeader;
 import br.eti.allandemiranda.forex.repositories.CandlestickRepository;
 import jakarta.annotation.PostConstruct;
@@ -73,5 +74,21 @@ public class CandlestickService {
     final Candlestick candlestick = new Candlestick(ticket.dateTime(), price, price, price, price);
     this.getRepository().addCandlestick(candlestick);
     this.updateDebugFile(ticket.dateTime(), this.getRepository());
+  }
+
+  public int getCacheMemorySize() {
+    return this.getRepository().getCacheSize();
+  }
+
+  public Candlestick @NotNull [] getCandlesticks(final int periodNum) {
+    if (this.getRepository().getCacheSize() >= periodNum) {
+      return Arrays.stream(this.getRepository().getCandlesticks(), this.getRepository().getCacheSize() - periodNum, this.getRepository().getCacheSize())
+          .toArray(Candlestick[]::new);
+    }
+    throw new ServiceException("Can't provide Candlesticks to the period requested");
+  }
+
+  public @NotNull LocalDateTime getLastDataTime() {
+    return this.getRepository().getLastDataTime();
   }
 }

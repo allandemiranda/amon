@@ -1,5 +1,6 @@
 package br.eti.allandemiranda.forex.services;
 
+import br.eti.allandemiranda.forex.dtos.ADX;
 import br.eti.allandemiranda.forex.headers.ADXHeaders;
 import br.eti.allandemiranda.forex.repositories.ADXRepository;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
@@ -38,10 +39,12 @@ public class ADXService {
     this.repository = repository;
   }
 
-  public void addADX(final @NotNull LocalDateTime realTime, final @NotNull LocalDateTime candlestickTime, final double adx, final double diPlus, final double diMinus,
-      final @NotNull SignalTrend trend, final double price) {
+  public void addADX(final @NotNull LocalDateTime candlestickTime, final double adx, final double diPlus, final double diMinus) {
     this.getRepository().add(candlestickTime, adx, diPlus, diMinus);
-    this.updateDebugFile(realTime, repository, trend, price);
+  }
+
+  public @NotNull ADX getADX() {
+    return this.getRepository().getADX();
   }
 
   @PostConstruct
@@ -62,14 +65,17 @@ public class ADXService {
     }
   }
 
+  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull SignalTrend trend, final double price) {
+    this.updateDebugFile(realTime, this.getRepository(), trend, price);
+  }
+
   @SneakyThrows
   private void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull ADXRepository repository, final @NotNull SignalTrend trend, final double price) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), repository.getADX().dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
             String.valueOf(repository.getADX().adx()).replace(".", ","), String.valueOf(repository.getADX().diPlus()).replace(".", ","),
-            String.valueOf(repository.getADX().diMinus()).replace(".", ","), trend,
-            String.valueOf(price).replace(".", ","));
+            String.valueOf(repository.getADX().diMinus()).replace(".", ","), trend, String.valueOf(price).replace(".", ","));
       }
     }
   }
