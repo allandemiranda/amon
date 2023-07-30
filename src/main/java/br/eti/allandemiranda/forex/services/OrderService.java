@@ -15,7 +15,6 @@ import java.util.Arrays;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.jetbrains.annotations.NotNull;
@@ -24,12 +23,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
-@Slf4j
 @Getter(AccessLevel.PRIVATE)
 public class OrderService {
 
+  public static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
   private static final String OUTPUT_FILE_NAME = "orders.csv";
-
   private final OrderRepository repository;
 
   @Value("${config.root.folder}")
@@ -38,13 +36,28 @@ public class OrderService {
   private boolean debugActive;
 
   @Autowired
-  private OrderService(final OrderRepository repository) {
+  protected OrderService(final OrderRepository repository) {
     this.repository = repository;
+  }
+
+  public Order getLastOrder() {
+    return this.getRepository().getLastOrder();
   }
 
   public void updateTicket(final @NotNull Ticket ticket) {
     this.getRepository().updateTicket(ticket);
     this.updateDebugFile();
+  }
+
+  public void updateTicket(final @NotNull Ticket ticket, final double takeProfit, final double stopLoss) {
+    this.getRepository().updateTicket(ticket);
+    if (this.getRepository().getLastOrder().profit() >= takeProfit) {
+      this.closePosition(ticket, OrderStatus.CLOSE_TP);
+    } else if (this.getRepository().getLastOrder().profit() <= stopLoss) {
+      this.closePosition(ticket, OrderStatus.CLOSE_SL);
+    } else {
+      this.updateDebugFile();
+    }
   }
 
   public void openPosition(final @NotNull Ticket ticket, final @NotNull OrderPosition position) {
@@ -69,17 +82,17 @@ public class OrderService {
   @SneakyThrows
   private void printDebugHeader() {
     if (this.isDebugActive()) {
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(Arrays.stream(OrderHeader.values()).map(Enum::toString).toArray());
       }
     }
   }
 
   @SneakyThrows
-  public void updateDebugFile() {
+  private void updateDebugFile() {
     Order order = this.getRepository().getLastOrder();
     if (this.isDebugActive()) {
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastUpdate().format(DateTimeFormatter.ISO_DATE_TIME), order.status(),
             order.position(), order.openPrice(), order.closePrice(), new DecimalFormat("#0.0000#").format(order.profit()),
             new DecimalFormat("#0.0000#").format(order.currentBalance()));

@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 public class CandlestickService {
 
   private static final String OUTPUT_FILE_NAME = "candlestick.csv";
+  private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
 
   private final CandlestickRepository repository;
 
@@ -34,7 +35,7 @@ public class CandlestickService {
   private boolean debugActive;
 
   @Autowired
-  private CandlestickService(final CandlestickRepository repository) {
+  protected CandlestickService(final CandlestickRepository repository) {
     this.repository = repository;
   }
 
@@ -50,7 +51,7 @@ public class CandlestickService {
   @SneakyThrows
   private void printDebugHeader() {
     if (this.isDebugActive()) {
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(Arrays.stream(CandlestickHeader.values()).map(Enum::toString).toArray());
       }
     }
@@ -60,7 +61,7 @@ public class CandlestickService {
   public void updateDebugFile(final @NotNull LocalDateTime realTime) {
     if (this.isDebugActive()) {
       final Candlestick candlestick = this.getRepository().getCandlesticks()[this.getRepository().getCacheSize() - 1];
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), candlestick.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), candlestick.open(),
             candlestick.high(), candlestick.low(), candlestick.close());
       }

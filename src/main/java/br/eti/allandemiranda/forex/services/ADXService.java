@@ -15,7 +15,7 @@ public class ADXService {
   private final ADXBase adxRepository;
 
   @Autowired
-  private ADXService(final ADXBase adxRepository) {
+  protected ADXService(final ADXBase adxRepository) {
     this.adxRepository = adxRepository;
   }
 

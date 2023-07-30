@@ -1,6 +1,5 @@
 package br.eti.allandemiranda.forex.services;
 
-import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.Signal;
 import br.eti.allandemiranda.forex.headers.SignalHeader;
 import br.eti.allandemiranda.forex.repositories.SignalRepository;
@@ -25,6 +24,7 @@ import org.springframework.stereotype.Service;
 public class SignalService {
 
   private static final String OUTPUT_FILE_NAME = "signals.csv";
+  private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
 
   private final SignalRepository repository;
 
@@ -34,8 +34,12 @@ public class SignalService {
   private boolean debugActive;
 
   @Autowired
-  private SignalService(final SignalRepository repository) {
+  protected SignalService(final SignalRepository repository) {
     this.repository = repository;
+  }
+
+  public @NotNull LocalDateTime getLastUpdateTime() {
+    return this.getRepository().getLastUpdateTime();
   }
 
   public void addGlobalSignal(final @NotNull Signal signal) {
@@ -59,17 +63,18 @@ public class SignalService {
   @SneakyThrows
   private void printDebugHeader() {
     if (this.isDebugActive()) {
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(Arrays.stream(SignalHeader.values()).map(Enum::toString).toArray());
       }
     }
   }
 
   @SneakyThrows
-  public void updateDebugFile() {
+  private void updateDebugFile() {
     if (this.isDebugActive()) {
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
-        final Signal signal = this.getRepository().getSignals()[this.getRepository().getSignals().length - 1];
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+        final Signal[] signals = this.getRepository().getSignals();
+        final Signal signal = signals[signals.length - 1];
         csvPrinter.printRecord(signal.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), signal.trend(), signal.price());
       }
     }

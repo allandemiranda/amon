@@ -28,7 +28,8 @@ public class TicketRepository {
 
   @Synchronized
   public void update(final @NotNull Ticket ticket) {
-    if (this.getData().getDateTime().isBefore(ticket.dateTime())) {
+    final LocalDateTime ticketDateTime = this.getData().getDateTime();
+    if (ticketDateTime.isBefore(ticket.dateTime())) {
       this.getData().setDateTime(ticket.dateTime());
       if (ticket.bid() >= 0d) {
         this.getData().setBid(ticket.bid());
@@ -38,7 +39,7 @@ public class TicketRepository {
       }
     } else {
       log.warn("DataTime {} from new ticket before or equal that current DataTime {}", ticket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
-          this.getData().getDateTime().format(DateTimeFormatter.ISO_DATE_TIME));
+          ticketDateTime.format(DateTimeFormatter.ISO_DATE_TIME));
     }
   }
 

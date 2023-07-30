@@ -2,6 +2,7 @@ package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.Signal;
 import br.eti.allandemiranda.forex.entities.SignalEntity;
+import java.time.LocalDateTime;
 import java.util.TreeSet;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -44,5 +45,9 @@ public class SignalRepository {
 
   public Signal @NotNull [] getSignals() {
     return this.getDataBase().stream().map(entity -> new Signal(entity.getDateTime(), entity.getTrend(), entity.getPrice())).toArray(Signal[]::new);
+  }
+
+  public LocalDateTime getLastUpdateTime() {
+    return this.getDataBase().stream().map(SignalEntity::getDateTime).findFirst().orElse(LocalDateTime.MIN);
   }
 }

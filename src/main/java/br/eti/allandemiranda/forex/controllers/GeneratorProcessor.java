@@ -23,7 +23,7 @@ public class GeneratorProcessor {
   private final OrderProcessor orderProcessor;
 
   @Autowired
-  private GeneratorProcessor(final TicketService ticketService, final ChartProcessor chartProcessor, final IndicatorsProcessor indicatorsProcessor,
+  protected GeneratorProcessor(final TicketService ticketService, final ChartProcessor chartProcessor, final IndicatorsProcessor indicatorsProcessor,
       final OrderProcessor orderProcessor) {
     this.ticketService = ticketService;
     this.chartProcessor = chartProcessor;
@@ -35,6 +35,7 @@ public class GeneratorProcessor {
   public void webSocket(final LocalDateTime time, final Double bid, final Double ask) {
     final Ticket ticket = new Ticket(Objects.isNull(time) ? LocalDateTime.now() : time, Objects.isNull(bid) ? Double.MIN_VALUE : bid,
         Objects.isNull(ask) ? Double.MIN_VALUE : ask);
+
     this.getTicketService().updateData(ticket);
     if (Objects.nonNull(this.getTicketService().getCurrentTicket())) {
       this.getChartProcessor().run();

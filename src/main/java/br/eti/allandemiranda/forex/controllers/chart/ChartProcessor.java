@@ -27,7 +27,7 @@ public class ChartProcessor {
   private String timeFrame;
 
   @Autowired
-  private ChartProcessor(final CandlestickService candlestickService, final TicketService ticketService) {
+  protected ChartProcessor(final CandlestickService candlestickService, final TicketService ticketService) {
     this.candlestickService = candlestickService;
     this.ticketService = ticketService;
   }
@@ -60,11 +60,12 @@ public class ChartProcessor {
   private static @NotNull LocalDateTime getDateTimeToM15(final @NotNull LocalDateTime ticketDateTime) {
     final LocalDate localDate = ticketDateTime.toLocalDate();
     final int hour = ticketDateTime.getHour();
-    if (ticketDateTime.getMinute() < 15) {
+    final int minute = ticketDateTime.getMinute();
+    if (minute < 15) {
       return LocalDateTime.of(localDate, LocalTime.of(hour, 0));
-    } else if (ticketDateTime.getMinute() < 30) {
+    } else if (minute < 30) {
       return LocalDateTime.of(localDate, LocalTime.of(hour, 15));
-    } else if (ticketDateTime.getMinute() < 45) {
+    } else if (minute < 45) {
       return LocalDateTime.of(localDate, LocalTime.of(hour, 30));
     } else {
       return LocalDateTime.of(localDate, LocalTime.of(hour, 45));

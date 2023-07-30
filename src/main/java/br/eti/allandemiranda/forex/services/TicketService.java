@@ -13,7 +13,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.Synchronized;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.jetbrains.annotations.NotNull;
@@ -23,10 +22,10 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Getter(AccessLevel.PRIVATE)
-@Slf4j
 public class TicketService {
 
   private static final String OUTPUT_FILE_NAME = "tickets.csv";
+  private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
 
   private final TicketRepository repository;
 
@@ -38,7 +37,7 @@ public class TicketService {
   private int digits;
 
   @Autowired
-  private TicketService(final TicketRepository repository) {
+  protected TicketService(final TicketRepository repository) {
     this.repository = repository;
   }
 
@@ -54,20 +53,19 @@ public class TicketService {
   @SneakyThrows
   private void printDebugHeader() {
     if (this.isDebugActive()) {
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(Arrays.stream(TicketHeader.values()).map(Enum::toString).toArray());
       }
     }
   }
 
   @SneakyThrows
-  public void updateDebugFile() {
+  private void updateDebugFile() {
     final Ticket currentTicket = this.getRepository().getCurrentTicket();
     if (this.isDebugActive() && Objects.nonNull(currentTicket)) {
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
-        csvPrinter.printRecord(currentTicket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
-            String.valueOf(currentTicket.bid()).replace(".", ","), String.valueOf(currentTicket.ask()).replace(".", ","),
-            this.getCurrentSpread());
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+        csvPrinter.printRecord(currentTicket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), String.valueOf(currentTicket.bid()).replace(".", ","),
+            String.valueOf(currentTicket.ask()).replace(".", ","), this.getCurrentSpread());
       }
     }
   }

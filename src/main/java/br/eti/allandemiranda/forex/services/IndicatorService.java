@@ -9,7 +9,6 @@ import java.io.FileWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
@@ -26,10 +25,10 @@ import org.springframework.stereotype.Service;
 @Getter(AccessLevel.PRIVATE)
 public class IndicatorService {
 
+  private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
   private static final String OUTPUT_FILE_NAME = "indicators.csv";
   private static final String DATA_TIME = "DATA_TIME";
   private static final String PRICE = "PRICE";
-
   private final IndicatorRepository repository;
 
   @Value("${config.root.folder}")
@@ -39,7 +38,7 @@ public class IndicatorService {
   private String[] header;
 
   @Autowired
-  private IndicatorService(final IndicatorRepository repository) {
+  protected IndicatorService(final IndicatorRepository repository) {
     this.repository = repository;
   }
 
@@ -49,10 +48,6 @@ public class IndicatorService {
 
   public @NotNull Map<String, SignalTrend> processAndGetSignals(final @NotNull LocalDateTime dataTime) {
     return this.getRepository().processAndGetSignals(dataTime);
-  }
-
-  public @NotNull Collection<SignalTrend> getSignalsProcessed() {
-    return this.getRepository().getSignalCollection();
   }
 
   public @NotNull LocalDateTime getLastUpdate() {
@@ -72,7 +67,7 @@ public class IndicatorService {
   private void printDebugHeader() {
     if (this.isDebugActive()) {
       this.header = Stream.concat(Stream.of(DATA_TIME, PRICE), this.getRepository().getNames().stream()).toArray(String[]::new);
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(Arrays.stream(this.getHeader()).toArray());
       }
     }
@@ -81,7 +76,7 @@ public class IndicatorService {
   @SneakyThrows
   public void updateDebugFile(final @NotNull Map<String, SignalTrend> signalsMap, final double price) {
     if (this.isDebugActive()) {
-      final Object[] tmp = Arrays.stream(this.getHeader()).map(s -> {
+      final Object[] row = Arrays.stream(this.getHeader()).map(s -> {
         if (DATA_TIME.equals(s)) {
           return this.getLastUpdate().format(DateTimeFormatter.ISO_DATE_TIME);
         } else if (PRICE.equals(s)) {
@@ -90,8 +85,8 @@ public class IndicatorService {
           return signalsMap.getOrDefault(s, SignalTrend.OUT);
         }
       }).toArray();
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSVFormat.TDF.builder().build().print(fileWriter)) {
-        csvPrinter.printRecord(tmp);
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+        csvPrinter.printRecord(row);
       }
     }
   }

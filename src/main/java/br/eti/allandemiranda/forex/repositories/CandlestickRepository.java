@@ -2,6 +2,7 @@ package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.entities.CandlestickEntity;
+import java.time.LocalDateTime;
 import java.util.TreeSet;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -27,17 +28,19 @@ public class CandlestickRepository {
 
   @Synchronized
   public void addCandlestick(final @NotNull Candlestick candlestick) {
-    if (this.getCacheSize() == 0 || candlestick.dateTime().isAfter(this.getDataBase().last().getDateTime())) {
+    final LocalDateTime candlestickDataTime = candlestick.dateTime();
+    final CandlestickEntity lastCandlestick = this.getDataBase().last();
+    if (this.getCacheSize() == 0 || candlestickDataTime.isAfter(lastCandlestick.getDateTime())) {
       final CandlestickEntity entity = new CandlestickEntity();
-      entity.setDateTime(candlestick.dateTime());
+      entity.setDateTime(candlestickDataTime);
       entity.setOpen(candlestick.open());
       this.getDataBase().add(entity);
-      if(this.getDataBase().size() > this.getMemorySize()) {
+      if (this.getDataBase().size() > this.getMemorySize()) {
         final CandlestickEntity older = this.getDataBase().first();
         this.getDataBase().remove(older);
       }
-    } else if (this.getDataBase().last().getDateTime().equals(candlestick.dateTime())) {
-      this.getDataBase().last().setClose(candlestick.close());
+    } else if (lastCandlestick.getDateTime().equals(candlestickDataTime)) {
+      lastCandlestick.setClose(candlestick.close());
     } else {
       log.warn("Trying to add a old Candlestick on repository");
     }

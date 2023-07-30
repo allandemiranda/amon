@@ -28,7 +28,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
   private Integer period;
 
   @Autowired
-  private AverageDirectionalMovementIndex(final ADXService adxService, final CandlestickService candlestickService, final TicketService ticketService) {
+  protected AverageDirectionalMovementIndex(final ADXService adxService, final CandlestickService candlestickService, final TicketService ticketService) {
     this.adxService = adxService;
     this.candlestickService = candlestickService;
     this.ticketService = ticketService;
