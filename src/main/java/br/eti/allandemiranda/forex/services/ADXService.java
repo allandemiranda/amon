@@ -7,6 +7,7 @@ import br.eti.allandemiranda.forex.utils.SignalTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -37,6 +38,10 @@ public class ADXService {
   @Autowired
   protected ADXService(final ADXRepository repository) {
     this.repository = repository;
+  }
+
+  private static @NotNull String getNumber(final double value) {
+    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
   }
 
   public void addADX(final @NotNull LocalDateTime candlestickTime, final double adx, final double diPlus, final double diMinus) {
@@ -73,9 +78,9 @@ public class ADXService {
   private void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull ADXRepository repository, final @NotNull SignalTrend trend, final double price) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), repository.getADX().dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
-            String.valueOf(repository.getADX().adx()).replace(".", ","), String.valueOf(repository.getADX().diPlus()).replace(".", ","),
-            String.valueOf(repository.getADX().diMinus()).replace(".", ","), trend, String.valueOf(price).replace(".", ","));
+        final ADX adx = repository.getADX();
+        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), adx.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(adx.adx()),
+            getNumber(adx.diPlus()), getNumber(adx.diMinus()), trend, getNumber(price));
       }
     }
   }

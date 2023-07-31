@@ -84,9 +84,9 @@ public class ChartProcessor {
 
   @Synchronized
   public void run() {
-    final Ticket ticket = this.ticketService.getCurrentTicket();
+    final Ticket ticket = this.getTicketService().getCurrentTicket();
     final Ticket ticketReformed = new Ticket(getCandleDateTime(ticket.dateTime(), this.getTimeFrame()), ticket.bid(), ticket.ask());
-    this.candlestickService.addTicket(ticketReformed);
+    this.candlestickService.addTicket(ticketReformed, ticket.dateTime());
   }
 
   private @NotNull TimeFrame getTimeFrame() {

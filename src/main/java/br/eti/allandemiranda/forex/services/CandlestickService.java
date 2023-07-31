@@ -8,6 +8,7 @@ import br.eti.allandemiranda.forex.repositories.CandlestickRepository;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -40,6 +41,10 @@ public class CandlestickService {
     this.repository = repository;
   }
 
+  private static @NotNull String getNumber(final double value) {
+    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
+  }
+
   private @NotNull File getOutputFile() {
     return new File(this.getOutputFolder(), OUTPUT_FILE_NAME);
   }
@@ -63,17 +68,18 @@ public class CandlestickService {
     if (this.isDebugActive()) {
       final Candlestick candlestick = repository.getCandlesticks()[repository.getCacheSize() - 1];
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), candlestick.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), candlestick.open(),
-            candlestick.high(), candlestick.low(), candlestick.close());
+        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), candlestick.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
+            getNumber(candlestick.open()), getNumber(candlestick.high()), getNumber(candlestick.low()), getNumber(candlestick.close()));
       }
     }
   }
 
-  public void addTicket(final @NotNull Ticket ticket) {
+  public void addTicket(final @NotNull Ticket ticket, final @NotNull LocalDateTime realDataTime) {
     final double price = ticket.bid();
-    final Candlestick candlestick = new Candlestick(ticket.dateTime(), price, price, price, price);
+    final LocalDateTime dateTime = ticket.dateTime();
+    final Candlestick candlestick = new Candlestick(dateTime, price, price, price, price);
     this.getRepository().addCandlestick(candlestick);
-    this.updateDebugFile(ticket.dateTime(), this.getRepository());
+    this.updateDebugFile(realDataTime, this.getRepository());
   }
 
   public int getCacheMemorySize() {

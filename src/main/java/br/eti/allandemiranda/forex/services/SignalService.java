@@ -6,6 +6,7 @@ import br.eti.allandemiranda.forex.repositories.SignalRepository;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -36,6 +37,10 @@ public class SignalService {
   @Autowired
   protected SignalService(final SignalRepository repository) {
     this.repository = repository;
+  }
+
+  private static @NotNull String getNumber(final double value) {
+    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
   }
 
   public @NotNull LocalDateTime getLastUpdateTime() {
@@ -75,7 +80,7 @@ public class SignalService {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         final Signal[] signals = repository.getSignals();
         final Signal signal = signals[signals.length - 1];
-        csvPrinter.printRecord(signal.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), signal.trend(), signal.price());
+        csvPrinter.printRecord(signal.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), signal.trend(), getNumber(signal.price()));
       }
     }
   }

@@ -33,8 +33,7 @@ public class GeneratorProcessor {
 
   @Synchronized
   public void webSocket(final LocalDateTime time, final Double bid, final Double ask) {
-    final Ticket ticket = new Ticket(Objects.isNull(time) ? LocalDateTime.now() : time, Objects.isNull(bid) ? Double.MIN_VALUE : bid,
-        Objects.isNull(ask) ? Double.MIN_VALUE : ask);
+    final Ticket ticket = new Ticket(Objects.isNull(time) ? LocalDateTime.now() : time, Objects.isNull(bid) ? 0d : bid, Objects.isNull(ask) ? 0d : ask);
 
     this.getTicketService().updateData(ticket);
     if (Objects.nonNull(this.getTicketService().getCurrentTicket())) {

@@ -40,6 +40,10 @@ public class OrderService {
     this.repository = repository;
   }
 
+  private static @NotNull String getNumber(final double value) {
+    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
+  }
+
   public Order getLastOrder() {
     return this.getRepository().getLastOrder();
   }
@@ -94,8 +98,7 @@ public class OrderService {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastUpdate().format(DateTimeFormatter.ISO_DATE_TIME), order.status(),
-            order.position(), order.openPrice(), order.closePrice(), new DecimalFormat("#0.0000#").format(order.profit()),
-            new DecimalFormat("#0.0000#").format(order.currentBalance()));
+            order.position(), getNumber(order.openPrice()), getNumber(order.closePrice()), getNumber(order.profit()), ((int) order.currentBalance()*1000));
       }
     }
   }

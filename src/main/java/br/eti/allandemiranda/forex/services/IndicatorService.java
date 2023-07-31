@@ -6,6 +6,7 @@ import br.eti.allandemiranda.forex.utils.SignalTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -40,6 +41,10 @@ public class IndicatorService {
   @Autowired
   protected IndicatorService(final IndicatorRepository repository) {
     this.repository = repository;
+  }
+
+  private static @NotNull String getNumber(final double value) {
+    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
   }
 
   public void addIndicator(final @NotNull String name, final Indicator indicator) {
@@ -80,7 +85,7 @@ public class IndicatorService {
         if (DATA_TIME.equals(s)) {
           return this.getLastUpdate().format(DateTimeFormatter.ISO_DATE_TIME);
         } else if (PRICE.equals(s)) {
-          return String.valueOf(price).replace(".", ",");
+          return getNumber(price);
         } else {
           return signalsMap.getOrDefault(s, SignalTrend.OUT);
         }

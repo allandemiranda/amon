@@ -6,6 +6,7 @@ import br.eti.allandemiranda.forex.repositories.TicketRepository;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
+import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Objects;
@@ -41,6 +42,14 @@ public class TicketService {
     this.repository = repository;
   }
 
+  private static @NotNull String getNumber(final double value) {
+    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
+  }
+
+  private static boolean getValidationTicket(final @NotNull Ticket ticket) {
+    return ticket.bid() > 0d && ticket.ask() > 0d;
+  }
+
   private @NotNull File getOutputFile() {
     return new File(this.getOutputFolder(), OUTPUT_FILE_NAME);
   }
@@ -64,8 +73,8 @@ public class TicketService {
     final Ticket currentTicket = repository.getCurrentTicket();
     if (this.isDebugActive() && Objects.nonNull(currentTicket)) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(currentTicket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), String.valueOf(currentTicket.bid()).replace(".", ","),
-            String.valueOf(currentTicket.ask()).replace(".", ","), this.getCurrentSpread());
+        csvPrinter.printRecord(currentTicket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(currentTicket.bid()), getNumber(currentTicket.ask()),
+            this.getCurrentSpread());
       }
     }
   }
@@ -81,7 +90,9 @@ public class TicketService {
 
   @Synchronized
   public void updateData(final @NotNull Ticket ticket) {
-    this.getRepository().update(ticket);
-    this.updateDebugFile(this.getRepository());
+    if (getValidationTicket(ticket)) {
+      this.getRepository().update(ticket);
+      this.updateDebugFile(this.getRepository());
+    }
   }
 }

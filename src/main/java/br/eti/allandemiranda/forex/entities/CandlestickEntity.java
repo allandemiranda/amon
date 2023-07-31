@@ -35,9 +35,9 @@ public class CandlestickEntity implements Serializable, DefaultEntity {
 
   public void setClose(final double close) {
     this.close = close;
-    if(this.getClose() > this.getHigh()) {
+    if (this.getClose() > this.getHigh()) {
       this.high = close;
-    } else if(this.getClose() < this.getLow()) {
+    } else if (this.getClose() < this.getLow()) {
       this.low = close;
     }
   }

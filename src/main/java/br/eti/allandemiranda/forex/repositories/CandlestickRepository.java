@@ -29,8 +29,7 @@ public class CandlestickRepository {
   @Synchronized
   public void addCandlestick(final @NotNull Candlestick candlestick) {
     final LocalDateTime candlestickDataTime = candlestick.dateTime();
-    final CandlestickEntity lastCandlestick = this.getDataBase().last();
-    if (this.getCacheSize() == 0 || candlestickDataTime.isAfter(lastCandlestick.getDateTime())) {
+    if (this.getCacheSize() == 0 || candlestickDataTime.isAfter(this.getDataBase().last().getDateTime())) {
       final CandlestickEntity entity = new CandlestickEntity();
       entity.setDateTime(candlestickDataTime);
       entity.setOpen(candlestick.open());
@@ -39,8 +38,8 @@ public class CandlestickRepository {
         final CandlestickEntity older = this.getDataBase().first();
         this.getDataBase().remove(older);
       }
-    } else if (lastCandlestick.getDateTime().equals(candlestickDataTime)) {
-      lastCandlestick.setClose(candlestick.close());
+    } else if (this.getDataBase().last().getDateTime().equals(candlestickDataTime)) {
+      this.getDataBase().last().setClose(candlestick.close());
     } else {
       log.warn("Trying to add a old Candlestick on repository");
     }
