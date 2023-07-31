@@ -24,6 +24,8 @@ public class OrderRepository {
   @PostConstruct
   private void init() {
     this.getData().setStatus(OrderStatus.CLOSE_MANUAL);
+    this.getData().setOpenDateTime(LocalDateTime.MIN);
+    this.getData().setLastUpdate(LocalDateTime.MIN);
     this.getData().setCurrentBalance(0d);
   }
 

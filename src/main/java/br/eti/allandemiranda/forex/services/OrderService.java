@@ -10,8 +10,10 @@ import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -50,16 +52,21 @@ public class OrderService {
 
   public void updateTicket(final @NotNull Ticket ticket) {
     this.getRepository().updateTicket(ticket);
-    this.updateDebugFile(this.getRepository());
+    if(!this.getRepository().getLastOrder().lastUpdate().equals(LocalDateTime.MIN)) {
+      this.updateDebugFile(this.getRepository());
+    }
   }
 
   public void updateTicket(final @NotNull Ticket ticket, final double takeProfit, final double stopLoss) {
     this.getRepository().updateTicket(ticket);
-    if (this.getRepository().getLastOrder().profit() >= takeProfit) {
-      this.closePosition(ticket, OrderStatus.CLOSE_TP);
-    } else if (this.getRepository().getLastOrder().profit() <= stopLoss) {
-      this.closePosition(ticket, OrderStatus.CLOSE_SL);
-    } else {
+    if(this.getRepository().getLastOrder().status().equals(OrderStatus.OPEN)) {
+      if (this.getRepository().getLastOrder().profit() >= takeProfit) {
+        this.closePosition(ticket, OrderStatus.CLOSE_TP);
+      } else if (this.getRepository().getLastOrder().profit() <= stopLoss) {
+        this.closePosition(ticket, OrderStatus.CLOSE_SL);
+      }
+    }
+    if(!this.getRepository().getLastOrder().lastUpdate().equals(LocalDateTime.MIN)) {
       this.updateDebugFile(this.getRepository());
     }
   }
@@ -98,7 +105,7 @@ public class OrderService {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastUpdate().format(DateTimeFormatter.ISO_DATE_TIME), order.status(),
-            order.position(), getNumber(order.openPrice()), getNumber(order.closePrice()), getNumber(order.profit()), ((int) order.currentBalance()*1000));
+            Objects.isNull(order.position()) ? "null" : order.position(), getNumber(order.openPrice()), getNumber(order.closePrice()), getNumber(order.profit()), ((int) order.currentBalance()*1000));
       }
     }
   }

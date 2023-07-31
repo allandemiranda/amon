@@ -90,9 +90,7 @@ public class TicketService {
 
   @Synchronized
   public void updateData(final @NotNull Ticket ticket) {
-    if (getValidationTicket(ticket)) {
-      this.getRepository().update(ticket);
-      this.updateDebugFile(this.getRepository());
-    }
+    this.getRepository().update(ticket);
+    this.updateDebugFile(this.getRepository());
   }
 }

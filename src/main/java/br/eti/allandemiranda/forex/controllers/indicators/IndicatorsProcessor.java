@@ -54,21 +54,23 @@ public class IndicatorsProcessor {
     if (this.getLastDataTime().plusMinutes(this.getInterval()).isBefore(currentTicketDataTime)) {
       this.setLastDataTime(currentTicketDataTime);
       final Map<String, SignalTrend> currentSignals = this.getIndicatorService().processAndGetSignals(currentTicketDataTime);
-      final double bid = this.getTicketService().getCurrentTicket().bid();
-      this.getIndicatorService().updateDebugFile(currentSignals, bid);
-      final double signalsPower = currentSignals.values().stream().filter(signalTrend -> !SignalTrend.OUT.equals(signalTrend))
-          .collect(Collectors.groupingBy(signalTrend -> signalTrend, Collectors.summingInt(signalTrend -> 1))).entrySet().parallelStream()
-          .mapToInt(entry -> entry.getKey().power * entry.getValue()).sum() / (double) currentSignals.size();
-      if (signalsPower < SignalTrend.SELL.power) {
-        this.getSignalService().addGlobalSignal(new Signal(currentTicketDataTime, SignalTrend.STRONG_SELL, bid));
-      } else if (signalsPower == SignalTrend.SELL.power) {
-        this.getSignalService().addGlobalSignal(new Signal(currentTicketDataTime, SignalTrend.SELL, bid));
-      } else if (signalsPower == SignalTrend.BUY.power) {
-        this.getSignalService().addGlobalSignal(new Signal(currentTicketDataTime, SignalTrend.BUY, bid));
-      } else if (signalsPower > SignalTrend.BUY.power) {
-        this.getSignalService().addGlobalSignal(new Signal(currentTicketDataTime, SignalTrend.STRONG_BUY, bid));
-      } else {
-        this.getSignalService().addGlobalSignal(new Signal(currentTicketDataTime, SignalTrend.NEUTRAL, bid));
+      if(!currentSignals.isEmpty()) {
+        final double bid = this.getTicketService().getCurrentTicket().bid();
+        this.getIndicatorService().updateDebugFile(currentSignals, bid);
+        final double signalsPower = currentSignals.values().stream().filter(signalTrend -> !SignalTrend.OUT.equals(signalTrend))
+            .collect(Collectors.groupingBy(signalTrend -> signalTrend, Collectors.summingInt(signalTrend -> 1))).entrySet().parallelStream()
+            .mapToInt(entry -> entry.getKey().power * entry.getValue()).sum() / (double) currentSignals.size();
+        if (signalsPower < SignalTrend.SELL.power) {
+          this.getSignalService().addGlobalSignal(new Signal(currentTicketDataTime, SignalTrend.STRONG_SELL, bid));
+        } else if (signalsPower == SignalTrend.SELL.power) {
+          this.getSignalService().addGlobalSignal(new Signal(currentTicketDataTime, SignalTrend.SELL, bid));
+        } else if (signalsPower == SignalTrend.BUY.power) {
+          this.getSignalService().addGlobalSignal(new Signal(currentTicketDataTime, SignalTrend.BUY, bid));
+        } else if (signalsPower > SignalTrend.BUY.power) {
+          this.getSignalService().addGlobalSignal(new Signal(currentTicketDataTime, SignalTrend.STRONG_BUY, bid));
+        } else {
+          this.getSignalService().addGlobalSignal(new Signal(currentTicketDataTime, SignalTrend.NEUTRAL, bid));
+        }
       }
     }
   }

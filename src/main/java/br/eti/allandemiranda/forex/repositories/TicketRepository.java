@@ -22,8 +22,8 @@ public class TicketRepository {
   @PostConstruct
   private void init() {
     this.getData().setDateTime(LocalDateTime.MIN);
-    this.getData().setBid(Double.MIN_VALUE);
-    this.getData().setAsk(Double.MIN_VALUE);
+    this.getData().setBid(0d);
+    this.getData().setAsk(0d);
   }
 
   @Synchronized
@@ -31,10 +31,10 @@ public class TicketRepository {
     final LocalDateTime ticketDateTime = this.getData().getDateTime();
     if (ticketDateTime.isBefore(ticket.dateTime())) {
       this.getData().setDateTime(ticket.dateTime());
-      if (ticket.bid() >= 0d) {
+      if (ticket.bid() > 0d) {
         this.getData().setBid(ticket.bid());
       }
-      if (ticket.ask() >= 0d) {
+      if (ticket.ask() > 0d) {
         this.getData().setAsk(ticket.ask());
       }
     } else {
@@ -44,7 +44,7 @@ public class TicketRepository {
   }
 
   public Ticket getCurrentTicket() {
-    if (this.getData().getBid() >= 0d && this.getData().getAsk() >= 0d) {
+    if (this.getData().getBid() > 0d && this.getData().getAsk() > 0d) {
       return new Ticket(this.getData().getDateTime(), this.getData().getBid(), this.getData().getAsk());
     } else {
       return null;

@@ -50,9 +50,9 @@ public class OrderProcessor {
     final SignalTrend[] signals = Arrays.stream(this.getSignalService().getSignals()).sorted(Comparator.comparing(Signal::dateTime).reversed()).limit(this.getOpenWith())
         .map(Signal::trend).toArray(SignalTrend[]::new);
     if (currentTicket.dateTime().equals(this.getSignalService().getLastUpdateTime()) && signals.length >= this.getOpenWith()) {
-      updateOnTime(currentTicket, signals);
+      this.updateOnTime(currentTicket, signals);
     } else {
-      updateWithOutIndicators(currentTicket);
+      this.updateWithOutIndicators(currentTicket);
     }
   }
 
