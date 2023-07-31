@@ -36,10 +36,11 @@ public class OrderEntity implements Serializable {
     this.status = status;
     if (this.position.equals(OrderPosition.BUY)) {
       this.closePrice = bid;
+      this.profit = this.closePrice - this.openPrice;
     } else {
       this.closePrice = ask;
+      this.profit = this.openPrice - this.closePrice;
     }
-    this.profit = this.closePrice - this.openPrice;
     this.currentBalance += this.profit;
   }
 
@@ -51,11 +52,12 @@ public class OrderEntity implements Serializable {
     if (this.position.equals(OrderPosition.BUY)) {
       this.openPrice = ask;
       this.closePrice = bid;
+      this.profit = this.closePrice - this.openPrice;
     } else {
       this.openPrice = bid;
       this.closePrice = ask;
+      this.profit = this.openPrice - this.closePrice;
     }
-    this.profit = this.closePrice - this.openPrice;
     this.currentBalance += this.profit;
   }
 }

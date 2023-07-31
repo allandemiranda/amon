@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Synchronized;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -30,7 +31,7 @@ public class OrderProcessor {
 
   @Value("${order.take-profit:0.001}")
   private double takeProfit;
-  @Value("${order.stop-loss:0.001}")
+  @Value("${order.stop-loss:100.0}")
   private double stopLoss;
   @Value("${order.security:false}")
   private boolean isSecurity;
@@ -44,40 +45,55 @@ public class OrderProcessor {
     this.orderService = orderService;
   }
 
-  @Synchronized
-  public void run() {
-    final Ticket currentTicket = this.getTicketService().getCurrentTicket();
-    final SignalTrend[] signals = Arrays.stream(this.getSignalService().getSignals()).sorted(Comparator.comparing(Signal::dateTime).reversed()).limit(this.getOpenWith())
-        .map(Signal::trend).toArray(SignalTrend[]::new);
-    if (currentTicket.dateTime().equals(this.getSignalService().getLastUpdateTime()) && signals.length >= this.getOpenWith()) {
-      this.updateOnTime(currentTicket, signals);
-    } else {
-      this.updateWithOutIndicators(currentTicket);
+  private static void updateClosePosition(final @NotNull Ticket currentTicket, final SignalTrend[] signals, final OrderService service, final double stopLoss) {
+    final ArrayList<SignalTrend> signalTrendSet = Arrays.stream(signals).distinct().collect(Collectors.toCollection(ArrayList::new));
+    if (signalTrendSet.size() == 1 && ((currentTicket.ask() - currentTicket.bid()) < stopLoss)) {
+      switch (signalTrendSet.get(0)) {
+        case STRONG_BUY -> service.openPosition(currentTicket, OrderPosition.BUY);
+        case STRONG_SELL -> service.openPosition(currentTicket, OrderPosition.SELL);
+      }
     }
   }
 
-  private void updateOnTime(final Ticket currentTicket, final SignalTrend[] signals) {
-    final Order lastOrder = this.getOrderService().getLastOrder();
-    if (lastOrder.status().equals(OrderStatus.OPEN)) {
+  private static void updateOpenPosition(final Ticket currentTicket, final SignalTrend @NotNull [] signals, final OrderService service, final Order lastOrder) {
+    final SignalTrend lastSignal = signals[0];
+    if (SignalTrend.NEUTRAL.equals(lastSignal)) {
+      service.closePosition(currentTicket, OrderStatus.CLOSE_MANUAL);
+    } else {
       OrderPosition orderPositionIndicator = null;
-      final SignalTrend lastSignal = signals[signals.length - 1];
       if (lastSignal.equals(SignalTrend.STRONG_BUY) || lastSignal.equals(SignalTrend.BUY)) {
         orderPositionIndicator = OrderPosition.BUY;
       } else if (lastSignal.equals(SignalTrend.STRONG_SELL) || lastSignal.equals(SignalTrend.SELL)) {
         orderPositionIndicator = OrderPosition.SELL;
       }
       if (!lastOrder.position().equals(orderPositionIndicator)) {
-        this.getOrderService().closePosition(currentTicket, OrderStatus.CLOSE_MANUAL);
+        service.closePosition(currentTicket, OrderStatus.CLOSE_MANUAL);
+      }
+    }
+  }
+
+  @Synchronized
+  public void run() {
+    final Ticket currentTicket = this.getTicketService().getCurrentTicket();
+    final SignalTrend[] signals = Arrays.stream(this.getSignalService().getSignals()).sorted(Comparator.comparing(Signal::dateTime).reversed()).limit(this.getOpenWith())
+        .map(Signal::trend).toArray(SignalTrend[]::new);
+    if (signals.length == this.getOpenWith()) {
+      this.updateOnTime(currentTicket, signals);
+    } else {
+      this.updateWithOutIndicators(currentTicket);
+    }
+    this.getOrderService().updateDebugFile();
+  }
+
+  private void updateOnTime(final Ticket currentTicket, final SignalTrend[] signals) {
+    final OrderService service = this.getOrderService();
+    if (service.getLastOrder().status().equals(OrderStatus.OPEN)) {
+      updateOpenPosition(currentTicket, signals, service, service.getLastOrder());
+      if(service.getLastOrder().status().equals(OrderStatus.OPEN)) {
+        this.updateWithOutIndicators(currentTicket);
       }
     } else {
-      final ArrayList<SignalTrend> signalTrendSet = Arrays.stream(signals).distinct().collect(Collectors.toCollection(ArrayList::new));
-      if (signalTrendSet.size() == 1) {
-        if (signalTrendSet.get(0).equals(SignalTrend.STRONG_BUY)) {
-          this.getOrderService().openPosition(currentTicket, OrderPosition.BUY);
-        } else if (signalTrendSet.get(0).equals(SignalTrend.STRONG_SELL)) {
-          this.getOrderService().openPosition(currentTicket, OrderPosition.SELL);
-        }
-      }
+      updateClosePosition(currentTicket, signals, service, this.getStopLoss());
     }
   }
 

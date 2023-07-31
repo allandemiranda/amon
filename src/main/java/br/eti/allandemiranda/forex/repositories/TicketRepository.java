@@ -31,11 +31,18 @@ public class TicketRepository {
     final LocalDateTime ticketDateTime = this.getData().getDateTime();
     if (ticketDateTime.isBefore(ticket.dateTime())) {
       this.getData().setDateTime(ticket.dateTime());
+      final double currentBid = this.getData().getBid();
+      final double currentAsk = this.getData().getAsk();
       if (ticket.bid() > 0d) {
         this.getData().setBid(ticket.bid());
       }
       if (ticket.ask() > 0d) {
         this.getData().setAsk(ticket.ask());
+      }
+      if(this.getData().getBid() > this.getData().getAsk()) {
+        log.error("Error on tickets update, a Bid values high than Ask!");
+        this.getData().setBid(currentBid);
+        this.getData().setAsk(currentAsk);
       }
     } else {
       log.warn("DataTime {} from new ticket before or equal that current DataTime {}", ticket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
