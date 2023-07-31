@@ -3,7 +3,6 @@ package br.eti.allandemiranda.forex.services;
 import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
 import br.eti.allandemiranda.forex.repositories.IndicatorRepository;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
-import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
 import java.text.DecimalFormat;
@@ -11,9 +10,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -36,7 +37,8 @@ public class IndicatorService {
   private File outputFolder;
   @Value("${indicators.debug:false}")
   private boolean debugActive;
-  private String[] header;
+  @Setter(AccessLevel.PRIVATE)
+  private String[] header = null;
 
   @Autowired
   protected IndicatorService(final IndicatorRepository repository) {
@@ -63,11 +65,6 @@ public class IndicatorService {
     return new File(this.getOutputFolder(), OUTPUT_FILE_NAME);
   }
 
-  @PostConstruct
-  private void init() {
-    this.printDebugHeader();
-  }
-
   @SneakyThrows
   private void printDebugHeader() {
     if (this.isDebugActive()) {
@@ -81,6 +78,10 @@ public class IndicatorService {
   @SneakyThrows
   public void updateDebugFile(final @NotNull Map<String, SignalTrend> signalsMap, final double price) {
     if (this.isDebugActive()) {
+      if (Objects.isNull(this.getHeader())) {
+        this.setHeader(Stream.concat(Stream.of(DATA_TIME, PRICE), this.getRepository().getNames().stream()).toArray(String[]::new));
+        this.printDebugHeader();
+      }
       final Object[] row = Arrays.stream(this.getHeader()).map(s -> {
         if (DATA_TIME.equals(s)) {
           return this.getLastUpdate().format(DateTimeFormatter.ISO_DATE_TIME);
