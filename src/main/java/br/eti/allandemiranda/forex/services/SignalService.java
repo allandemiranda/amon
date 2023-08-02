@@ -7,7 +7,6 @@ import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
 import java.text.DecimalFormat;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import lombok.AccessLevel;
@@ -40,16 +39,20 @@ public class SignalService {
   }
 
   private static @NotNull String getNumber(final double value) {
-    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
-  }
-
-  public @NotNull LocalDateTime getLastUpdateTime() {
-    return this.getRepository().getLastUpdateTime();
+    return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
   }
 
   public void addGlobalSignal(final @NotNull Signal signal) {
     this.getRepository().add(signal);
-    this.updateDebugFile(this.getRepository());
+    this.updateDebugFile();
+  }
+
+  public boolean isReady() {
+    return this.getRepository().isReady();
+  }
+
+  public Signal getLastSignal() {
+    return this.getRepository().getLastSignal();
   }
 
   public Signal @NotNull [] getSignals() {
@@ -75,11 +78,10 @@ public class SignalService {
   }
 
   @SneakyThrows
-  private void updateDebugFile(final @NotNull SignalRepository repository) {
-    if (this.isDebugActive()) {
+  private void updateDebugFile() {
+    if (this.isDebugActive() && this.getRepository().isReady()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        final Signal[] signals = repository.getSignals();
-        final Signal signal = signals[signals.length - 1];
+        final Signal signal = this.getRepository().getLastSignal();
         csvPrinter.printRecord(signal.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), signal.trend(), getNumber(signal.price()));
       }
     }

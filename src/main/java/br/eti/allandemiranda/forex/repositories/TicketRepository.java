@@ -30,19 +30,16 @@ public class TicketRepository {
   public void update(final @NotNull Ticket ticket) {
     final LocalDateTime ticketDateTime = this.getData().getDateTime();
     if (ticketDateTime.isBefore(ticket.dateTime())) {
-      this.getData().setDateTime(ticket.dateTime());
-      final double currentBid = this.getData().getBid();
-      final double currentAsk = this.getData().getAsk();
-      if (ticket.bid() > 0d) {
-        this.getData().setBid(ticket.bid());
-      }
-      if (ticket.ask() > 0d) {
-        this.getData().setAsk(ticket.ask());
-      }
-      if(this.getData().getBid() > this.getData().getAsk()) {
+      if (ticket.bid() > ticket.ask()) {
         log.error("Error on tickets update, a Bid values high than Ask!");
-        this.getData().setBid(currentBid);
-        this.getData().setAsk(currentAsk);
+      } else {
+        this.getData().setDateTime(ticket.dateTime());
+        if (ticket.bid() > 0d) {
+          this.getData().setBid(ticket.bid());
+        }
+        if (ticket.ask() > 0d) {
+          this.getData().setAsk(ticket.ask());
+        }
       }
     } else {
       log.warn("DataTime {} from new ticket before or equal that current DataTime {}", ticket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
@@ -50,11 +47,7 @@ public class TicketRepository {
     }
   }
 
-  public Ticket getCurrentTicket() {
-    if (this.getData().getBid() > 0d && this.getData().getAsk() > 0d) {
-      return new Ticket(this.getData().getDateTime(), this.getData().getBid(), this.getData().getAsk());
-    } else {
-      return null;
-    }
+  public @NotNull Ticket getCurrentTicket() {
+    return new Ticket(this.getData().getDateTime(), this.getData().getBid(), this.getData().getAsk());
   }
 }

@@ -42,7 +42,7 @@ public class CandlestickService {
   }
 
   private static @NotNull String getNumber(final double value) {
-    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
+    return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
   }
 
   private @NotNull File getOutputFile() {
@@ -64,37 +64,34 @@ public class CandlestickService {
   }
 
   @SneakyThrows
-  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull CandlestickRepository repository) {
-    if (this.isDebugActive()) {
-      final Candlestick candlestick = repository.getCandlesticks()[repository.getCacheSize() - 1];
+  public void updateDebugFile() {
+    if (this.isDebugActive() && this.isReady()) {
+      final Candlestick candlestick = this.getRepository().getLastCandlestick();
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), candlestick.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
+        csvPrinter.printRecord(candlestick.realDateTime().format(DateTimeFormatter.ISO_DATE_TIME), candlestick.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
             getNumber(candlestick.open()), getNumber(candlestick.high()), getNumber(candlestick.low()), getNumber(candlestick.close()));
       }
     }
   }
 
-  public void addTicket(final @NotNull Ticket ticket, final @NotNull LocalDateTime realDataTime) {
-    final double price = ticket.bid();
-    final LocalDateTime dateTime = ticket.dateTime();
-    final Candlestick candlestick = new Candlestick(dateTime, price, price, price, price);
-    this.getRepository().addCandlestick(candlestick);
-    this.updateDebugFile(realDataTime, this.getRepository());
-  }
-
-  public int getCacheMemorySize() {
-    return this.getRepository().getCacheSize();
+  public void addTicket(final @NotNull Ticket ticket, final @NotNull LocalDateTime candlestickDateTime) {
+    this.getRepository().addCandlestick(ticket.dateTime(), candlestickDateTime, ticket.bid());
+    this.updateDebugFile();
   }
 
   public Candlestick @NotNull [] getCandlesticks(final int periodNum) {
-    if (this.getRepository().getCacheSize() >= periodNum) {
-      return Arrays.stream(this.getRepository().getCandlesticks(), this.getRepository().getCacheSize() - periodNum, this.getRepository().getCacheSize())
+    if (periodNum > this.getRepository().getMemorySize()) {
+      return Arrays.stream(this.getRepository().getCandlesticks(), this.getRepository().getMemorySize() - periodNum, this.getRepository().getMemorySize())
           .toArray(Candlestick[]::new);
     }
     throw new ServiceException("Can't provide Candlesticks to the period requested");
   }
 
-  public @NotNull LocalDateTime getLastDataTime() {
-    return this.getRepository().getLastDataTime();
+  public boolean isReady() {
+    return this.getRepository().isReady();
+  }
+
+  public Candlestick getLastCandlestick() {
+    return this.getRepository().getLastCandlestick();
   }
 }

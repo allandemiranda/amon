@@ -7,9 +7,9 @@ import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -43,11 +43,7 @@ public class TicketService {
   }
 
   private static @NotNull String getNumber(final double value) {
-    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
-  }
-
-  private static boolean getValidationTicket(final @NotNull Ticket ticket) {
-    return ticket.bid() > 0d && ticket.ask() > 0d;
+    return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
   }
 
   private @NotNull File getOutputFile() {
@@ -71,7 +67,7 @@ public class TicketService {
   @SneakyThrows
   private void updateDebugFile(final @NotNull TicketRepository repository) {
     final Ticket currentTicket = repository.getCurrentTicket();
-    if (this.isDebugActive() && Objects.nonNull(currentTicket)) {
+    if (this.isDebugActive() && this.isReady()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(currentTicket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(currentTicket.bid()), getNumber(currentTicket.ask()),
             this.getCurrentSpread());
@@ -84,8 +80,12 @@ public class TicketService {
     return (int) ((currentTicket.ask() - currentTicket.bid()) / (1 / (Math.pow(10, this.getDigits()))));
   }
 
-  public Ticket getCurrentTicket() {
+  public @NotNull Ticket getTicket() {
     return this.getRepository().getCurrentTicket();
+  }
+
+  public boolean isReady() {
+    return this.getRepository().getCurrentTicket().bid() > 0d && this.getRepository().getCurrentTicket().ask() > 0d;
   }
 
   @Synchronized

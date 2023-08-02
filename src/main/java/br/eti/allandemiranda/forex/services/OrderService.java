@@ -42,7 +42,7 @@ public class OrderService {
   }
 
   private static @NotNull String getNumber(final double value) {
-    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
+    return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
   }
 
   public Order getLastOrder() {

@@ -41,7 +41,7 @@ public class ADXService {
   }
 
   private static @NotNull String getNumber(final double value) {
-    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
+    return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
   }
 
   public void addADX(final @NotNull LocalDateTime candlestickTime, final double adx, final double diPlus, final double diMinus) {

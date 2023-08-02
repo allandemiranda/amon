@@ -9,6 +9,7 @@ import java.util.Objects;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 
 @Entity
 @Getter
@@ -18,6 +19,7 @@ public class CandlestickEntity implements Serializable, DefaultEntity {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  private LocalDateTime realDateTime;
   @Id
   @Setter
   private LocalDateTime dateTime;
@@ -26,14 +28,17 @@ public class CandlestickEntity implements Serializable, DefaultEntity {
   private double low;
   private double close;
 
-  public void setOpen(final double open) {
+  public void setOpen(final @NotNull LocalDateTime realDateTime, final @NotNull LocalDateTime dateTime, final double open) {
+    this.realDateTime = realDateTime;
+    this.dateTime = dateTime;
     this.open = open;
     this.high = open;
     this.low = open;
     this.close = open;
   }
 
-  public void setClose(final double close) {
+  public void setClose(final @NotNull LocalDateTime realDateTime, final double close) {
+    this.realDateTime = realDateTime;
     this.close = close;
     if (this.getClose() > this.getHigh()) {
       this.high = close;

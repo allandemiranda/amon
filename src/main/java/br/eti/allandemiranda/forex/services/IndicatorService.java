@@ -31,6 +31,7 @@ public class IndicatorService {
   private static final String OUTPUT_FILE_NAME = "indicators.csv";
   private static final String DATA_TIME = "DATA_TIME";
   private static final String PRICE = "PRICE";
+
   private final IndicatorRepository repository;
 
   @Value("${config.root.folder}")
@@ -46,19 +47,15 @@ public class IndicatorService {
   }
 
   private static @NotNull String getNumber(final double value) {
-    return new DecimalFormat("#0.0000#").format(value).replace(".", ",");
+    return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
   }
 
   public void addIndicator(final @NotNull String name, final Indicator indicator) {
     this.getRepository().add(name, indicator);
   }
 
-  public @NotNull Map<String, SignalTrend> processAndGetSignals(final @NotNull LocalDateTime dataTime) {
-    return this.getRepository().processAndGetSignals(dataTime);
-  }
-
-  public @NotNull LocalDateTime getLastUpdate() {
-    return this.getRepository().getLastUpdate();
+  public @NotNull Map<String, SignalTrend> processAndGetSignals() {
+    return this.getRepository().processAndGetSignals();
   }
 
   private @NotNull File getOutputFile() {
@@ -76,7 +73,7 @@ public class IndicatorService {
   }
 
   @SneakyThrows
-  public void updateDebugFile(final @NotNull Map<String, SignalTrend> signalsMap, final double price) {
+  public void updateDebugFile(final @NotNull Map<String, SignalTrend> signalsMap, final @NotNull LocalDateTime updateDateTime, final double price) {
     if (this.isDebugActive()) {
       if (Objects.isNull(this.getHeader())) {
         this.setHeader(Stream.concat(Stream.of(DATA_TIME, PRICE), this.getRepository().getNames().stream()).toArray(String[]::new));
@@ -84,7 +81,7 @@ public class IndicatorService {
       }
       final Object[] row = Arrays.stream(this.getHeader()).map(s -> {
         if (DATA_TIME.equals(s)) {
-          return this.getLastUpdate().format(DateTimeFormatter.ISO_DATE_TIME);
+          return updateDateTime.format(DateTimeFormatter.ISO_DATE_TIME);
         } else if (PRICE.equals(s)) {
           return getNumber(price);
         } else {
