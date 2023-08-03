@@ -56,21 +56,32 @@ public class OrderProcessor {
             case STRONG_BUY, BUY -> {
               if (this.getOrderService().getLastOrder().position().equals(OrderPosition.SELL)) {
                 this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+                this.getOrderService().updateDebugShortFile();
               }
             }
             case STRONG_SELL, SELL -> {
               if (this.getOrderService().getLastOrder().position().equals(OrderPosition.BUY)) {
                 this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+                this.getOrderService().updateDebugShortFile();
               }
             }
-            case NEUTRAL -> this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+            case NEUTRAL -> {
+              this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+              this.getOrderService().updateDebugShortFile();
+            }
           }
         }
       } else {
         if (this.getSignalService().getValidation() && this.getTicketService().getCurrentSpread() < this.getStopLoss()) {
           switch (this.getSignalService().getLastSignal().trend()) {
-            case STRONG_BUY -> this.getOrderService().openPosition(this.getTicketService().getTicket(), OrderPosition.BUY);
-            case STRONG_SELL -> this.getOrderService().openPosition(this.getTicketService().getTicket(), OrderPosition.SELL);
+            case STRONG_BUY -> {
+              this.getOrderService().openPosition(this.getTicketService().getTicket(), OrderPosition.BUY);
+              this.getOrderService().updateDebugShortFile();
+            }
+            case STRONG_SELL -> {
+              this.getOrderService().openPosition(this.getTicketService().getTicket(), OrderPosition.SELL);
+              this.getOrderService().updateDebugShortFile();
+            }
           }
         }
       }

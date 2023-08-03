@@ -52,7 +52,7 @@ public class IndicatorsProcessor {
   @Synchronized
   public void run() {
     final Candlestick lastCandlestick = this.getCandlestickService().getLastCandlestick();
-    final LocalDateTime currentDataTime = lastCandlestick.dateTime();
+    final LocalDateTime currentDataTime = lastCandlestick.realDateTime();
     if (this.getCandlestickService().isReady() && this.getLastDataTime().plusMinutes(this.getInterval()).isBefore(currentDataTime)) {
       this.setLastDataTime(currentDataTime);
       final Map<String, SignalTrend> currentSignals = this.getIndicatorService().processAndGetSignals();

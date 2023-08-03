@@ -36,13 +36,14 @@ public class OrderEntity implements Serializable {
     this.lastUpdate = lastUpdate;
     this.status = status;
     if (this.position.equals(OrderPosition.BUY)) {
+      this.currentBalance += bid - this.closePrice;
       this.closePrice = bid;
       this.profit = this.closePrice - this.openPrice;
     } else {
+      this.currentBalance += this.closePrice - ask;
       this.closePrice = ask;
       this.profit = this.openPrice - this.closePrice;
     }
-    this.currentBalance += this.profit;
   }
 
   public void setOpenDateTime(final @NotNull LocalDateTime openDateTime, final @NotNull OrderPosition position, final double bid, final double ask) {
