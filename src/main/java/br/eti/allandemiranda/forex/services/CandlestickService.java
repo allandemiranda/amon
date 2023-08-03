@@ -65,7 +65,7 @@ public class CandlestickService {
 
   @SneakyThrows
   public void updateDebugFile() {
-    if (this.isDebugActive() && this.isReady()) {
+    if (this.isDebugActive()) {
       final Candlestick candlestick = this.getRepository().getLastCandlestick();
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(candlestick.realDateTime().format(DateTimeFormatter.ISO_DATE_TIME), candlestick.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
