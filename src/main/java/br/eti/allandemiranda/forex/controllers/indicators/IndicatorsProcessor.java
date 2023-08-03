@@ -53,7 +53,7 @@ public class IndicatorsProcessor {
   public void run() {
     final Candlestick lastCandlestick = this.getCandlestickService().getLastCandlestick();
     final LocalDateTime currentDataTime = lastCandlestick.dateTime();
-    if (this.getLastDataTime().plusMinutes(this.getInterval()).isBefore(currentDataTime)) {
+    if (this.getCandlestickService().isReady() && this.getLastDataTime().plusMinutes(this.getInterval()).isBefore(currentDataTime)) {
       this.setLastDataTime(currentDataTime);
       final Map<String, SignalTrend> currentSignals = this.getIndicatorService().processAndGetSignals();
       if (!currentSignals.isEmpty()) {

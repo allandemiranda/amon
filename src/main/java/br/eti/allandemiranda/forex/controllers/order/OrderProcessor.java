@@ -1,23 +1,15 @@
 package br.eti.allandemiranda.forex.controllers.order;
 
-import br.eti.allandemiranda.forex.dtos.Order;
-import br.eti.allandemiranda.forex.dtos.Signal;
-import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.services.OrderService;
 import br.eti.allandemiranda.forex.services.SignalService;
 import br.eti.allandemiranda.forex.services.TicketService;
 import br.eti.allandemiranda.forex.utils.OrderPosition;
 import br.eti.allandemiranda.forex.utils.OrderStatus;
-import br.eti.allandemiranda.forex.utils.SignalTrend;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.stream.Collectors;
+import jakarta.annotation.PostConstruct;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.Synchronized;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -30,14 +22,12 @@ public class OrderProcessor {
   private final TicketService ticketService;
   private final OrderService orderService;
 
-  @Value("${order.take-profit:100.0}")
+  @Value("${order.take-profit:0.0}")
+  @Setter(AccessLevel.PRIVATE)
   private double takeProfit;
-  @Value("${order.stop-loss:100.0}")
+  @Value("${order.stop-loss:0.0}")
+  @Setter(AccessLevel.PRIVATE)
   private double stopLoss;
-  @Value("${order.security:false}")
-  private boolean isSecurity;
-  @Value("${order.open:3}")
-  private int openWith;
 
   @Autowired
   protected OrderProcessor(final SignalService signalService, final TicketService ticketService, final OrderService orderService) {
@@ -46,48 +36,45 @@ public class OrderProcessor {
     this.orderService = orderService;
   }
 
-  @Synchronized
-  public void run() {
-    if (this.getSignalService().isReady()) {
-
-
+  @PostConstruct
+  private void init() {
+    if (this.getTakeProfit() <= 0d) {
+      this.setTakeProfit(Double.MAX_VALUE);
+    }
+    if (this.getStopLoss() <= 0d) {
+      this.setStopLoss(Double.MAX_VALUE);
     }
   }
 
-  private void update(final Ticket currentTicket, final SignalTrend lastSignalTrend) {
-
-
-    final OrderService service = this.getOrderService();
-    if (service.getLastOrder().status().equals(OrderStatus.OPEN)) {
-      final SignalTrend lastSignal = signals[0];
-      if (SignalTrend.NEUTRAL.equals(lastSignal)) {
-        service.closePosition(currentTicket, OrderStatus.CLOSE_MANUAL);
+  @Synchronized
+  public void run() {
+    if (this.getSignalService().isReady()) {
+      if (OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status())) {
+        this.getOrderService().updateOpenPosition(this.getTicketService().getTicket(), this.getTakeProfit(), this.getStopLoss());
+        if (OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status())) {
+          switch (this.getSignalService().getLastSignal().trend()) {
+            case STRONG_BUY, BUY -> {
+              if (this.getOrderService().getLastOrder().position().equals(OrderPosition.SELL)) {
+                this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+              }
+            }
+            case STRONG_SELL, SELL -> {
+              if (this.getOrderService().getLastOrder().position().equals(OrderPosition.BUY)) {
+                this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+              }
+            }
+            case NEUTRAL -> this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+          }
+        }
       } else {
-        OrderPosition orderPositionIndicator = null;
-        if (lastSignal.equals(SignalTrend.STRONG_BUY) || lastSignal.equals(SignalTrend.BUY)) {
-          orderPositionIndicator = OrderPosition.BUY;
-        } else if (lastSignal.equals(SignalTrend.STRONG_SELL) || lastSignal.equals(SignalTrend.SELL)) {
-          orderPositionIndicator = OrderPosition.SELL;
-        }
-        if (!lastOrder.position().equals(orderPositionIndicator)) {
-          service.closePosition(currentTicket, OrderStatus.CLOSE_MANUAL);
+        if (this.getSignalService().getValidation() && this.getTicketService().getCurrentSpread() < this.getStopLoss()) {
+          switch (this.getSignalService().getLastSignal().trend()) {
+            case STRONG_BUY -> this.getOrderService().openPosition(this.getTicketService().getTicket(), OrderPosition.BUY);
+            case STRONG_SELL -> this.getOrderService().openPosition(this.getTicketService().getTicket(), OrderPosition.SELL);
+          }
         }
       }
-      if (service.getLastOrder().status().equals(OrderStatus.OPEN)) {
-        if (this.isSecurity()) {
-          this.getOrderService().updateTicket(currentTicket, this.getTakeProfit(), this.getStopLoss());
-        } else {
-          this.getOrderService().updateTicket(currentTicket);
-        }
-      }
-    } else {
-      final ArrayList<SignalTrend> signalTrendSet = Arrays.stream(signals).distinct().collect(Collectors.toCollection(ArrayList::new));
-      if (signalTrendSet.size() == 1 && ((currentTicket.ask() - currentTicket.bid()) < stopLoss)) {
-        switch (signalTrendSet.get(0)) {
-          case STRONG_BUY -> service.openPosition(currentTicket, OrderPosition.BUY);
-          case STRONG_SELL -> service.openPosition(currentTicket, OrderPosition.SELL);
-        }
-      }
+      this.getOrderService().updateDebugFile();
     }
   }
 }

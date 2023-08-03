@@ -2,15 +2,14 @@ package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.Signal;
 import br.eti.allandemiranda.forex.entities.SignalEntity;
-import br.eti.allandemiranda.forex.services.SignalService;
-import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
@@ -22,8 +21,8 @@ public class SignalRepository {
 
   private final TreeSet<SignalEntity> dataBase = new TreeSet<>();
 
-  @Value("${signal.repository.memory:3}")
-  private int memorySize;
+  @Value("${order.open:3}")
+  private int openWith;
 
   @Synchronized
   public void add(final @NotNull Signal signal) {
@@ -33,7 +32,7 @@ public class SignalRepository {
       entity.setTrend(signal.trend());
       entity.setPrice(signal.price());
       this.getDataBase().add(entity);
-      if (this.getDataBase().size() > this.getMemorySize()) {
+      if (this.getDataBase().size() > this.getOpenWith()) {
         final SignalEntity older = this.getDataBase().first();
         this.getDataBase().remove(older);
       }
@@ -42,8 +41,8 @@ public class SignalRepository {
     }
   }
 
-  public Signal @NotNull [] getSignals() {
-    return this.getDataBase().stream().map(entity -> new Signal(entity.getDateTime(), entity.getTrend(), entity.getPrice())).toArray(Signal[]::new);
+  public boolean getValidation() {
+    return this.getDataBase().stream().map(SignalEntity::getTrend).collect(Collectors.toCollection(HashSet::new)).size() == 1;
   }
 
   private @NotNull Signal toModel(final @NotNull SignalEntity entity) {
@@ -59,6 +58,6 @@ public class SignalRepository {
   }
 
   public boolean isReady() {
-    return this.getDataBase().size() >= this.getMemorySize();
+    return this.getDataBase().size() >= this.getOpenWith();
   }
 }

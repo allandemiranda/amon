@@ -4,7 +4,6 @@ import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.services.ADXService;
 import br.eti.allandemiranda.forex.services.CandlestickService;
-import br.eti.allandemiranda.forex.services.TicketService;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -23,16 +22,14 @@ public class AverageDirectionalMovementIndex implements Indicator {
 
   private final ADXService adxService;
   private final CandlestickService candlestickService;
-  private final TicketService ticketService;
 
   @Value("${adx.parameters.period}")
   private int period;
 
   @Autowired
-  protected AverageDirectionalMovementIndex(final ADXService adxService, final CandlestickService candlestickService, final TicketService ticketService) {
+  protected AverageDirectionalMovementIndex(final ADXService adxService, final CandlestickService candlestickService) {
     this.adxService = adxService;
     this.candlestickService = candlestickService;
-    this.ticketService = ticketService;
   }
 
   private static double @NotNull [] getDx(final Candlestick @NotNull [] chart) {
@@ -77,7 +74,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
   @Override
   @Synchronized
   public boolean run() {
-    if (this.getCandlestickService().getCacheMemorySize() >= (this.getPeriod() * 2)) {
+    if (this.getCandlestickService().isReady()) {
       final Candlestick[] chart = this.getCandlestickService().getCandlesticks(this.getPeriod() * 2);
       final double[][] adxs = IntStream.range(0, this.getPeriod()).mapToObj(i -> {
         final Candlestick[] tmp = Arrays.stream(chart, i, this.getPeriod() + i + 1).toArray(Candlestick[]::new);
@@ -86,7 +83,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
       final double adxValue = Arrays.stream(adxs).mapToDouble(value -> value[0]).sum() / adxs.length;
       final double diPlus = adxs[adxs.length - 1][1];
       final double diMinus = adxs[adxs.length - 1][2];
-      this.adxService.addADX(this.getCandlestickService().getLastDataTime(), adxValue, diPlus, diMinus);
+      this.adxService.addADX(this.getCandlestickService().getLastCandlestick().realDateTime(), adxValue, diPlus, diMinus);
       return true;
     } else {
       return false;
@@ -99,8 +96,8 @@ public class AverageDirectionalMovementIndex implements Indicator {
     if (this.getAdxService().getADX().dateTime().equals(LocalDateTime.MIN)) {
       return SignalTrend.OUT;
     } else {
-      final LocalDateTime realTime = this.getTicketService().getCurrentTicket().dateTime();
-      final double price = this.getTicketService().getCurrentTicket().bid();
+      final LocalDateTime realTime = this.getCandlestickService().getLastCandlestick().realDateTime();
+      final double price = this.getCandlestickService().getLastCandlestick().close();
       if (this.getAdxService().getADX().diPlus() == this.getAdxService().getADX().diMinus() || this.getAdxService().getADX().adx() < 50d) {
         this.getAdxService().updateDebugFile(realTime, SignalTrend.NEUTRAL, price);
         return SignalTrend.NEUTRAL;

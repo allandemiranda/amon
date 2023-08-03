@@ -30,9 +30,6 @@ public class TicketRepository {
   public void update(final @NotNull Ticket ticket) {
     final LocalDateTime ticketDateTime = this.getData().getDateTime();
     if (ticketDateTime.isBefore(ticket.dateTime())) {
-      if (ticket.bid() > ticket.ask()) {
-        log.error("Error on tickets update, a Bid values high than Ask!");
-      } else {
         this.getData().setDateTime(ticket.dateTime());
         if (ticket.bid() > 0d) {
           this.getData().setBid(ticket.bid());
@@ -40,7 +37,6 @@ public class TicketRepository {
         if (ticket.ask() > 0d) {
           this.getData().setAsk(ticket.ask());
         }
-      }
     } else {
       log.warn("DataTime {} from new ticket before or equal that current DataTime {}", ticket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
           ticketDateTime.format(DateTimeFormatter.ISO_DATE_TIME));

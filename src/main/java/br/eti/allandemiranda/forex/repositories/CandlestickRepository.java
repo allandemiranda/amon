@@ -20,7 +20,7 @@ public class CandlestickRepository {
 
   private final TreeSet<CandlestickEntity> dataBase = new TreeSet<>();
 
-  @Value("${candlestick.repository.memory}")
+  @Value("${candlestick.repository.memory:15}")
   @Getter(AccessLevel.PUBLIC)
   private int memorySize;
 

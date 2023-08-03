@@ -80,7 +80,7 @@ public class CandlestickService {
   }
 
   public Candlestick @NotNull [] getCandlesticks(final int periodNum) {
-    if (periodNum > this.getRepository().getMemorySize()) {
+    if (this.getRepository().getMemorySize() >= periodNum) {
       return Arrays.stream(this.getRepository().getCandlesticks(), this.getRepository().getMemorySize() - periodNum, this.getRepository().getMemorySize())
           .toArray(Candlestick[]::new);
     }

@@ -49,20 +49,13 @@ public class OrderService {
     return this.getRepository().getLastOrder();
   }
 
-  public void updateTicket(final @NotNull Ticket ticket) {
-    this.getRepository().updateTicket(ticket);
-  }
-
-  public void updateTicket(final @NotNull Ticket ticket, final double takeProfit, final double stopLoss) {
-    this.getRepository().updateTicket(ticket);
-    final Order lastOrder = this.getRepository().getLastOrder();
-    if (lastOrder.status().equals(OrderStatus.OPEN)) {
-      final double profit = lastOrder.profit();
-      if (profit >= takeProfit) {
-        this.closePosition(ticket, OrderStatus.CLOSE_TP);
-      } else if (profit <= stopLoss) {
-        this.closePosition(ticket, OrderStatus.CLOSE_SL);
-      }
+  public void updateOpenPosition(final @NotNull Ticket ticket, final double takeProfit, final double stopLoss) {
+    this.getRepository().updateOpenPosition(ticket);
+    final double profit = this.getRepository().getLastOrder().profit();
+    if (profit >= takeProfit) {
+      this.closePosition(OrderStatus.CLOSE_TP);
+    } else if (profit <= stopLoss) {
+      this.closePosition(OrderStatus.CLOSE_SL);
     }
   }
 
@@ -70,8 +63,8 @@ public class OrderService {
     this.getRepository().openPosition(ticket, position);
   }
 
-  public void closePosition(final @NotNull Ticket ticket, final @NotNull OrderStatus status) {
-    this.getRepository().closePosition(ticket, status);
+  public void closePosition(final @NotNull OrderStatus status) {
+    this.getRepository().closePosition(status);
   }
 
   private @NotNull File getOutputFile() {

@@ -47,16 +47,16 @@ public class SignalService {
     this.updateDebugFile();
   }
 
+  public boolean getValidation() {
+    return this.getRepository().getValidation();
+  }
+
   public boolean isReady() {
     return this.getRepository().isReady();
   }
 
   public Signal getLastSignal() {
     return this.getRepository().getLastSignal();
-  }
-
-  public Signal @NotNull [] getSignals() {
-    return this.getRepository().getSignals();
   }
 
   private @NotNull File getOutputFile() {
