@@ -33,8 +33,8 @@ public class StringConfig {
     try (final FileReader fileReader = new FileReader(inputFile); final CSVParser csvParser = CSVFormat.TDF.builder().setHeader(TicketHeader.class).setSkipHeaderRecord(true)
         .build().parse(fileReader)) {
       StreamSupport.stream(csvParser.spliterator(), false)
-          .skip(5500)
-          .limit(100000)
+//          .skip(5500)
+          .limit(4000000)
           .forEach(csvRecord -> {
             String date = csvRecord.get(0);
             String time = csvRecord.get(1);
