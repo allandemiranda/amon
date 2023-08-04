@@ -22,12 +22,12 @@ public class OrderProcessor {
   private final TicketService ticketService;
   private final OrderService orderService;
 
-  @Value("${order.take-profit:0.0}")
+  @Value("${order.take-profit:0}")
   @Setter(AccessLevel.PRIVATE)
-  private double takeProfit;
-  @Value("${order.stop-loss:0.0}")
+  private int takeProfit;
+  @Value("${order.stop-loss:0}")
   @Setter(AccessLevel.PRIVATE)
-  private double stopLoss;
+  private int stopLoss;
 
   @Autowired
   protected OrderProcessor(final SignalService signalService, final TicketService ticketService, final OrderService orderService) {
@@ -38,11 +38,11 @@ public class OrderProcessor {
 
   @PostConstruct
   private void init() {
-    if (this.getTakeProfit() <= 0d) {
-      this.setTakeProfit(Double.MAX_VALUE);
+    if (this.getTakeProfit() <= 0) {
+      this.setTakeProfit(Integer.MAX_VALUE);
     }
-    if (this.getStopLoss() <= 0d) {
-      this.setStopLoss(Double.MAX_VALUE);
+    if (this.getStopLoss() <= 0) {
+      this.setStopLoss(Integer.MAX_VALUE);
     }
   }
 
@@ -50,7 +50,9 @@ public class OrderProcessor {
   public void run() {
     if (this.getSignalService().isReady()) {
       if (OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status())) {
-        this.getOrderService().updateOpenPosition(this.getTicketService().getTicket(), this.getTakeProfit(), this.getStopLoss());
+        final double loss = this.getStopLoss() * (-1/(Math.pow(10, this.getTicketService().getDigits())));
+        final double profit = this.getTakeProfit() * (1/(Math.pow(10, this.getTicketService().getDigits())));
+        this.getOrderService().updateOpenPosition(this.getTicketService().getTicket(), profit, loss);
         if (OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status())) {
           switch (this.getSignalService().getLastSignal().trend()) {
             case STRONG_BUY, BUY -> {
@@ -72,7 +74,7 @@ public class OrderProcessor {
           }
         }
       } else {
-        if (this.getSignalService().getValidation() && this.getTicketService().getCurrentSpread() < this.getStopLoss()) {
+        if (this.getSignalService().getValidation() && this.getTicketService().getCurrentSpread() <= this.getStopLoss()) {
           switch (this.getSignalService().getLastSignal().trend()) {
             case STRONG_BUY -> {
               this.getOrderService().openPosition(this.getTicketService().getTicket(), OrderPosition.BUY);

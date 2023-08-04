@@ -58,7 +58,7 @@ public class OrderService {
     if (profit >= takeProfit) {
       this.closePosition(OrderStatus.CLOSE_TP);
       this.updateDebugShortFile();
-    } else if ((profit * (-1)) >= stopLoss) {
+    } else if (profit <= stopLoss) {
       this.closePosition(OrderStatus.CLOSE_SL);
       this.updateDebugShortFile();
     }

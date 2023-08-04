@@ -35,6 +35,7 @@ public class TicketService {
   @Value("${ticket.debug:false}")
   private boolean debugActive;
   @Value("${ticket.digits:5}")
+  @Getter(AccessLevel.PUBLIC)
   private int digits;
 
   @Autowired
