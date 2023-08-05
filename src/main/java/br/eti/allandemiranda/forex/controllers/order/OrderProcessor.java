@@ -1,5 +1,6 @@
 package br.eti.allandemiranda.forex.controllers.order;
 
+import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.services.OrderService;
 import br.eti.allandemiranda.forex.services.SignalService;
 import br.eti.allandemiranda.forex.services.TicketService;
@@ -28,6 +29,9 @@ public class OrderProcessor {
   @Value("${order.stop-loss:0}")
   @Setter(AccessLevel.PRIVATE)
   private int stopLoss;
+  @Value("${order.open.spread.max:0}")
+  @Setter(AccessLevel.PRIVATE)
+  private int maxSpread;
 
   @Autowired
   protected OrderProcessor(final SignalService signalService, final TicketService ticketService, final OrderService orderService) {
@@ -44,50 +48,59 @@ public class OrderProcessor {
     if (this.getStopLoss() <= 0) {
       this.setStopLoss(Integer.MAX_VALUE);
     }
+    if (this.getMaxSpread() <= 0) {
+      this.setMaxSpread(Integer.MAX_VALUE);
+    }
   }
 
   @Synchronized
   public void run() {
     if (this.getSignalService().isReady()) {
+      final Ticket ticket = this.getTicketService().getTicket();
       if (OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status())) {
-        final double loss = this.getStopLoss() * (-1/(Math.pow(10, this.getTicketService().getDigits())));
-        final double profit = this.getTakeProfit() * (1/(Math.pow(10, this.getTicketService().getDigits())));
-        this.getOrderService().updateOpenPosition(this.getTicketService().getTicket(), profit, loss);
-        if (OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status())) {
-          switch (this.getSignalService().getLastSignal().trend()) {
-            case STRONG_BUY, BUY -> {
-              if (this.getOrderService().getLastOrder().position().equals(OrderPosition.SELL)) {
-                this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
-                this.getOrderService().updateDebugShortFile();
-              }
-            }
-            case STRONG_SELL, SELL -> {
-              if (this.getOrderService().getLastOrder().position().equals(OrderPosition.BUY)) {
-                this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
-                this.getOrderService().updateDebugShortFile();
-              }
-            }
-            case NEUTRAL -> {
-              this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
-              this.getOrderService().updateDebugShortFile();
-            }
-          }
-        }
+        operationToOpenOrder(ticket, this.getTakeProfit(), this.getStopLoss());
       } else {
-        if (this.getSignalService().getValidation() && this.getTicketService().getCurrentSpread() <= this.getStopLoss()) {
-          switch (this.getSignalService().getLastSignal().trend()) {
-            case STRONG_BUY -> {
-              this.getOrderService().openPosition(this.getTicketService().getTicket(), OrderPosition.BUY);
-              this.getOrderService().updateDebugShortFile();
-            }
-            case STRONG_SELL -> {
-              this.getOrderService().openPosition(this.getTicketService().getTicket(), OrderPosition.SELL);
-              this.getOrderService().updateDebugShortFile();
-            }
-          }
-        }
+        operationToCloseOrder(ticket, this.getStopLoss(), this.getMaxSpread());
       }
       this.getOrderService().updateDebugFile();
+    }
+  }
+
+  private void operationToCloseOrder(final Ticket ticket, final int stopLoss, final int maxSpread) {
+    if (this.getSignalService().haveValidSignal() && ticket.spread() < stopLoss && ticket.spread() <= maxSpread) {
+      switch (this.getSignalService().getLastSignal().trend()) {
+        case STRONG_BUY -> {
+          this.getOrderService().openPosition(ticket, OrderPosition.BUY);
+          this.getOrderService().updateDebugShortFile();
+        }
+        case STRONG_SELL -> {
+          this.getOrderService().openPosition(ticket, OrderPosition.SELL);
+          this.getOrderService().updateDebugShortFile();
+        }
+      }
+    }
+  }
+
+  private void operationToOpenOrder(final Ticket ticket, final int takeProfit, final int stopLoss) {
+    if (OrderStatus.OPEN.equals(this.getOrderService().updateOpenPosition(ticket, takeProfit, stopLoss))) {
+      switch (this.getSignalService().getLastSignal().trend()) {
+        case STRONG_BUY, BUY -> {
+          if (this.getOrderService().getLastOrder().position().equals(OrderPosition.SELL)) {
+            this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+            this.getOrderService().updateDebugShortFile();
+          }
+        }
+        case STRONG_SELL, SELL -> {
+          if (this.getOrderService().getLastOrder().position().equals(OrderPosition.BUY)) {
+            this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+            this.getOrderService().updateDebugShortFile();
+          }
+        }
+        case NEUTRAL -> {
+          this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+          this.getOrderService().updateDebugShortFile();
+        }
+      }
     }
   }
 }

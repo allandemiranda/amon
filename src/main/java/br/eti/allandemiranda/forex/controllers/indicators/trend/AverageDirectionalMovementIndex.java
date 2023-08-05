@@ -98,10 +98,10 @@ public class AverageDirectionalMovementIndex implements Indicator {
     } else {
       final LocalDateTime realTime = this.getCandlestickService().getLastCandlestick().realDateTime();
       final double price = this.getCandlestickService().getLastCandlestick().close();
-      if (this.getAdxService().getADX().diPlus() == this.getAdxService().getADX().diMinus() || this.getAdxService().getADX().adx() < 50d) {
+      if (this.getAdxService().getADX().diPlus() == this.getAdxService().getADX().diMinus() || this.getAdxService().getADX().value() < 50d) {
         this.getAdxService().updateDebugFile(realTime, SignalTrend.NEUTRAL, price);
         return SignalTrend.NEUTRAL;
-      } else if (this.getAdxService().getADX().adx() < 75) {
+      } else if (this.getAdxService().getADX().value() < 75) {
         final SignalTrend trend = this.getAdxService().getADX().diPlus() > this.getAdxService().getADX().diMinus() ? SignalTrend.BUY : SignalTrend.SELL;
         this.getAdxService().updateDebugFile(realTime, trend, price);
         return trend;

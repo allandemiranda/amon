@@ -79,7 +79,7 @@ public class ADXService {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         final ADX adx = repository.getADX();
-        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), adx.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(adx.adx()),
+        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), adx.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(adx.value()),
             getNumber(adx.diPlus()), getNumber(adx.diMinus()), trend, getNumber(price));
       }
     }

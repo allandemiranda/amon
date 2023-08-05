@@ -3,19 +3,16 @@ package br.eti.allandemiranda.forex.repositories;
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.entities.CandlestickEntity;
 import java.time.LocalDateTime;
-import java.util.NoSuchElementException;
 import java.util.TreeSet;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Synchronized;
-import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @Getter(AccessLevel.PRIVATE)
-@Slf4j
 public class CandlestickRepository {
 
   private final TreeSet<CandlestickEntity> dataBase = new TreeSet<>();
@@ -40,8 +37,6 @@ public class CandlestickRepository {
       }
     } else if (dateTime.equals(this.getDataBase().last().getDateTime())) {
       this.getDataBase().last().setClose(realDataTime, price);
-    } else {
-      log.warn("Trying to add a old Candlestick on repository");
     }
   }
 
@@ -53,11 +48,7 @@ public class CandlestickRepository {
     return new Candlestick(output.getRealDateTime(), output.getDateTime(), output.getOpen(), output.getHigh(), output.getLow(), output.getClose());
   }
 
-  public Candlestick getLastCandlestick() {
-    try {
-      return this.toModel(this.getDataBase().last());
-    } catch (NoSuchElementException e) {
-      return null;
-    }
+  public @NotNull Candlestick getLastCandlestick() {
+    return this.toModel(this.getDataBase().last());
   }
 }

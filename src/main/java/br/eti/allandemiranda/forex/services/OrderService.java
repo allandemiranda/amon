@@ -27,9 +27,10 @@ import org.springframework.stereotype.Service;
 @Getter(AccessLevel.PRIVATE)
 public class OrderService {
 
-  public static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
+  private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
   private static final String OUTPUT_FILE_NAME = "orders.csv";
   private static final String OUTPUT_FILE_NAME_SHORT = "orders_short.csv";
+
   private final OrderRepository repository;
 
   @Value("${config.root.folder}")
@@ -48,28 +49,35 @@ public class OrderService {
     return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
   }
 
-  public Order getLastOrder() {
+  public @NotNull Order getLastOrder() {
     return this.getRepository().getLastOrder();
   }
 
-  public void updateOpenPosition(final @NotNull Ticket ticket, final double takeProfit, final double stopLoss) {
-    this.getRepository().updateOpenPosition(ticket);
-    final double profit = this.getRepository().getLastOrder().profit();
-    if (profit >= takeProfit) {
-      this.closePosition(OrderStatus.CLOSE_TP);
-      this.updateDebugShortFile();
-    } else if (profit <= stopLoss) {
-      this.closePosition(OrderStatus.CLOSE_SL);
-      this.updateDebugShortFile();
+  public @NotNull OrderStatus updateOpenPosition(final @NotNull Ticket ticket, final int takeProfit, final int stopLoss) {
+    if (this.getRepository().getLastOrder().lastUpdate().isBefore(ticket.dateTime())) {
+      this.getRepository().updateOpenPosition(ticket);
+      final double currentProfit = this.getRepository().getLastOrder().currentProfit();
+      if (currentProfit >= takeProfit) {
+        this.closePosition(OrderStatus.CLOSE_TP);
+        this.updateDebugShortFile();
+      } else if (currentProfit <= Math.negateExact(stopLoss)) {
+        this.closePosition(OrderStatus.CLOSE_SL);
+        this.updateDebugShortFile();
+      }
     }
+    return this.getRepository().getLastOrder().status();
   }
 
   public void openPosition(final @NotNull Ticket ticket, final @NotNull OrderPosition position) {
-    this.getRepository().openPosition(ticket, position);
+    if (this.getRepository().getLastOrder().lastUpdate().isBefore(ticket.dateTime())) {
+      this.getRepository().openPosition(ticket, position);
+    }
   }
 
   public void closePosition(final @NotNull OrderStatus status) {
-    this.getRepository().closePosition(status);
+    if (!OrderStatus.OPEN.equals(status)) {
+      this.getRepository().closePosition(status);
+    }
   }
 
   private @NotNull File getOutputFile(final String filename) {
@@ -113,7 +121,8 @@ public class OrderService {
     if (!order.lastUpdate().equals(LocalDateTime.MIN)) {
       try (final FileWriter fileWriter = new FileWriter(file, true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastUpdate().format(DateTimeFormatter.ISO_DATE_TIME), order.status(),
-            order.position(), getNumber(order.openPrice()), getNumber(order.closePrice()), getNumber(order.profit()), getNumber(order.currentBalance()));
+            order.position(), getNumber(order.openPrice()), getNumber(order.closePrice()), order.currentProfit(), order.currentBalance(), order.highProfit(),
+            order.lowProfit());
       }
     }
   }

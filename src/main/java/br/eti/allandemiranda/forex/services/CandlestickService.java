@@ -91,7 +91,7 @@ public class CandlestickService {
     return this.getRepository().isReady();
   }
 
-  public Candlestick getLastCandlestick() {
+  public @NotNull Candlestick getLastCandlestick() {
     return this.getRepository().getLastCandlestick();
   }
 }

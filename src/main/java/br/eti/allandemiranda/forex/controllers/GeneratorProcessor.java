@@ -3,7 +3,6 @@ package br.eti.allandemiranda.forex.controllers;
 import br.eti.allandemiranda.forex.controllers.chart.ChartProcessor;
 import br.eti.allandemiranda.forex.controllers.indicators.IndicatorsProcessor;
 import br.eti.allandemiranda.forex.controllers.order.OrderProcessor;
-import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.services.TicketService;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -33,9 +32,7 @@ public class GeneratorProcessor {
 
   @Synchronized
   public void webSocket(final LocalDateTime time, final Double bid, final Double ask) {
-    final Ticket ticket = new Ticket(Objects.isNull(time) ? LocalDateTime.MIN : time, Objects.isNull(bid) ? 0d : bid, Objects.isNull(ask) ? 0d : ask);
-
-    this.getTicketService().updateData(ticket);
+    this.getTicketService().updateData(Objects.isNull(time) ? LocalDateTime.MIN : time, Objects.isNull(bid) ? 0d : bid, Objects.isNull(ask) ? 0d : ask);
     if (this.getTicketService().isReady()) {
       this.getChartProcessor().run();
       this.getIndicatorsProcessor().run();

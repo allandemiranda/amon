@@ -10,12 +10,13 @@ import java.util.Objects;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
-public class SignalEntity implements Serializable, DefaultEntity {
+public class SignalEntity implements Serializable, Comparable<SignalEntity> {
 
   @Serial
   private static final long serialVersionUID = 1L;
@@ -40,5 +41,10 @@ public class SignalEntity implements Serializable, DefaultEntity {
   @Override
   public int hashCode() {
     return Objects.hash(dateTime);
+  }
+
+  @Override
+  public int compareTo(@NotNull final SignalEntity o) {
+    return this.getDateTime().compareTo(o.getDateTime());
   }
 }

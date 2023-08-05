@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 @Entity
 @Getter
 @NoArgsConstructor
-public class CandlestickEntity implements Serializable, DefaultEntity {
+public class CandlestickEntity implements Serializable, Comparable<CandlestickEntity> {
 
   @Serial
   private static final long serialVersionUID = 1L;
@@ -62,5 +62,10 @@ public class CandlestickEntity implements Serializable, DefaultEntity {
   @Override
   public int hashCode() {
     return Objects.hash(dateTime);
+  }
+
+  @Override
+  public int compareTo(@NotNull final CandlestickEntity o) {
+    return this.getDateTime().compareTo(o.getDateTime());
   }
 }

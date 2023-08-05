@@ -1,35 +1,39 @@
 package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.ADX;
-import br.eti.allandemiranda.forex.entities.ADXEntity;
 import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @Getter(AccessLevel.PRIVATE)
+@Setter(AccessLevel.PRIVATE)
 public class ADXRepository {
 
-  private final ADXEntity data = new ADXEntity();
+  private LocalDateTime dateTime;
+  private double value;
+  private double diPlus;
+  private double diMinus;
 
   @PostConstruct
   private void init() {
-    this.getData().setDateTime(LocalDateTime.MIN);
+    this.setDateTime(LocalDateTime.MIN);
   }
 
   public void add(final @NotNull LocalDateTime dateTime, final double adx, final double diPlus, final double diMinus) {
-    if (dateTime.isAfter(this.getData().getDateTime())) {
-      this.getData().setDateTime(dateTime);
-      this.getData().setAdx(adx);
-      this.getData().setDiPlus(diPlus);
-      this.getData().setDiMinus(diMinus);
+    if (dateTime.isAfter(this.getDateTime())) {
+      this.setDateTime(dateTime);
+      this.setValue(adx);
+      this.setDiPlus(diPlus);
+      this.setDiMinus(diMinus);
     }
   }
 
   public @NotNull ADX getADX() {
-    return new ADX(this.getData().getDateTime(), this.getData().getAdx(), this.getData().getDiPlus(), this.getData().getDiMinus());
+    return new ADX(this.getDateTime(), this.getValue(), this.getDiPlus(), this.getDiMinus());
   }
 }

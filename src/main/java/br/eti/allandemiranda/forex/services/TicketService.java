@@ -35,7 +35,6 @@ public class TicketService {
   @Value("${ticket.debug:false}")
   private boolean debugActive;
   @Value("${ticket.digits:5}")
-  @Getter(AccessLevel.PUBLIC)
   private int digits;
 
   @Autowired
@@ -54,6 +53,7 @@ public class TicketService {
   @PostConstruct
   private void init() {
     this.printDebugHeader();
+    this.getRepository().setDigits(this.getDigits());
   }
 
   @SneakyThrows
@@ -71,14 +71,9 @@ public class TicketService {
     if (this.isDebugActive() && this.isReady()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(currentTicket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(currentTicket.bid()), getNumber(currentTicket.ask()),
-            this.getCurrentSpread());
+            currentTicket.spread());
       }
     }
-  }
-
-  public int getCurrentSpread() {
-    final Ticket currentTicket = this.getRepository().getCurrentTicket();
-    return (int) ((currentTicket.ask() - currentTicket.bid()) / (1 / (Math.pow(10, this.getDigits()))));
   }
 
   public @NotNull Ticket getTicket() {
@@ -90,8 +85,10 @@ public class TicketService {
   }
 
   @Synchronized
-  public void updateData(final @NotNull Ticket ticket) {
-    this.getRepository().update(ticket);
-    this.updateDebugFile(this.getRepository());
+  public void updateData(final @NotNull LocalDateTime dateTime, final double bid, final double ask) {
+    if (dateTime.isAfter(this.getRepository().getCurrentTicket().dateTime())) {
+      this.getRepository().update(dateTime, bid, ask);
+      this.updateDebugFile(this.getRepository());
+    }
   }
 }

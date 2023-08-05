@@ -1,49 +1,49 @@
 package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.Ticket;
-import br.eti.allandemiranda.forex.entities.TicketEntity;
 import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.Synchronized;
-import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @Getter(AccessLevel.PRIVATE)
-@Slf4j
+@Setter(AccessLevel.PRIVATE)
 public class TicketRepository {
 
-  private final TicketEntity data = new TicketEntity();
+  private LocalDateTime dateTime;
+  private double bid;
+  private double ask;
+  private int spread;
+  @Setter(AccessLevel.PUBLIC)
+  private int digits;
+
+  private static int getPoints(final double price, final int digits) {
+    return (int) ((price) / (1 / (Math.pow(10, digits))));
+  }
 
   @PostConstruct
   private void init() {
-    this.getData().setDateTime(LocalDateTime.MIN);
-    this.getData().setBid(0d);
-    this.getData().setAsk(0d);
+    this.setDateTime(LocalDateTime.MIN);
   }
 
   @Synchronized
-  public void update(final @NotNull Ticket ticket) {
-    final LocalDateTime ticketDateTime = this.getData().getDateTime();
-    if (ticketDateTime.isBefore(ticket.dateTime())) {
-        this.getData().setDateTime(ticket.dateTime());
-        if (ticket.bid() > 0d) {
-          this.getData().setBid(ticket.bid());
-        }
-        if (ticket.ask() > 0d) {
-          this.getData().setAsk(ticket.ask());
-        }
-    } else {
-      log.warn("DataTime {} from new ticket before or equal that current DataTime {}", ticket.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
-          ticketDateTime.format(DateTimeFormatter.ISO_DATE_TIME));
+  public void update(final @NotNull LocalDateTime dateTime, final double bid, final double ask) {
+    this.setDateTime(dateTime);
+    if (bid > 0d) {
+      this.setBid(bid);
     }
+    if (ask > 0d) {
+      this.setAsk(ask);
+    }
+    this.setSpread(getPoints((this.getAsk() - this.getBid()), this.getDigits()));
   }
 
   public @NotNull Ticket getCurrentTicket() {
-    return new Ticket(this.getData().getDateTime(), this.getData().getBid(), this.getData().getAsk());
+    return new Ticket(this.getDateTime(), this.getBid(), this.getAsk(), this.getSpread(), this.getDigits());
   }
 }

@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import lombok.experimental.Accessors;
 
 @Accessors(fluent = true)
-public record Candlestick(@NotNull LocalDateTime realDateTime, @NotNull LocalDateTime dateTime, double open, double high, double low, double close) implements
-    DefaultModel {
+public record Candlestick(@NotNull LocalDateTime realDateTime, @NotNull LocalDateTime dateTime, double open, double high, double low, double close) {
 
 }

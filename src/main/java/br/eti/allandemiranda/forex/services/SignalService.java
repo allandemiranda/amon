@@ -47,8 +47,8 @@ public class SignalService {
     this.updateDebugFile();
   }
 
-  public boolean getValidation() {
-    return this.getRepository().getValidation();
+  public boolean haveValidSignal() {
+    return this.getRepository().haveValidSignal();
   }
 
   public boolean isReady() {

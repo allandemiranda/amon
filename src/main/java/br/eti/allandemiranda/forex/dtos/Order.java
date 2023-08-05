@@ -8,6 +8,6 @@ import lombok.experimental.Accessors;
 
 @Accessors(fluent = true)
 public record Order(@NotNull LocalDateTime openDateTime, @NotNull LocalDateTime lastUpdate, @NotNull OrderStatus status, @NotNull OrderPosition position,
-                    double openPrice, double closePrice, double profit, double currentBalance) {
+                    double openPrice, double closePrice, int currentProfit, int currentBalance, int highProfit, int lowProfit) {
 
 }
