@@ -6,6 +6,7 @@ import br.eti.allandemiranda.forex.repositories.SignalRepository;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -38,8 +39,8 @@ public class SignalService {
     this.repository = repository;
   }
 
-  private static @NotNull String getNumber(final double value) {
-    return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
+  private static @NotNull String getNumber(final @NotNull BigDecimal value) {
+    return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
   public void addGlobalSignal(final @NotNull Signal signal) {

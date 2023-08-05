@@ -5,6 +5,7 @@ import br.eti.allandemiranda.forex.repositories.IndicatorRepository;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import java.io.File;
 import java.io.FileWriter;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -46,8 +47,8 @@ public class IndicatorService {
     this.repository = repository;
   }
 
-  private static @NotNull String getNumber(final double value) {
-    return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
+  private static @NotNull String getNumber(final @NotNull BigDecimal value) {
+    return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
   public void addIndicator(final @NotNull String name, final Indicator indicator) {
@@ -73,7 +74,7 @@ public class IndicatorService {
   }
 
   @SneakyThrows
-  public void updateDebugFile(final @NotNull Map<String, SignalTrend> signalsMap, final @NotNull LocalDateTime updateDateTime, final double price) {
+  public void updateDebugFile(final @NotNull Map<String, SignalTrend> signalsMap, final @NotNull LocalDateTime updateDateTime, final @NotNull BigDecimal price) {
     if (this.isDebugActive()) {
       if (Objects.isNull(this.getHeader())) {
         this.setHeader(Stream.concat(Stream.of(DATA_TIME, PRICE), this.getRepository().getNames().stream()).toArray(String[]::new));

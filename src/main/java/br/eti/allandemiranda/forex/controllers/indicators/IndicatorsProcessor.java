@@ -8,6 +8,7 @@ import br.eti.allandemiranda.forex.services.IndicatorService;
 import br.eti.allandemiranda.forex.services.SignalService;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import jakarta.annotation.PostConstruct;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -57,7 +58,7 @@ public class IndicatorsProcessor {
       this.setLastDataTime(currentDataTime);
       final Map<String, SignalTrend> currentSignals = this.getIndicatorService().processAndGetSignals();
       if (!currentSignals.isEmpty()) {
-        final double price = lastCandlestick.close();
+        final BigDecimal price = lastCandlestick.close();
         this.getIndicatorService().updateDebugFile(currentSignals, currentDataTime, price);
         final double signalsPower = currentSignals.values().stream().filter(signalTrend -> !SignalTrend.OUT.equals(signalTrend))
             .collect(Collectors.groupingBy(signalTrend -> signalTrend, Collectors.summingInt(signalTrend -> 1))).entrySet().parallelStream()

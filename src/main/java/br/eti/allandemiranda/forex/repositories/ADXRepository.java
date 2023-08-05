@@ -2,6 +2,7 @@ package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.ADX;
 import jakarta.annotation.PostConstruct;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -15,16 +16,16 @@ import org.springframework.stereotype.Repository;
 public class ADXRepository {
 
   private LocalDateTime dateTime;
-  private double value;
-  private double diPlus;
-  private double diMinus;
+  private BigDecimal value;
+  private BigDecimal diPlus;
+  private BigDecimal diMinus;
 
   @PostConstruct
   private void init() {
     this.setDateTime(LocalDateTime.MIN);
   }
 
-  public void add(final @NotNull LocalDateTime dateTime, final double adx, final double diPlus, final double diMinus) {
+  public void add(final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal adx, final @NotNull BigDecimal diPlus, final @NotNull BigDecimal diMinus) {
     if (dateTime.isAfter(this.getDateTime())) {
       this.setDateTime(dateTime);
       this.setValue(adx);

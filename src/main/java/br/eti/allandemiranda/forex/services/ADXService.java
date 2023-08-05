@@ -7,6 +7,7 @@ import br.eti.allandemiranda.forex.utils.SignalTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -40,11 +41,11 @@ public class ADXService {
     this.repository = repository;
   }
 
-  private static @NotNull String getNumber(final double value) {
-    return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
+  private static @NotNull String getNumber(final @NotNull BigDecimal value) {
+    return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
-  public void addADX(final @NotNull LocalDateTime candlestickTime, final double adx, final double diPlus, final double diMinus) {
+  public void addADX(final @NotNull LocalDateTime candlestickTime, final @NotNull BigDecimal adx, final @NotNull BigDecimal diPlus, final @NotNull BigDecimal diMinus) {
     this.getRepository().add(candlestickTime, adx, diPlus, diMinus);
   }
 
@@ -70,12 +71,13 @@ public class ADXService {
     }
   }
 
-  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull SignalTrend trend, final double price) {
+  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull SignalTrend trend, final @NotNull BigDecimal price) {
     this.updateDebugFile(realTime, this.getRepository(), trend, price);
   }
 
   @SneakyThrows
-  private void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull ADXRepository repository, final @NotNull SignalTrend trend, final double price) {
+  private void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull ADXRepository repository, final @NotNull SignalTrend trend,
+      final @NotNull BigDecimal price) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         final ADX adx = repository.getADX();

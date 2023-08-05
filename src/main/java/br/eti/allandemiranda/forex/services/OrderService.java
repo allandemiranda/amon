@@ -9,6 +9,7 @@ import br.eti.allandemiranda.forex.utils.OrderStatus;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -45,8 +46,8 @@ public class OrderService {
     this.repository = repository;
   }
 
-  private static @NotNull String getNumber(final double value) {
-    return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
+  private static @NotNull String getNumber(final @NotNull BigDecimal value) {
+    return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
   public @NotNull Order getLastOrder() {

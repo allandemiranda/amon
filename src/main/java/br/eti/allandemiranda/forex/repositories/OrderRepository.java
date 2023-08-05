@@ -5,6 +5,7 @@ import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.utils.OrderPosition;
 import br.eti.allandemiranda.forex.utils.OrderStatus;
 import jakarta.annotation.PostConstruct;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,15 +23,15 @@ public class OrderRepository {
   private LocalDateTime lastUpdate;
   private OrderStatus status;
   private OrderPosition position;
-  private double openPrice;
-  private double closePrice;
+  private BigDecimal openPrice;
+  private BigDecimal closePrice;
   private int currentProfit;
   private int currentBalance;
   private int highProfit;
   private int lowProfit;
 
-  private static int getPoints(final double price, final int digits) {
-    return (int) ((price) / (1 / (Math.pow(10, digits))));
+  private static int getPoints(final @NotNull BigDecimal price, final int digits) {
+    return price.multiply(BigDecimal.valueOf(Math.pow(10, digits))).intValue();
   }
 
   @PostConstruct
@@ -50,15 +51,15 @@ public class OrderRepository {
     final int digits = ticket.digits();
     this.setLastUpdate(ticket.dateTime());
     if (OrderPosition.BUY.equals(this.getPosition())) {
-      final double bid = ticket.bid();
-      this.setCurrentBalance(this.getCurrentBalance() + getPoints((bid - this.getClosePrice()), digits));
+      final BigDecimal bid = ticket.bid();
+      this.setCurrentBalance(this.getCurrentBalance() + getPoints(bid.subtract(this.getClosePrice()), digits));
       this.setClosePrice(bid);
-      this.setCurrentProfit(getPoints((bid - this.getOpenPrice()), digits));
+      this.setCurrentProfit(getPoints(bid.subtract(this.getOpenPrice()), digits));
     } else {
-      final double ask = ticket.ask();
-      this.setCurrentBalance(this.getCurrentBalance() + getPoints((this.getClosePrice() - ask), digits));
+      final BigDecimal ask = ticket.ask();
+      this.setCurrentBalance(this.getCurrentBalance() + getPoints(this.getClosePrice().subtract(ask), digits));
       this.setClosePrice(ask);
-      this.setCurrentProfit(getPoints((this.getOpenPrice() - ask), digits));
+      this.setCurrentProfit(getPoints(this.getOpenPrice().subtract(ask), digits));
     }
     if (this.getCurrentProfit() > this.getHighProfit()) {
       this.setHighProfit(this.getCurrentProfit());
@@ -71,8 +72,8 @@ public class OrderRepository {
   @Synchronized
   public void openPosition(final @NotNull Ticket ticket, final @NotNull OrderPosition position) {
     final LocalDateTime dateTime = ticket.dateTime();
-    final double ask = ticket.ask();
-    final double bid = ticket.bid();
+    final BigDecimal ask = ticket.ask();
+    final BigDecimal bid = ticket.bid();
     final int spread = ticket.spread();
     this.setOpenDateTime(dateTime);
     this.setLastUpdate(dateTime);

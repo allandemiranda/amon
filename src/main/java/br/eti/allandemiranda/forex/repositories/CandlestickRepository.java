@@ -2,6 +2,7 @@ package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.entities.CandlestickEntity;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.TreeSet;
 import lombok.AccessLevel;
@@ -26,7 +27,7 @@ public class CandlestickRepository {
   }
 
   @Synchronized
-  public void addCandlestick(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime dateTime, final double price) {
+  public void addCandlestick(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal price) {
     if (this.getDataBase().isEmpty() || dateTime.isAfter(this.getDataBase().last().getDateTime())) {
       final CandlestickEntity entity = new CandlestickEntity();
       entity.setOpen(realDataTime, dateTime, price);

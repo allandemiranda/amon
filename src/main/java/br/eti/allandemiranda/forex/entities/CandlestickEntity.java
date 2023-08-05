@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.Getter;
@@ -23,12 +24,12 @@ public class CandlestickEntity implements Serializable, Comparable<CandlestickEn
   @Id
   @Setter
   private LocalDateTime dateTime;
-  private double open;
-  private double high;
-  private double low;
-  private double close;
+  private BigDecimal open;
+  private BigDecimal high;
+  private BigDecimal low;
+  private BigDecimal close;
 
-  public void setOpen(final @NotNull LocalDateTime realDateTime, final @NotNull LocalDateTime dateTime, final double open) {
+  public void setOpen(final @NotNull LocalDateTime realDateTime, final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal open) {
     this.realDateTime = realDateTime;
     this.dateTime = dateTime;
     this.open = open;
@@ -37,12 +38,12 @@ public class CandlestickEntity implements Serializable, Comparable<CandlestickEn
     this.close = open;
   }
 
-  public void setClose(final @NotNull LocalDateTime realDateTime, final double close) {
+  public void setClose(final @NotNull LocalDateTime realDateTime, final @NotNull BigDecimal close) {
     this.realDateTime = realDateTime;
     this.close = close;
-    if (this.getClose() > this.getHigh()) {
+    if (this.getClose().compareTo(this.getHigh()) > 0) {
       this.high = close;
-    } else if (this.getClose() < this.getLow()) {
+    } else if (this.getClose().compareTo(this.getLow()) < 0) {
       this.low = close;
     }
   }

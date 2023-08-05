@@ -6,6 +6,7 @@ import br.eti.allandemiranda.forex.repositories.TicketRepository;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -42,8 +43,8 @@ public class TicketService {
     this.repository = repository;
   }
 
-  private static @NotNull String getNumber(final double value) {
-    return new DecimalFormat("#0.00000#").format(value).replace(".", ",");
+  private static @NotNull String getNumber(final @NotNull BigDecimal value) {
+    return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
   private @NotNull File getOutputFile() {
@@ -81,11 +82,12 @@ public class TicketService {
   }
 
   public boolean isReady() {
-    return this.getRepository().getCurrentTicket().bid() > 0d && this.getRepository().getCurrentTicket().ask() > 0d;
+    return this.getRepository().getCurrentTicket().bid().compareTo(BigDecimal.valueOf(0d)) > 0
+        && this.getRepository().getCurrentTicket().ask().compareTo(BigDecimal.valueOf(0d)) > 0;
   }
 
   @Synchronized
-  public void updateData(final @NotNull LocalDateTime dateTime, final double bid, final double ask) {
+  public void updateData(final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal bid, final @NotNull BigDecimal ask) {
     if (dateTime.isAfter(this.getRepository().getCurrentTicket().dateTime())) {
       this.getRepository().update(dateTime, bid, ask);
       this.updateDebugFile(this.getRepository());

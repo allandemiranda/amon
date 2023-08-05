@@ -5,6 +5,8 @@ import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.services.ADXService;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -32,43 +34,43 @@ public class AverageDirectionalMovementIndex implements Indicator {
     this.candlestickService = candlestickService;
   }
 
-  private static double @NotNull [] getDx(final Candlestick @NotNull [] chart) {
-    final double tr = IntStream.range(1, chart.length).parallel().mapToDouble(i -> {
+  private static BigDecimal @NotNull [] getDx(final Candlestick @NotNull [] chart) {
+    final BigDecimal tr = IntStream.range(1, chart.length).parallel().mapToObj(i -> {
       final Candlestick candlestick = chart[i];
       final Candlestick lastCandlestick = chart[i - 1];
-      final double pOne = Math.abs(candlestick.high() - lastCandlestick.close());
-      final double pTwo = Math.abs(candlestick.low() - lastCandlestick.close());
-      final double pThree = candlestick.high() - candlestick.low();
-      return Math.max(Math.max(pOne, pTwo), pThree);
-    }).sum();
-    final double dmPlus = IntStream.range(1, chart.length).parallel().mapToDouble(i -> {
+      final BigDecimal pOne = candlestick.high().subtract(lastCandlestick.close()).abs();
+      final BigDecimal pTwo = candlestick.low().subtract(lastCandlestick.close()).abs();
+      final BigDecimal pThree = candlestick.high().subtract(candlestick.low());
+      return pOne.max(pTwo).max(pThree);
+    }).reduce(BigDecimal.valueOf(0d), BigDecimal::add);
+    final BigDecimal dmPlus = IntStream.range(1, chart.length).parallel().mapToObj(i -> {
       final Candlestick candlestick = chart[i];
       final Candlestick lastCandlestick = chart[i - 1];
-      final double highValue = candlestick.high() - lastCandlestick.high();
-      final double lowValue = lastCandlestick.low() - candlestick.low();
-      if (highValue > lowValue) {
-        return Math.max(highValue, 0d);
+      final BigDecimal highValue = candlestick.high().subtract(lastCandlestick.high());
+      final BigDecimal lowValue = lastCandlestick.low().subtract(candlestick.low());
+      if (highValue.compareTo(lowValue) > 0) {
+        return highValue.max(BigDecimal.valueOf(0d));
       } else {
-        return 0d;
+        return BigDecimal.valueOf(0d);
       }
-    }).sum();
-    final double dmMinus = IntStream.range(1, chart.length).parallel().mapToDouble(i -> {
+    }).reduce(BigDecimal.valueOf(0d), BigDecimal::add);
+    final BigDecimal dmMinus = IntStream.range(1, chart.length).parallel().mapToObj(i -> {
       final Candlestick candlestick = chart[i];
       final Candlestick lastCandlestick = chart[i - 1];
-      final double highValue = candlestick.high() - lastCandlestick.high();
-      final double lowValue = lastCandlestick.low() - candlestick.low();
-      if (lowValue > highValue) {
-        return Math.max(lowValue, 0d);
+      final BigDecimal highValue = candlestick.high().subtract(lastCandlestick.high());
+      final BigDecimal lowValue = lastCandlestick.low().subtract(candlestick.low());
+      if (lowValue.compareTo(highValue) > 0) {
+        return lowValue.max(BigDecimal.valueOf(0d));
       } else {
-        return 0d;
+        return BigDecimal.valueOf(0d);
       }
-    }).sum();
-    final double diPlus = 100 * (dmPlus / tr);
-    final double diMinus = 100 * (dmMinus / tr);
-    final double diDiff = Math.abs(diPlus - diMinus);
-    final double diSum = diPlus + diMinus;
-    final double dx = 100 * (diDiff / diSum);
-    return new double[]{dx, diPlus, diMinus};
+    }).reduce(BigDecimal.valueOf(0d), BigDecimal::add);
+    final BigDecimal diPlus = dmPlus.divide(tr, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
+    final BigDecimal diMinus = dmMinus.divide(tr, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
+    final BigDecimal diDiff = diPlus.subtract(diMinus).abs();
+    final BigDecimal diSum = diPlus.add(diMinus);
+    final BigDecimal dx = diDiff.divide(diSum, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
+    return new BigDecimal[]{dx, diPlus, diMinus};
   }
 
   @Override
@@ -76,13 +78,14 @@ public class AverageDirectionalMovementIndex implements Indicator {
   public boolean run() {
     if (this.getCandlestickService().isReady()) {
       final Candlestick[] chart = this.getCandlestickService().getCandlesticks(this.getPeriod() * 2);
-      final double[][] adxs = IntStream.range(0, this.getPeriod()).mapToObj(i -> {
+      final BigDecimal[][] adxs = IntStream.range(0, this.getPeriod()).mapToObj(i -> {
         final Candlestick[] tmp = Arrays.stream(chart, i, this.getPeriod() + i + 1).toArray(Candlestick[]::new);
         return getDx(tmp);
-      }).toArray(double[][]::new);
-      final double adxValue = Arrays.stream(adxs).mapToDouble(value -> value[0]).sum() / adxs.length;
-      final double diPlus = adxs[adxs.length - 1][1];
-      final double diMinus = adxs[adxs.length - 1][2];
+      }).toArray(BigDecimal[][]::new);
+      final BigDecimal adxValue = Arrays.stream(adxs).map(value -> value[0]).reduce(BigDecimal.valueOf(0d), BigDecimal::add)
+          .divide(BigDecimal.valueOf(adxs.length), RoundingMode.DOWN);
+      final BigDecimal diPlus = adxs[adxs.length - 1][1];
+      final BigDecimal diMinus = adxs[adxs.length - 1][2];
       this.adxService.addADX(this.getCandlestickService().getLastCandlestick().realDateTime(), adxValue, diPlus, diMinus);
       return true;
     } else {
@@ -97,16 +100,18 @@ public class AverageDirectionalMovementIndex implements Indicator {
       return SignalTrend.OUT;
     } else {
       final LocalDateTime realTime = this.getCandlestickService().getLastCandlestick().realDateTime();
-      final double price = this.getCandlestickService().getLastCandlestick().close();
-      if (this.getAdxService().getADX().diPlus() == this.getAdxService().getADX().diMinus() || this.getAdxService().getADX().value() < 50d) {
+      final BigDecimal price = this.getCandlestickService().getLastCandlestick().close();
+      if (this.getAdxService().getADX().diPlus().compareTo(this.getAdxService().getADX().diMinus()) == 0
+          || this.getAdxService().getADX().value().compareTo(BigDecimal.valueOf(50d)) < 0) {
         this.getAdxService().updateDebugFile(realTime, SignalTrend.NEUTRAL, price);
         return SignalTrend.NEUTRAL;
-      } else if (this.getAdxService().getADX().value() < 75) {
-        final SignalTrend trend = this.getAdxService().getADX().diPlus() > this.getAdxService().getADX().diMinus() ? SignalTrend.BUY : SignalTrend.SELL;
+      } else if (this.getAdxService().getADX().value().compareTo(BigDecimal.valueOf(75d)) < 0) {
+        final SignalTrend trend = this.getAdxService().getADX().diPlus().compareTo(this.getAdxService().getADX().diMinus()) > 0 ? SignalTrend.BUY : SignalTrend.SELL;
         this.getAdxService().updateDebugFile(realTime, trend, price);
         return trend;
       } else {
-        final SignalTrend trend = this.getAdxService().getADX().diPlus() > this.getAdxService().getADX().diMinus() ? SignalTrend.STRONG_BUY : SignalTrend.STRONG_SELL;
+        final SignalTrend trend =
+            this.getAdxService().getADX().diPlus().compareTo(this.getAdxService().getADX().diMinus()) > 0 ? SignalTrend.STRONG_BUY : SignalTrend.STRONG_SELL;
         this.getAdxService().updateDebugFile(realTime, trend, price);
         return trend;
       }

@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.Getter;
@@ -24,7 +25,7 @@ public class SignalEntity implements Serializable, Comparable<SignalEntity> {
   @Id
   private LocalDateTime dateTime;
   private SignalTrend trend;
-  private double price;
+  private BigDecimal price;
 
   @Override
   public boolean equals(final Object o) {
