@@ -122,8 +122,8 @@ public class OrderService {
     if (!order.lastUpdate().equals(LocalDateTime.MIN)) {
       try (final FileWriter fileWriter = new FileWriter(file, true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastUpdate().format(DateTimeFormatter.ISO_DATE_TIME), order.status(),
-            order.position(), getNumber(order.openPrice()), getNumber(order.closePrice()), order.currentProfit(), order.currentBalance(), order.highProfit(),
-            order.lowProfit());
+            order.position(), getNumber(order.openPrice()), getNumber(order.closePrice()), order.highProfit(), order.lowProfit(), order.currentProfit(),
+            order.currentBalance());
       }
     }
   }

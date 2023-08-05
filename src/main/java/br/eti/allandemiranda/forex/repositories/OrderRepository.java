@@ -25,10 +25,10 @@ public class OrderRepository {
   private OrderPosition position;
   private BigDecimal openPrice;
   private BigDecimal closePrice;
-  private int currentProfit;
-  private int currentBalance;
   private int highProfit;
   private int lowProfit;
+  private int currentProfit;
+  private int currentBalance;
 
   private static int getPoints(final @NotNull BigDecimal price, final int digits) {
     return price.multiply(BigDecimal.valueOf(Math.pow(10, digits))).intValue();
@@ -42,8 +42,8 @@ public class OrderRepository {
   }
 
   public @NotNull Order getLastOrder() {
-    return new Order(this.getOpenDateTime(), this.getLastUpdate(), this.getStatus(), this.getPosition(), this.getOpenPrice(), this.getClosePrice(),
-        this.getCurrentProfit(), this.getCurrentBalance(), this.getHighProfit(), this.getLowProfit());
+    return new Order(this.getOpenDateTime(), this.getLastUpdate(), this.getStatus(), this.getPosition(), this.getOpenPrice(), this.getClosePrice(), this.getHighProfit(),
+        this.getLowProfit(), this.getCurrentProfit(), this.getCurrentBalance());
   }
 
   @Synchronized
