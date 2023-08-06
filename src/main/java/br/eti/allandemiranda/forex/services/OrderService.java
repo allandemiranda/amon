@@ -30,7 +30,6 @@ public class OrderService {
 
   private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
   private static final String OUTPUT_FILE_NAME = "orders.csv";
-  private static final String OUTPUT_FILE_NAME_SHORT = "orders_short.csv";
 
   private final OrderRepository repository;
 
@@ -38,8 +37,6 @@ public class OrderService {
   private File outputFolder;
   @Value("${order.debug:false}")
   private boolean debugActive;
-  @Value("${order.debug.short:false}")
-  private boolean debugActiveShort;
 
   @Autowired
   protected OrderService(final OrderRepository repository) {
@@ -60,10 +57,10 @@ public class OrderService {
       final double currentProfit = this.getRepository().getLastOrder().currentProfit();
       if (currentProfit >= takeProfit) {
         this.closePosition(OrderStatus.CLOSE_TP);
-        this.updateDebugShortFile();
+        this.updateDebugFile();
       } else if (currentProfit <= Math.negateExact(stopLoss)) {
         this.closePosition(OrderStatus.CLOSE_SL);
-        this.updateDebugShortFile();
+        this.updateDebugFile();
       }
     }
     return this.getRepository().getLastOrder().status();
@@ -81,8 +78,8 @@ public class OrderService {
     }
   }
 
-  private @NotNull File getOutputFile(final String filename) {
-    return new File(this.getOutputFolder(), filename);
+  private @NotNull File getOutputFile() {
+    return new File(this.getOutputFolder(), OrderService.OUTPUT_FILE_NAME);
   }
 
   @PostConstruct
@@ -93,12 +90,7 @@ public class OrderService {
   @SneakyThrows
   private void printDebugHeader() {
     if (this.isDebugActive()) {
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(OUTPUT_FILE_NAME)); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(Arrays.stream(OrderHeader.values()).map(Enum::toString).toArray());
-      }
-    }
-    if (this.isDebugActiveShort()) {
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(OUTPUT_FILE_NAME_SHORT)); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(Arrays.stream(OrderHeader.values()).map(Enum::toString).toArray());
       }
     }
@@ -106,13 +98,7 @@ public class OrderService {
 
   public void updateDebugFile() {
     if (this.isDebugActive()) {
-      this.debugUpdate(this.getOutputFile(OUTPUT_FILE_NAME));
-    }
-  }
-
-  public void updateDebugShortFile() {
-    if (this.isDebugActiveShort()) {
-      this.debugUpdate(this.getOutputFile(OUTPUT_FILE_NAME_SHORT));
+      this.debugUpdate(this.getOutputFile());
     }
   }
 

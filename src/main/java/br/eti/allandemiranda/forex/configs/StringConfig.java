@@ -1,7 +1,6 @@
 package br.eti.allandemiranda.forex.configs;
 
 import br.eti.allandemiranda.forex.controllers.GeneratorProcessor;
-import br.eti.allandemiranda.forex.headers.TicketHeader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -30,12 +29,11 @@ public class StringConfig {
   @Bean
   void processor() {
     // MOCKED
-    try (final FileReader fileReader = new FileReader(inputFile); final CSVParser csvParser = CSVFormat.TDF.builder().setHeader(TicketHeader.class).setSkipHeaderRecord(true)
-        .build().parse(fileReader)) {
+    try (final FileReader fileReader = new FileReader(inputFile); final CSVParser csvParser = CSVFormat.TDF.builder().build()
+        .parse(fileReader)) {
       StreamSupport.stream(csvParser.spliterator(), false)
-//          .skip(5500)
-          .limit(4000000)
-          .forEach(csvRecord -> {
+          .skip(1)
+          .limit(4000000).forEach(csvRecord -> {
             String date = csvRecord.get(0);
             String time = csvRecord.get(1);
             String dataTime = date.replace(".", "-").concat("T").concat(time);
