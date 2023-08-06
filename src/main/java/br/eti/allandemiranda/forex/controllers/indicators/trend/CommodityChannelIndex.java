@@ -23,7 +23,7 @@ public class CommodityChannelIndex implements Indicator {
   private final CciService cciService;
   private final CandlestickService candlestickService;
 
-  @Value("${cci.parameters.period}")
+  @Value("${cci.parameters.period:14}")
   private int period;
 
   @Autowired
@@ -39,8 +39,8 @@ public class CommodityChannelIndex implements Indicator {
       final BigDecimal[] tps = Arrays.stream(chart)
           .map(candlestick -> candlestick.high().add(candlestick.low()).add(candlestick.close()).divide(BigDecimal.valueOf(3), 5, RoundingMode.DOWN))
           .toArray(BigDecimal[]::new);
-      final BigDecimal smaTp = Arrays.stream(tps).reduce(BigDecimal.valueOf(0d), BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriod()), 5, RoundingMode.DOWN);
-      final BigDecimal dayM = Arrays.stream(tps).reduce(BigDecimal.valueOf(0d), (subtotal, element) -> smaTp.subtract(element).abs().add(subtotal))
+      final BigDecimal smaTp = Arrays.stream(tps).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriod()), 5, RoundingMode.DOWN);
+      final BigDecimal dayM = Arrays.stream(tps).reduce(BigDecimal.ZERO, (subtotal, element) -> smaTp.subtract(element).abs().add(subtotal))
           .divide(BigDecimal.valueOf(this.getPeriod()), 5, RoundingMode.DOWN);
       final BigDecimal cci = tps[tps.length - 1].subtract(smaTp).divide(BigDecimal.valueOf(0.015).multiply(dayM), 5, RoundingMode.DOWN);
       this.getCciService().addCci(this.getCandlestickService().getLastCandlestick().realDateTime(), cci);

@@ -25,7 +25,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
   private final AdxService adxService;
   private final CandlestickService candlestickService;
 
-  @Value("${adx.parameters.period}")
+  @Value("${adx.parameters.period:14}")
   private int period;
 
   @Autowired
@@ -42,29 +42,29 @@ public class AverageDirectionalMovementIndex implements Indicator {
       final BigDecimal pTwo = candlestick.low().subtract(lastCandlestick.close()).abs();
       final BigDecimal pThree = candlestick.high().subtract(candlestick.low());
       return pOne.max(pTwo).max(pThree);
-    }).reduce(BigDecimal.valueOf(0d), BigDecimal::add);
+    }).reduce(BigDecimal.ZERO, BigDecimal::add);
     final BigDecimal dmPlus = IntStream.range(1, chart.length).parallel().mapToObj(i -> {
       final Candlestick candlestick = chart[i];
       final Candlestick lastCandlestick = chart[i - 1];
       final BigDecimal highValue = candlestick.high().subtract(lastCandlestick.high());
       final BigDecimal lowValue = lastCandlestick.low().subtract(candlestick.low());
       if (highValue.compareTo(lowValue) > 0) {
-        return highValue.max(BigDecimal.valueOf(0d));
+        return highValue.max(BigDecimal.ZERO);
       } else {
-        return BigDecimal.valueOf(0d);
+        return BigDecimal.ZERO;
       }
-    }).reduce(BigDecimal.valueOf(0d), BigDecimal::add);
+    }).reduce(BigDecimal.ZERO, BigDecimal::add);
     final BigDecimal dmMinus = IntStream.range(1, chart.length).parallel().mapToObj(i -> {
       final Candlestick candlestick = chart[i];
       final Candlestick lastCandlestick = chart[i - 1];
       final BigDecimal highValue = candlestick.high().subtract(lastCandlestick.high());
       final BigDecimal lowValue = lastCandlestick.low().subtract(candlestick.low());
       if (lowValue.compareTo(highValue) > 0) {
-        return lowValue.max(BigDecimal.valueOf(0d));
+        return lowValue.max(BigDecimal.ZERO);
       } else {
-        return BigDecimal.valueOf(0d);
+        return BigDecimal.ZERO;
       }
-    }).reduce(BigDecimal.valueOf(0d), BigDecimal::add);
+    }).reduce(BigDecimal.ZERO, BigDecimal::add);
     final BigDecimal diPlus = dmPlus.divide(tr, 5, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
     final BigDecimal diMinus = dmMinus.divide(tr, 5, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
     final BigDecimal diDiff = diPlus.subtract(diMinus).abs();
@@ -82,7 +82,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
         final Candlestick[] tmp = Arrays.stream(chart, i, this.getPeriod() + i + 1).toArray(Candlestick[]::new);
         return getDx(tmp);
       }).toArray(BigDecimal[][]::new);
-      final BigDecimal adxValue = Arrays.stream(adxs).map(value -> value[0]).reduce(BigDecimal.valueOf(0d), BigDecimal::add)
+      final BigDecimal adxValue = Arrays.stream(adxs).map(value -> value[0]).reduce(BigDecimal.ZERO, BigDecimal::add)
           .divide(BigDecimal.valueOf(adxs.length), 5, RoundingMode.DOWN);
       final BigDecimal diPlus = adxs[adxs.length - 1][1];
       final BigDecimal diMinus = adxs[adxs.length - 1][2];

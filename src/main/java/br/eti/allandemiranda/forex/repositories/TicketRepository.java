@@ -38,10 +38,10 @@ public class TicketRepository {
   @Synchronized
   public void update(final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal bid, final @NotNull BigDecimal ask) {
     this.setDateTime(dateTime);
-    if (bid.compareTo(BigDecimal.valueOf(0d)) > 0) {
+    if (bid.compareTo(BigDecimal.ZERO) > 0) {
       this.setBid(bid.setScale(this.getDigits(), RoundingMode.DOWN));
     }
-    if (ask.compareTo(BigDecimal.valueOf(0d)) > 0) {
+    if (ask.compareTo(BigDecimal.ZERO) > 0) {
       this.setAsk(ask.setScale(this.getDigits(), RoundingMode.DOWN));
     }
     this.setSpread(getPoints((this.getAsk().subtract(this.getBid())), this.getDigits()));

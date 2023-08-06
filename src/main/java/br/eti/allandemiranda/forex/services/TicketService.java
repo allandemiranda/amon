@@ -37,8 +37,7 @@ public class TicketService {
   }
 
   public boolean isReady() {
-    return this.getRepository().getCurrentTicket().bid().compareTo(BigDecimal.valueOf(0d)) > 0
-        && this.getRepository().getCurrentTicket().ask().compareTo(BigDecimal.valueOf(0d)) > 0;
+    return this.getRepository().getCurrentTicket().bid().compareTo(BigDecimal.ZERO) > 0 && this.getRepository().getCurrentTicket().ask().compareTo(BigDecimal.ZERO) > 0;
   }
 
   @Synchronized

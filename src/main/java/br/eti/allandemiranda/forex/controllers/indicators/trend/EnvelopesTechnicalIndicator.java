@@ -52,9 +52,9 @@ public class EnvelopesTechnicalIndicator implements Indicator {
     if (this.getCandlestickService().isReady()) {
       if (this.getShift() == 0) {
         final BigDecimal sma = Arrays.stream(this.getCandlestickService().getCandlesticks(this.getPeriod())).map(Candlestick::close)
-            .reduce(BigDecimal.valueOf(0d), BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriod()), 5, RoundingMode.DOWN);
-        final BigDecimal upper = (BigDecimal.valueOf(1).add(this.getPercent())).multiply(sma);
-        final BigDecimal lower = (BigDecimal.valueOf(1).subtract(this.getPercent())).multiply(sma);
+            .reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriod()), 5, RoundingMode.DOWN);
+        final BigDecimal upper = (BigDecimal.ONE.add(this.getPercent())).multiply(sma);
+        final BigDecimal lower = (BigDecimal.ONE.subtract(this.getPercent())).multiply(sma);
         this.getEnvelopeService().addEnvelopes(this.getCandlestickService().getLastCandlestick().realDateTime(), upper, lower);
         return true;
       } else {

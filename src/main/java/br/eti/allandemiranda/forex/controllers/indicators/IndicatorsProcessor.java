@@ -3,6 +3,7 @@ package br.eti.allandemiranda.forex.controllers.indicators;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.AverageDirectionalMovementIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.CommodityChannelIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.EnvelopesTechnicalIndicator;
+import br.eti.allandemiranda.forex.controllers.indicators.trend.RelativeStrengthIndex;
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.Signal;
 import br.eti.allandemiranda.forex.services.CandlestickService;
@@ -30,10 +31,12 @@ public class IndicatorsProcessor {
   private static final String ADX = "ADX";
   private static final String ENVELOPES = "Envelopes";
   private static final String CCI = "CCI";
+  private static final String RSI = "RSI";
 
   private final AverageDirectionalMovementIndex averageDirectionalMovementIndex;
   private final EnvelopesTechnicalIndicator envelopesTechnicalIndicator;
   private final CommodityChannelIndex commodityChannelIndex;
+  private final RelativeStrengthIndex relativeStrengthIndex;
   private final IndicatorService indicatorService;
   private final SignalService signalService;
   private final CandlestickService candlestickService;
@@ -45,11 +48,12 @@ public class IndicatorsProcessor {
 
   @Autowired
   protected IndicatorsProcessor(final AverageDirectionalMovementIndex averageDirectionalMovementIndex, final EnvelopesTechnicalIndicator envelopesTechnicalIndicator,
-      final CommodityChannelIndex commodityChannelIndex, final IndicatorService indicatorService, final SignalService signalService,
-      final CandlestickService candlestickService) {
+      final CommodityChannelIndex commodityChannelIndex, final RelativeStrengthIndex relativeStrengthIndex, final IndicatorService indicatorService,
+      final SignalService signalService, final CandlestickService candlestickService) {
     this.averageDirectionalMovementIndex = averageDirectionalMovementIndex;
     this.envelopesTechnicalIndicator = envelopesTechnicalIndicator;
     this.commodityChannelIndex = commodityChannelIndex;
+    this.relativeStrengthIndex = relativeStrengthIndex;
     this.indicatorService = indicatorService;
     this.signalService = signalService;
     this.candlestickService = candlestickService;
@@ -60,6 +64,7 @@ public class IndicatorsProcessor {
     this.getIndicatorService().addIndicator(ADX, this.getAverageDirectionalMovementIndex());
     this.getIndicatorService().addIndicator(ENVELOPES, this.getEnvelopesTechnicalIndicator());
     this.getIndicatorService().addIndicator(CCI, this.getCommodityChannelIndex());
+    this.getIndicatorService().addIndicator(RSI, this.getRelativeStrengthIndex());
   }
 
   @Synchronized
