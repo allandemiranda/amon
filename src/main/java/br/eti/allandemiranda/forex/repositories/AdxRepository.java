@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 @Getter(AccessLevel.PRIVATE)
 @Setter(AccessLevel.PRIVATE)
-public class ADXRepository {
+public class AdxRepository {
 
   private LocalDateTime dateTime;
   private BigDecimal value;

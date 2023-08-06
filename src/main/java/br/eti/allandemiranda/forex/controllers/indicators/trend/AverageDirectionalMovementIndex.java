@@ -2,7 +2,7 @@ package br.eti.allandemiranda.forex.controllers.indicators.trend;
 
 import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
 import br.eti.allandemiranda.forex.dtos.Candlestick;
-import br.eti.allandemiranda.forex.services.ADXService;
+import br.eti.allandemiranda.forex.services.AdxService;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import java.math.BigDecimal;
@@ -22,14 +22,14 @@ import org.springframework.stereotype.Controller;
 @Getter(AccessLevel.PRIVATE)
 public class AverageDirectionalMovementIndex implements Indicator {
 
-  private final ADXService adxService;
+  private final AdxService adxService;
   private final CandlestickService candlestickService;
 
   @Value("${adx.parameters.period}")
   private int period;
 
   @Autowired
-  protected AverageDirectionalMovementIndex(final ADXService adxService, final CandlestickService candlestickService) {
+  protected AverageDirectionalMovementIndex(final AdxService adxService, final CandlestickService candlestickService) {
     this.adxService = adxService;
     this.candlestickService = candlestickService;
   }
@@ -86,7 +86,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
           .divide(BigDecimal.valueOf(adxs.length), 5, RoundingMode.DOWN);
       final BigDecimal diPlus = adxs[adxs.length - 1][1];
       final BigDecimal diMinus = adxs[adxs.length - 1][2];
-      this.adxService.addADX(this.getCandlestickService().getLastCandlestick().realDateTime(), adxValue, diPlus, diMinus);
+      this.adxService.addAdx(this.getCandlestickService().getLastCandlestick().realDateTime(), adxValue, diPlus, diMinus);
       return true;
     } else {
       return false;
@@ -96,22 +96,22 @@ public class AverageDirectionalMovementIndex implements Indicator {
   @Override
   @Synchronized
   public @NotNull SignalTrend getCurrentSignal() {
-    if (this.getAdxService().getADX().dateTime().equals(LocalDateTime.MIN)) {
+    if (this.getAdxService().getAdx().dateTime().equals(LocalDateTime.MIN)) {
       return SignalTrend.OUT;
     } else {
       final LocalDateTime realTime = this.getCandlestickService().getLastCandlestick().realDateTime();
       final BigDecimal price = this.getCandlestickService().getLastCandlestick().close();
-      if (this.getAdxService().getADX().diPlus().compareTo(this.getAdxService().getADX().diMinus()) == 0
-          || this.getAdxService().getADX().value().compareTo(BigDecimal.valueOf(50d)) < 0) {
+      if (this.getAdxService().getAdx().diPlus().compareTo(this.getAdxService().getAdx().diMinus()) == 0
+          || this.getAdxService().getAdx().value().compareTo(BigDecimal.valueOf(50d)) < 0) {
         this.getAdxService().updateDebugFile(realTime, SignalTrend.NEUTRAL, price);
         return SignalTrend.NEUTRAL;
-      } else if (this.getAdxService().getADX().value().compareTo(BigDecimal.valueOf(75d)) < 0) {
-        final SignalTrend trend = this.getAdxService().getADX().diPlus().compareTo(this.getAdxService().getADX().diMinus()) > 0 ? SignalTrend.BUY : SignalTrend.SELL;
+      } else if (this.getAdxService().getAdx().value().compareTo(BigDecimal.valueOf(75d)) < 0) {
+        final SignalTrend trend = this.getAdxService().getAdx().diPlus().compareTo(this.getAdxService().getAdx().diMinus()) > 0 ? SignalTrend.BUY : SignalTrend.SELL;
         this.getAdxService().updateDebugFile(realTime, trend, price);
         return trend;
       } else {
         final SignalTrend trend =
-            this.getAdxService().getADX().diPlus().compareTo(this.getAdxService().getADX().diMinus()) > 0 ? SignalTrend.STRONG_BUY : SignalTrend.STRONG_SELL;
+            this.getAdxService().getAdx().diPlus().compareTo(this.getAdxService().getAdx().diMinus()) > 0 ? SignalTrend.STRONG_BUY : SignalTrend.STRONG_SELL;
         this.getAdxService().updateDebugFile(realTime, trend, price);
         return trend;
       }

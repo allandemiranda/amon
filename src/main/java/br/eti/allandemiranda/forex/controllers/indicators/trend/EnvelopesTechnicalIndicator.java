@@ -68,15 +68,20 @@ public class EnvelopesTechnicalIndicator implements Indicator {
   public @NotNull SignalTrend getCurrentSignal() {
     if (this.getEnvelopeService().getEnvelopes().dateTime().equals(LocalDateTime.MIN)) {
       return SignalTrend.OUT;
-    } else if(this.getCandlestickService().getLastCandlestick().close().compareTo(this.getEnvelopeService().getEnvelopes().upperBand()) >= 0) {
-      this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getLastCandlestick().realDateTime(), SignalTrend.SELL,this.getCandlestickService().getLastCandlestick().close());
-      return SignalTrend.SELL;
-    } else if(this.getCandlestickService().getLastCandlestick().close().compareTo(this.getEnvelopeService().getEnvelopes().lowerBand()) <= 0) {
-      this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getLastCandlestick().realDateTime(), SignalTrend.BUY,this.getCandlestickService().getLastCandlestick().close());
-      return SignalTrend.BUY;
     } else {
-      this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getLastCandlestick().realDateTime(), SignalTrend.NEUTRAL,this.getCandlestickService().getLastCandlestick().close());
-      return SignalTrend.NEUTRAL;
+      final Candlestick lastCandlestick = this.getCandlestickService().getLastCandlestick();
+      final BigDecimal closePrice = lastCandlestick.close();
+      final LocalDateTime realTime = lastCandlestick.realDateTime();
+      if (closePrice.compareTo(this.getEnvelopeService().getEnvelopes().upperBand()) >= 0) {
+        this.getEnvelopeService().updateDebugFile(realTime, SignalTrend.SELL, closePrice);
+        return SignalTrend.SELL;
+      } else if (closePrice.compareTo(this.getEnvelopeService().getEnvelopes().lowerBand()) <= 0) {
+        this.getEnvelopeService().updateDebugFile(realTime, SignalTrend.BUY, closePrice);
+        return SignalTrend.BUY;
+      } else {
+        this.getEnvelopeService().updateDebugFile(realTime, SignalTrend.NEUTRAL, closePrice);
+        return SignalTrend.NEUTRAL;
+      }
     }
   }
 }
