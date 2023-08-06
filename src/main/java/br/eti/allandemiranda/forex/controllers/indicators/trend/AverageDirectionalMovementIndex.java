@@ -65,11 +65,11 @@ public class AverageDirectionalMovementIndex implements Indicator {
         return BigDecimal.valueOf(0d);
       }
     }).reduce(BigDecimal.valueOf(0d), BigDecimal::add);
-    final BigDecimal diPlus = dmPlus.divide(tr, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
-    final BigDecimal diMinus = dmMinus.divide(tr, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
+    final BigDecimal diPlus = dmPlus.divide(tr, 5, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
+    final BigDecimal diMinus = dmMinus.divide(tr, 5, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
     final BigDecimal diDiff = diPlus.subtract(diMinus).abs();
     final BigDecimal diSum = diPlus.add(diMinus);
-    final BigDecimal dx = diDiff.divide(diSum, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
+    final BigDecimal dx = diDiff.divide(diSum, 5, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
     return new BigDecimal[]{dx, diPlus, diMinus};
   }
 
@@ -83,7 +83,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
         return getDx(tmp);
       }).toArray(BigDecimal[][]::new);
       final BigDecimal adxValue = Arrays.stream(adxs).map(value -> value[0]).reduce(BigDecimal.valueOf(0d), BigDecimal::add)
-          .divide(BigDecimal.valueOf(adxs.length), RoundingMode.DOWN);
+          .divide(BigDecimal.valueOf(adxs.length), 5, RoundingMode.DOWN);
       final BigDecimal diPlus = adxs[adxs.length - 1][1];
       final BigDecimal diMinus = adxs[adxs.length - 1][2];
       this.adxService.addADX(this.getCandlestickService().getLastCandlestick().realDateTime(), adxValue, diPlus, diMinus);

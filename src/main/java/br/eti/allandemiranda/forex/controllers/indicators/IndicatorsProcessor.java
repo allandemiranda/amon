@@ -1,6 +1,7 @@
 package br.eti.allandemiranda.forex.controllers.indicators;
 
 import br.eti.allandemiranda.forex.controllers.indicators.trend.AverageDirectionalMovementIndex;
+import br.eti.allandemiranda.forex.controllers.indicators.trend.EnvelopesTechnicalIndicator;
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.Signal;
 import br.eti.allandemiranda.forex.services.CandlestickService;
@@ -10,6 +11,7 @@ import br.eti.allandemiranda.forex.utils.SignalTrend;
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -25,8 +27,10 @@ import org.springframework.stereotype.Controller;
 public class IndicatorsProcessor {
 
   private static final String ADX = "ADX";
+  private static final String ENVELOPES = "Envelopes";
 
   private final AverageDirectionalMovementIndex averageDirectionalMovementIndex;
+  private final EnvelopesTechnicalIndicator envelopesTechnicalIndicator;
   private final IndicatorService indicatorService;
   private final SignalService signalService;
   private final CandlestickService candlestickService;
@@ -37,9 +41,10 @@ public class IndicatorsProcessor {
   private LocalDateTime lastDataTime = LocalDateTime.MIN;
 
   @Autowired
-  protected IndicatorsProcessor(final AverageDirectionalMovementIndex averageDirectionalMovementIndex, final IndicatorService indicatorService,
-      final SignalService signalService, final CandlestickService candlestickService) {
+  protected IndicatorsProcessor(final AverageDirectionalMovementIndex averageDirectionalMovementIndex, final EnvelopesTechnicalIndicator envelopesTechnicalIndicator,
+      final IndicatorService indicatorService, final SignalService signalService, final CandlestickService candlestickService) {
     this.averageDirectionalMovementIndex = averageDirectionalMovementIndex;
+    this.envelopesTechnicalIndicator = envelopesTechnicalIndicator;
     this.indicatorService = indicatorService;
     this.signalService = signalService;
     this.candlestickService = candlestickService;
@@ -48,6 +53,7 @@ public class IndicatorsProcessor {
   @PostConstruct
   public void init() {
     this.getIndicatorService().addIndicator(ADX, this.getAverageDirectionalMovementIndex());
+    this.getIndicatorService().addIndicator(ENVELOPES, this.getEnvelopesTechnicalIndicator());
   }
 
   @Synchronized
@@ -60,9 +66,10 @@ public class IndicatorsProcessor {
       if (!currentSignals.isEmpty()) {
         final BigDecimal price = lastCandlestick.close();
         this.getIndicatorService().updateDebugFile(currentSignals, currentDataTime, price);
-        final double signalsPower = currentSignals.values().stream().filter(signalTrend -> !SignalTrend.OUT.equals(signalTrend))
-            .collect(Collectors.groupingBy(signalTrend -> signalTrend, Collectors.summingInt(signalTrend -> 1))).entrySet().parallelStream()
-            .mapToInt(entry -> entry.getKey().power * entry.getValue()).sum() / (double) currentSignals.size();
+        final List<SignalTrend> collect = currentSignals.values().stream().filter(signalTrend -> !SignalTrend.OUT.equals(signalTrend)).toList();
+        final double signalsPower =
+            collect.stream().collect(Collectors.groupingBy(signalTrend -> signalTrend, Collectors.summingInt(signalTrend -> 1))).entrySet().parallelStream()
+                .mapToInt(entry -> entry.getKey().power * entry.getValue()).sum() / (double) collect.size();
         if (signalsPower < SignalTrend.SELL.power) {
           this.getSignalService().addGlobalSignal(new Signal(currentDataTime, SignalTrend.STRONG_SELL, price));
         } else if (signalsPower == SignalTrend.SELL.power) {

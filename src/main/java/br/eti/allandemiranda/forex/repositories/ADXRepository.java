@@ -34,7 +34,7 @@ public class ADXRepository {
     }
   }
 
-  public @NotNull ADX getADX() {
+  public @NotNull ADX get() {
     return new ADX(this.getDateTime(), this.getValue(), this.getDiPlus(), this.getDiMinus());
   }
 }
