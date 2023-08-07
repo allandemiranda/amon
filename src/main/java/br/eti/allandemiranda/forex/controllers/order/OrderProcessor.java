@@ -139,10 +139,10 @@ public class OrderProcessor {
             this.getOrderService().updateDebugFile();
           }
         }
-        case NEUTRAL -> {
-          this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
-          this.getOrderService().updateDebugFile();
-        }
+//        case NEUTRAL -> {
+//          this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+//          this.getOrderService().updateDebugFile();
+//        }
       }
     }
   }

@@ -1,8 +1,8 @@
 package br.eti.allandemiranda.forex.services;
 
-import br.eti.allandemiranda.forex.dtos.RSI;
-import br.eti.allandemiranda.forex.headers.RsiHeaders;
-import br.eti.allandemiranda.forex.repositories.RsiRepository;
+import br.eti.allandemiranda.forex.dtos.RVI;
+import br.eti.allandemiranda.forex.headers.RviHeaders;
+import br.eti.allandemiranda.forex.repositories.RviRepository;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
@@ -24,20 +24,20 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Getter(AccessLevel.PRIVATE)
-public class RsiService {
+public class RviService {
 
-  private static final String OUTPUT_FILE_NAME = "rsi.csv";
+  private static final String OUTPUT_FILE_NAME = "rvi.csv";
   private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
 
-  private final RsiRepository repository;
+  private final RviRepository repository;
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${rsi.debug:false}")
+  @Value("${rvi.debug:true}")
   private boolean debugActive;
 
   @Autowired
-  protected RsiService(final RsiRepository repository) {
+  protected RviService(final RviRepository repository) {
     this.repository = repository;
   }
 
@@ -45,11 +45,19 @@ public class RsiService {
     return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
-  public void addRsi(final @NotNull LocalDateTime dataTime, final @NotNull BigDecimal rsi) {
-    this.getRepository().add(dataTime, rsi);
+  public void addRvi(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime dataTime, final @NotNull BigDecimal rvi, final @NotNull BigDecimal signal) {
+    this.getRepository().add(realDataTime, dataTime, rvi, signal);
   }
 
-  public @NotNull RSI getRsi() {
+  public boolean isRead() {
+    return getRVIs().length >= 2;
+  }
+
+  public @NotNull RVI getLastRvi() {
+    return this.getRepository().getLast();
+  }
+
+  public RVI[] getRVIs() {
     return this.getRepository().get();
   }
 
@@ -66,7 +74,7 @@ public class RsiService {
   private void printDebugHeader() {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(Arrays.stream(RsiHeaders.values()).map(Enum::toString).toArray());
+        csvPrinter.printRecord(Arrays.stream(RviHeaders.values()).map(Enum::toString).toArray());
       }
     }
   }
@@ -75,10 +83,11 @@ public class RsiService {
   public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull SignalTrend trend, final @NotNull BigDecimal price) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        final RSI rsi = this.getRepository().get();
-        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), rsi.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(rsi.value()), trend,
+        final RVI rvi = this.getRepository().getLast();
+        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), rvi.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(rvi.value()), getNumber(rvi.signal()), trend,
             getNumber(price));
       }
     }
   }
+
 }

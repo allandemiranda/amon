@@ -1,7 +1,7 @@
 package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.CCI;
-import br.eti.allandemiranda.forex.headers.AdxHeaders;
+import br.eti.allandemiranda.forex.headers.CciHeaders;
 import br.eti.allandemiranda.forex.repositories.CciRepository;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import jakarta.annotation.PostConstruct;
@@ -66,7 +66,7 @@ public class CciService {
   private void printDebugHeader() {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(Arrays.stream(AdxHeaders.values()).map(Enum::toString).toArray());
+        csvPrinter.printRecord(Arrays.stream(CciHeaders.values()).map(Enum::toString).toArray());
       }
     }
   }
