@@ -27,21 +27,32 @@ public class CandlestickRepository {
   }
 
   @Synchronized
-  public void addCandlestick(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal price) {
-    if (this.getDataBase().isEmpty() || dateTime.isAfter(this.getDataBase().last().getDateTime())) {
-      final CandlestickEntity entity = new CandlestickEntity();
-      entity.setOpen(realDataTime, dateTime, price);
+  public void add(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime candlestickDateTime, final @NotNull BigDecimal price) {
+    final CandlestickEntity entity = new CandlestickEntity();
+    entity.setDateTime(candlestickDateTime);
+    if (this.getDataBase().contains(entity)) {
+      final CandlestickEntity older = this.getDataBase().first();
+      older.setRealDateTime(realDataTime);
+      older.setClose(price);
+      if (older.getClose().compareTo(older.getHigh()) > 0) {
+        older.setHigh(price);
+      } else if (older.getClose().compareTo(older.getLow()) < 0) {
+        older.setLow(price);
+      }
+    } else {
+      entity.setRealDateTime(realDataTime);
+      entity.setHigh(price);
+      entity.setLow(price);
+      entity.setOpen(price);
+      entity.setClose(price);
       this.getDataBase().add(entity);
       if (this.getDataBase().size() > this.getMemorySize()) {
-        final CandlestickEntity older = this.getDataBase().first();
-        this.getDataBase().remove(older);
+        this.getDataBase().pollLast();
       }
-    } else if (dateTime.equals(this.getDataBase().last().getDateTime())) {
-      this.getDataBase().last().setClose(realDataTime, price);
     }
   }
 
-  public Candlestick @NotNull [] getCandlesticks() {
+  public Candlestick @NotNull [] get() {
     return this.getDataBase().stream().map(this::toModel).toArray(Candlestick[]::new);
   }
 
@@ -49,7 +60,7 @@ public class CandlestickRepository {
     return new Candlestick(output.getRealDateTime(), output.getDateTime(), output.getOpen(), output.getHigh(), output.getLow(), output.getClose());
   }
 
-  public @NotNull Candlestick getLastCandlestick() {
-    return this.toModel(this.getDataBase().last());
+  public @NotNull Candlestick getLastUpdate() {
+    return this.toModel(this.getDataBase().first());
   }
 }

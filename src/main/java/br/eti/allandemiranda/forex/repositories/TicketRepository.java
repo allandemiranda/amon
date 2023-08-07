@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.Synchronized;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -21,7 +22,8 @@ public class TicketRepository {
   private BigDecimal bid;
   private BigDecimal ask;
   private int spread;
-  @Setter(AccessLevel.PUBLIC)
+  @Value("${ticket.digits:5}")
+  @Setter(AccessLevel.NONE)
   private int digits;
 
   private static int getPoints(final @NotNull BigDecimal price, final int digits) {
@@ -31,18 +33,18 @@ public class TicketRepository {
   @PostConstruct
   private void init() {
     this.setDateTime(LocalDateTime.MIN);
-    this.setBid(BigDecimal.valueOf(Double.MIN_VALUE).setScale(this.getDigits(), RoundingMode.DOWN));
-    this.setAsk(BigDecimal.valueOf(Double.MIN_VALUE).setScale(this.getDigits(), RoundingMode.DOWN));
+    this.setBid(BigDecimal.ZERO);
+    this.setAsk(BigDecimal.ZERO);
   }
 
   @Synchronized
-  public void update(final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal bid, final @NotNull BigDecimal ask) {
+  public void update(final @NotNull LocalDateTime dateTime, final double bid, final double ask) {
     this.setDateTime(dateTime);
-    if (bid.compareTo(BigDecimal.ZERO) > 0) {
-      this.setBid(bid.setScale(this.getDigits(), RoundingMode.DOWN));
+    if (bid > 0d) {
+      this.setBid(BigDecimal.valueOf(bid).setScale(this.getDigits(), RoundingMode.DOWN));
     }
-    if (ask.compareTo(BigDecimal.ZERO) > 0) {
-      this.setAsk(ask.setScale(this.getDigits(), RoundingMode.DOWN));
+    if (ask > 0d) {
+      this.setAsk(BigDecimal.valueOf(ask).setScale(this.getDigits(), RoundingMode.DOWN));
     }
     this.setSpread(getPoints((this.getAsk().subtract(this.getBid())), this.getDigits()));
   }

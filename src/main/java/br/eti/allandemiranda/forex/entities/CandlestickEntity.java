@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 public class CandlestickEntity implements Serializable, Comparable<CandlestickEntity> {
 
@@ -22,31 +23,11 @@ public class CandlestickEntity implements Serializable, Comparable<CandlestickEn
 
   private LocalDateTime realDateTime;
   @Id
-  @Setter
   private LocalDateTime dateTime;
   private BigDecimal open;
   private BigDecimal high;
   private BigDecimal low;
   private BigDecimal close;
-
-  public void setOpen(final @NotNull LocalDateTime realDateTime, final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal open) {
-    this.realDateTime = realDateTime;
-    this.dateTime = dateTime;
-    this.open = open;
-    this.high = open;
-    this.low = open;
-    this.close = open;
-  }
-
-  public void setClose(final @NotNull LocalDateTime realDateTime, final @NotNull BigDecimal close) {
-    this.realDateTime = realDateTime;
-    this.close = close;
-    if (this.getClose().compareTo(this.getHigh()) > 0) {
-      this.high = close;
-    } else if (this.getClose().compareTo(this.getLow()) < 0) {
-      this.low = close;
-    }
-  }
 
   @Override
   public boolean equals(final Object o) {
@@ -67,6 +48,6 @@ public class CandlestickEntity implements Serializable, Comparable<CandlestickEn
 
   @Override
   public int compareTo(@NotNull final CandlestickEntity o) {
-    return this.getDateTime().compareTo(o.getDateTime());
+    return o.getDateTime().compareTo(this.getDateTime());
   }
 }
