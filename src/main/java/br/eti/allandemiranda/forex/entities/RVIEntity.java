@@ -46,6 +46,6 @@ public class RVIEntity implements Serializable, Comparable<RVIEntity> {
 
   @Override
   public int compareTo(@NotNull final RVIEntity o) {
-    return this.getDateTime().compareTo(o.getDateTime());
+    return o.getDateTime().compareTo(this.getDateTime());
   }
 }

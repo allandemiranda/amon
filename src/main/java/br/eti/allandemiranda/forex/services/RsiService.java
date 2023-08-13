@@ -3,7 +3,7 @@ package br.eti.allandemiranda.forex.services;
 import br.eti.allandemiranda.forex.dtos.RSI;
 import br.eti.allandemiranda.forex.headers.RsiHeaders;
 import br.eti.allandemiranda.forex.repositories.RsiRepository;
-import br.eti.allandemiranda.forex.utils.SignalTrend;
+import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
@@ -33,7 +33,7 @@ public class RsiService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${rsi.debug:false}")
+  @Value("${rsi.debug:true}")
   private boolean debugActive;
 
   @Autowired
@@ -72,7 +72,7 @@ public class RsiService {
   }
 
   @SneakyThrows
-  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull SignalTrend trend, final @NotNull BigDecimal price) {
+  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull IndicatorTrend trend, final @NotNull BigDecimal price) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         final RSI rsi = this.getRepository().get();

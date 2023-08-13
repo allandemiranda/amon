@@ -46,6 +46,6 @@ public class SignalEntity implements Serializable, Comparable<SignalEntity> {
 
   @Override
   public int compareTo(@NotNull final SignalEntity o) {
-    return this.getDateTime().compareTo(o.getDateTime());
+    return o.getDateTime().compareTo(this.getDateTime());
   }
 }

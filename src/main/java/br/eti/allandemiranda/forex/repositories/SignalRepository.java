@@ -30,7 +30,7 @@ public class SignalRepository {
     entity.setPrice(price);
     this.getDataBase().add(entity);
     if (this.getDataBase().size() > this.getOpenWith()) {
-      this.getDataBase().pollFirst();
+      this.getDataBase().pollLast();
     }
   }
 
@@ -43,7 +43,7 @@ public class SignalRepository {
   }
 
   public @NotNull Signal getLastSignal() {
-    return this.toModel(this.getDataBase().last());
+    return this.toModel(this.getDataBase().first());
   }
 
   public boolean isReady() {

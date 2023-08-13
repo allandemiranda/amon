@@ -35,11 +35,14 @@ public class CommodityChannelIndex implements Indicator {
   @Override
   public @NotNull IndicatorTrend getSignal() {
     if (this.getCciService().getCci().value().compareTo(BigDecimal.valueOf(100)) >= 0) {
+      this.getCciService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL, this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.SELL;
     }
     if (this.getCciService().getCci().value().compareTo(BigDecimal.valueOf(-100)) <= 0) {
+      this.getCciService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY, this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.BUY;
     }
+    this.getCciService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL, this.getCandlestickService().getOldestCandlestick().close());
     return IndicatorTrend.NEUTRAL;
   }
 

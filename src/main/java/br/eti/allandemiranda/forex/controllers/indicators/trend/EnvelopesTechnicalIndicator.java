@@ -47,11 +47,14 @@ public class EnvelopesTechnicalIndicator implements Indicator {
   @Override
   public @NotNull IndicatorTrend getSignal() {
     if (this.getCandlestickService().getOldestCandlestick().close().compareTo(this.getEnvelopeService().getEnvelopes().upperBand()) >= 0) {
+      this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL, this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.SELL;
     }
     if (this.getCandlestickService().getOldestCandlestick().close().compareTo(this.getEnvelopeService().getEnvelopes().lowerBand()) <= 0) {
+      this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY, this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.BUY;
     }
+    this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL, this.getCandlestickService().getOldestCandlestick().close());
     return IndicatorTrend.NEUTRAL;
   }
 

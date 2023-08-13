@@ -3,7 +3,7 @@ package br.eti.allandemiranda.forex.services;
 import br.eti.allandemiranda.forex.dtos.ADX;
 import br.eti.allandemiranda.forex.headers.AdxHeaders;
 import br.eti.allandemiranda.forex.repositories.AdxRepository;
-import br.eti.allandemiranda.forex.utils.SignalTrend;
+import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
@@ -33,7 +33,7 @@ public class AdxService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${adx.debug:false}")
+  @Value("${adx.debug:true}")
   private boolean debugActive;
 
   @Autowired
@@ -72,7 +72,7 @@ public class AdxService {
   }
 
   @SneakyThrows
-  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull SignalTrend trend, final @NotNull BigDecimal price) {
+  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull IndicatorTrend trend, final @NotNull BigDecimal price) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         final ADX adx = this.getRepository().get();

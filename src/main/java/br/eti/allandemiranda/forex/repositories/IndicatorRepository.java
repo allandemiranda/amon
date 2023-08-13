@@ -3,6 +3,7 @@ package br.eti.allandemiranda.forex.repositories;
 import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,7 +23,7 @@ public class IndicatorRepository {
   }
 
   @Synchronized
-  public @NotNull Map<String, Indicator> get() {
+  public @NotNull SortedMap<String, Indicator> get() {
     return this.getDataBase();
   }
 }

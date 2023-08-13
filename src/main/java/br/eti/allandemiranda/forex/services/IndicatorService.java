@@ -3,6 +3,7 @@ package br.eti.allandemiranda.forex.services;
 import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
 import br.eti.allandemiranda.forex.repositories.IndicatorRepository;
 import java.util.Map;
+import java.util.SortedMap;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +25,7 @@ public class IndicatorService {
     this.getRepository().add(name, indicator);
   }
 
-  public Map<String, Indicator> getIndicators() {
+  public SortedMap<String, Indicator> getIndicators() {
     return this.getRepository().get();
   }
 }

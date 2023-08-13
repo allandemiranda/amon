@@ -34,11 +34,14 @@ public class RelativeStrengthIndex implements Indicator {
   @Override
   public @NotNull IndicatorTrend getSignal() {
     if (this.getRsiService().getRsi().value().compareTo(BigDecimal.valueOf(70)) >= 0) {
+      this.getRsiService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL, this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.SELL;
     }
     if (this.getRsiService().getRsi().value().compareTo(BigDecimal.valueOf(30)) <= 0) {
+      this.getRsiService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY, this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.BUY;
     }
+    this.getRsiService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL, this.getCandlestickService().getOldestCandlestick().close());
     return IndicatorTrend.NEUTRAL;
   }
 

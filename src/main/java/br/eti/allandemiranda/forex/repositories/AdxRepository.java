@@ -26,12 +26,10 @@ public class AdxRepository {
   }
 
   public void add(final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal adx, final @NotNull BigDecimal diPlus, final @NotNull BigDecimal diMinus) {
-    if (dateTime.isAfter(this.getDateTime())) {
-      this.setDateTime(dateTime);
-      this.setValue(adx);
-      this.setDiPlus(diPlus);
-      this.setDiMinus(diMinus);
-    }
+    this.setDateTime(dateTime);
+    this.setValue(adx);
+    this.setDiPlus(diPlus);
+    this.setDiMinus(diMinus);
   }
 
   public @NotNull ADX get() {

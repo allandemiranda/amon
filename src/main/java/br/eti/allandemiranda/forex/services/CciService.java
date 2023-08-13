@@ -3,7 +3,7 @@ package br.eti.allandemiranda.forex.services;
 import br.eti.allandemiranda.forex.dtos.CCI;
 import br.eti.allandemiranda.forex.headers.CciHeaders;
 import br.eti.allandemiranda.forex.repositories.CciRepository;
-import br.eti.allandemiranda.forex.utils.SignalTrend;
+import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
@@ -33,7 +33,7 @@ public class CciService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${cci.debug:false}")
+  @Value("${cci.debug:true}")
   private boolean debugActive;
 
   @Autowired
@@ -72,7 +72,7 @@ public class CciService {
   }
 
   @SneakyThrows
-  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull SignalTrend trend, final @NotNull BigDecimal price) {
+  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull IndicatorTrend trend, final @NotNull BigDecimal price) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         final CCI cci = this.getRepository().get();

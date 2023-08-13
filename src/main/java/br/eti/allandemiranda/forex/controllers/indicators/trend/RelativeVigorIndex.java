@@ -31,15 +31,10 @@ public class RelativeVigorIndex implements Indicator {
   }
 
   private static boolean isCross(final RVI @NotNull [] rvis) {
-    if (rvis.length == 3) {
-      if (rvis[1].value().compareTo(rvis[1].signal()) == 0) {
-        return rvis[0].value().compareTo(rvis[0].signal()) > 0 && rvis[2].value().compareTo(rvis[2].signal()) < 0
-            || rvis[0].value().compareTo(rvis[0].signal()) < 0 && rvis[2].value().compareTo(rvis[2].signal()) > 0;
-      } else {
-        return rvis[1].value().compareTo(rvis[1].signal()) > 0 && rvis[2].value().compareTo(rvis[2].signal()) < 0
-            || rvis[1].value().compareTo(rvis[1].signal()) < 0 && rvis[2].value().compareTo(rvis[2].signal()) > 0;
-      }
-    } else if (rvis.length == 2) {
+    if (rvis.length == 3 && rvis[1].value().compareTo(rvis[1].signal()) == 0) {
+      return rvis[0].value().compareTo(rvis[0].signal()) > 0 && rvis[2].value().compareTo(rvis[2].signal()) < 0
+          || rvis[0].value().compareTo(rvis[0].signal()) < 0 && rvis[2].value().compareTo(rvis[2].signal()) > 0;
+    } else if (rvis.length >= 2) {
       return rvis[0].value().compareTo(rvis[0].signal()) > 0 && rvis[1].value().compareTo(rvis[1].signal()) < 0
           || rvis[0].value().compareTo(rvis[0].signal()) < 0 && rvis[1].value().compareTo(rvis[1].signal()) > 0;
     } else {
@@ -80,13 +75,16 @@ public class RelativeVigorIndex implements Indicator {
     if (rvis.length > 1) {
       if (rvis[rvis.length - 1].value().compareTo(rvis[rvis.length - 1].signal()) > 0 && rvis[rvis.length - 1].value().compareTo(BigDecimal.ZERO) < 0
           && rvis[rvis.length - 1].signal().compareTo(BigDecimal.ZERO) < 0 && isCross(rvis)) {
+        this.getRviService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY, this.getCandlestickService().getOldestCandlestick().close());
         return IndicatorTrend.BUY;
       }
       if (rvis[rvis.length - 1].value().compareTo(rvis[rvis.length - 1].signal()) < 0 && rvis[rvis.length - 1].value().compareTo(BigDecimal.ZERO) > 0
           && rvis[rvis.length - 1].signal().compareTo(BigDecimal.ZERO) > 0 && isCross(rvis)) {
+        this.getRviService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL, this.getCandlestickService().getOldestCandlestick().close());
         return IndicatorTrend.SELL;
       }
     }
+    this.getRviService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL, this.getCandlestickService().getOldestCandlestick().close());
     return IndicatorTrend.NEUTRAL;
   }
 }

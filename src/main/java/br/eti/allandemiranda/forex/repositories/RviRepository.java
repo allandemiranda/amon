@@ -18,7 +18,7 @@ public class RviRepository {
   private final TreeSet<RVIEntity> dataBase = new TreeSet<>();
 
   public void add(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal rvi, final @NotNull BigDecimal signal) {
-    if (this.getDataBase().isEmpty() || dateTime.isAfter(this.getDataBase().last().getDateTime())) {
+    if (this.getDataBase().isEmpty() || dateTime.isAfter(this.getDataBase().first().getDateTime())) {
       final RVIEntity entity = new RVIEntity();
       entity.setRealDateTime(realDataTime);
       entity.setDateTime(dateTime);
@@ -26,11 +26,11 @@ public class RviRepository {
       entity.setSignal(signal);
       this.getDataBase().add(entity);
       if (this.getDataBase().size() > MEMORY_SIZE) {
-        this.getDataBase().pollFirst();
+        this.getDataBase().pollLast();
       }
-    } else if (dateTime.equals(this.getDataBase().last().getDateTime())) {
-      this.getDataBase().last().setRealDateTime(realDataTime);
-      this.getDataBase().last().setValue(rvi);
+    } else {
+      this.getDataBase().first().setRealDateTime(realDataTime);
+      this.getDataBase().first().setValue(rvi);
     }
   }
 

@@ -39,11 +39,14 @@ public class AverageDirectionalMovementIndex implements Indicator {
     final ADX adx = this.getAdxService().getAdx();
     if (adx.value().compareTo(BigDecimal.valueOf(50)) >= 0) {
       if (adx.diPlus().compareTo(adx.diMinus()) > 0) {
+        this.getAdxService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY, this.getCandlestickService().getOldestCandlestick().close());
         return IndicatorTrend.BUY;
       } else if (adx.diPlus().compareTo(adx.diMinus()) < 0) {
+        this.getAdxService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL, this.getCandlestickService().getOldestCandlestick().close());
         return IndicatorTrend.SELL;
       }
     }
+    this.getAdxService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL, this.getCandlestickService().getOldestCandlestick().close());
     return IndicatorTrend.NEUTRAL;
   }
 
