@@ -87,19 +87,17 @@ public class OrderProcessor {
 
   @Synchronized
   public void run() {
-    if (this.getSignalService().isReady()) {
-      final Ticket ticket = this.getTicketService().getTicket();
-      if (OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status())) {
-        operationToOpenOrder(ticket, this.getTakeProfit(), this.getStopLoss());
-      } else {
-        operationToCloseOrder(ticket, this.getStopLoss(), this.getMaxSpread());
-      }
+    final Ticket ticket = this.getTicketService().getTicket();
+    if (OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status())) {
+      operationToOpenOrder(ticket, this.getTakeProfit(), this.getStopLoss());
+    } else if (this.getSignalService().isOpenSignal()){
+      operationToCloseOrder(ticket, this.getStopLoss(), this.getMaxSpread());
     }
   }
 
   private void operationToCloseOrder(final Ticket ticket, final int stopLoss, final int maxSpread) {
-    if (this.getSignalService().haveValidSignal() && ticket.spread() < stopLoss && ticket.spread() <= maxSpread && this.checkDataTime()) {
-      switch (this.getSignalService().getLastSignal().trend()) {
+    if (this.getSignalService().isOpenSignal() && ticket.spread() < stopLoss && ticket.spread() <= maxSpread && this.checkDataTime()) {
+      switch (this.getSignalService().getOpenSignal().trend()) {
         case STRONG_BUY -> {
           this.getOrderService().openPosition(ticket, OrderPosition.BUY);
           this.getOrderService().updateDebugFile();
@@ -126,7 +124,7 @@ public class OrderProcessor {
 
   private void operationToOpenOrder(final Ticket ticket, final int takeProfit, final int stopLoss) {
     if (OrderStatus.OPEN.equals(this.getOrderService().updateOpenPosition(ticket, takeProfit, stopLoss))) {
-      switch (this.getSignalService().getLastSignal().trend()) {
+      switch (this.getSignalService().getOpenSignal().trend()) {
         case STRONG_BUY, BUY -> {
           if (this.getOrderService().getLastOrder().position().equals(OrderPosition.SELL)) {
             this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
@@ -139,10 +137,6 @@ public class OrderProcessor {
             this.getOrderService().updateDebugFile();
           }
         }
-//        case NEUTRAL -> {
-//          this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
-//          this.getOrderService().updateDebugFile();
-//        }
       }
     }
   }

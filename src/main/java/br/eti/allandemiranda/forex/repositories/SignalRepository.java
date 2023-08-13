@@ -2,9 +2,10 @@ package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.Signal;
 import br.eti.allandemiranda.forex.entities.SignalEntity;
-import java.util.HashSet;
+import br.eti.allandemiranda.forex.utils.SignalTrend;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Synchronized;
@@ -22,20 +23,19 @@ public class SignalRepository {
   private int openWith;
 
   @Synchronized
-  public void add(final @NotNull Signal signal) {
+  public void add(final @NotNull LocalDateTime dateTime, final @NotNull SignalTrend trend, final @NotNull BigDecimal price) {
     final SignalEntity entity = new SignalEntity();
-    entity.setDateTime(signal.dateTime());
-    entity.setTrend(signal.trend());
-    entity.setPrice(signal.price());
+    entity.setDateTime(dateTime);
+    entity.setTrend(trend);
+    entity.setPrice(price);
     this.getDataBase().add(entity);
     if (this.getDataBase().size() > this.getOpenWith()) {
-      final SignalEntity older = this.getDataBase().first();
-      this.getDataBase().remove(older);
+      this.getDataBase().pollFirst();
     }
   }
 
-  public boolean haveValidSignal() {
-    return this.getDataBase().stream().map(SignalEntity::getTrend).collect(Collectors.toCollection(HashSet::new)).size() == 1;
+  public Signal[] get() {
+    return this.getDataBase().stream().map(this::toModel).toArray(Signal[]::new);
   }
 
   private @NotNull Signal toModel(final @NotNull SignalEntity entity) {

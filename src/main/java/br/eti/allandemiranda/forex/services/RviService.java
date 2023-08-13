@@ -49,14 +49,6 @@ public class RviService {
     this.getRepository().add(realDataTime, dataTime, rvi, signal);
   }
 
-  public boolean isRead() {
-    return getRVIs().length >= 2;
-  }
-
-  public @NotNull RVI getLastRvi() {
-    return this.getRepository().getLast();
-  }
-
   public RVI[] getRVIs() {
     return this.getRepository().get();
   }
@@ -83,9 +75,10 @@ public class RviService {
   public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull SignalTrend trend, final @NotNull BigDecimal price) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        final RVI rvi = this.getRepository().getLast();
-        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), rvi.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(rvi.value()), getNumber(rvi.signal()), trend,
-            getNumber(price));
+        final RVI[] rvis = this.getRepository().get();
+        final RVI rvi = rvis[rvis.length - 1];
+        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), rvi.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(rvi.value()),
+            getNumber(rvi.signal()), trend, getNumber(price));
       }
     }
   }

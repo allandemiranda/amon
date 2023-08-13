@@ -1,18 +1,18 @@
 package br.eti.allandemiranda.forex.controllers.indicators.trend;
 
 import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
+import br.eti.allandemiranda.forex.dtos.ADX;
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.services.AdxService;
 import br.eti.allandemiranda.forex.services.CandlestickService;
-import br.eti.allandemiranda.forex.utils.SignalTrend;
+import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Synchronized;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,87 +34,64 @@ public class AverageDirectionalMovementIndex implements Indicator {
     this.candlestickService = candlestickService;
   }
 
-  private static BigDecimal @NotNull [] getDx(final Candlestick @NotNull [] chart) {
-    final BigDecimal tr = IntStream.range(1, chart.length).parallel().mapToObj(i -> {
-      final Candlestick candlestick = chart[i];
-      final Candlestick lastCandlestick = chart[i - 1];
-      final BigDecimal pOne = candlestick.high().subtract(lastCandlestick.close()).abs();
-      final BigDecimal pTwo = candlestick.low().subtract(lastCandlestick.close()).abs();
-      final BigDecimal pThree = candlestick.high().subtract(candlestick.low());
-      return pOne.max(pTwo).max(pThree);
-    }).reduce(BigDecimal.ZERO, BigDecimal::add);
-    final BigDecimal dmPlus = IntStream.range(1, chart.length).parallel().mapToObj(i -> {
-      final Candlestick candlestick = chart[i];
-      final Candlestick lastCandlestick = chart[i - 1];
-      final BigDecimal highValue = candlestick.high().subtract(lastCandlestick.high());
-      final BigDecimal lowValue = lastCandlestick.low().subtract(candlestick.low());
-      if (highValue.compareTo(lowValue) > 0) {
-        return highValue.max(BigDecimal.ZERO);
-      } else {
-        return BigDecimal.ZERO;
+  @Override
+  public @NotNull IndicatorTrend getSignal() {
+    final ADX adx = this.getAdxService().getAdx();
+    if (adx.value().compareTo(BigDecimal.valueOf(50)) >= 0) {
+      if (adx.diPlus().compareTo(adx.diMinus()) > 0) {
+        return IndicatorTrend.BUY;
+      } else if (adx.diPlus().compareTo(adx.diMinus()) < 0) {
+        return IndicatorTrend.SELL;
       }
-    }).reduce(BigDecimal.ZERO, BigDecimal::add);
-    final BigDecimal dmMinus = IntStream.range(1, chart.length).parallel().mapToObj(i -> {
-      final Candlestick candlestick = chart[i];
-      final Candlestick lastCandlestick = chart[i - 1];
-      final BigDecimal highValue = candlestick.high().subtract(lastCandlestick.high());
-      final BigDecimal lowValue = lastCandlestick.low().subtract(candlestick.low());
-      if (lowValue.compareTo(highValue) > 0) {
-        return lowValue.max(BigDecimal.ZERO);
-      } else {
-        return BigDecimal.ZERO;
-      }
-    }).reduce(BigDecimal.ZERO, BigDecimal::add);
-    final BigDecimal diPlus = dmPlus.divide(tr, 5, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
-    final BigDecimal diMinus = dmMinus.divide(tr, 5, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
-    final BigDecimal diDiff = diPlus.subtract(diMinus).abs();
-    final BigDecimal diSum = diPlus.add(diMinus);
-    final BigDecimal dx = diDiff.divide(diSum, 5, RoundingMode.DOWN).multiply(BigDecimal.valueOf(100));
-    return new BigDecimal[]{dx, diPlus, diMinus};
+    }
+    return IndicatorTrend.NEUTRAL;
   }
 
   @Override
-  @Synchronized
-  public boolean run() {
-    if (this.getCandlestickService().isReady()) {
-      final Candlestick[] chart = this.getCandlestickService().getCandlesticks(this.getPeriod() * 2);
-      final BigDecimal[][] adxs = IntStream.range(0, this.getPeriod()).mapToObj(i -> {
-        final Candlestick[] tmp = Arrays.stream(chart, i, this.getPeriod() + i + 1).toArray(Candlestick[]::new);
-        return getDx(tmp);
-      }).toArray(BigDecimal[][]::new);
-      final BigDecimal adxValue = Arrays.stream(adxs).map(value -> value[0]).reduce(BigDecimal.ZERO, BigDecimal::add)
-          .divide(BigDecimal.valueOf(adxs.length), 5, RoundingMode.DOWN);
-      final BigDecimal diPlus = adxs[adxs.length - 1][1];
-      final BigDecimal diMinus = adxs[adxs.length - 1][2];
-      this.adxService.addAdx(this.getCandlestickService().getLastCandlestick().realDateTime(), adxValue, diPlus, diMinus);
-      return true;
-    } else {
-      return false;
-    }
-  }
+  public void run() {
+    final Function<Candlestick[], BigDecimal> trSmoothing = candlesticks -> {
+      final BigDecimal highCurrent = candlesticks[0].high();
+      final BigDecimal lowCurrent = candlesticks[0].low();
+      final BigDecimal closeLast = candlesticks[1].close();
+      return (highCurrent.subtract(lowCurrent)).max(highCurrent.subtract(closeLast).abs()).max(lowCurrent.subtract(closeLast).abs());
+    };
+    final Function<Candlestick[], BigDecimal> dmPlusSmoothing = candlesticks -> {
+      final BigDecimal highCurrent = candlesticks[0].high();
+      final BigDecimal highLast = candlesticks[1].high();
+      final BigDecimal lowCurrent = candlesticks[0].low();
+      final BigDecimal lowLast = candlesticks[0].low();
+      return (highCurrent.subtract(highLast)).compareTo(lowLast.subtract(lowCurrent)) > 0 ? (highCurrent.subtract(highLast)).max(BigDecimal.ZERO) : BigDecimal.ZERO;
+    };
+    final Function<Candlestick[], BigDecimal> dmMinusSmoothing = candlesticks -> {
+      final BigDecimal highCurrent = candlesticks[0].high();
+      final BigDecimal highLast = candlesticks[1].high();
+      final BigDecimal lowCurrent = candlesticks[0].low();
+      final BigDecimal lowLast = candlesticks[0].low();
+      return (lowLast.subtract(lowCurrent)).compareTo(highCurrent.subtract(highLast)) > 0 ? (lowLast.subtract(lowCurrent)).max(BigDecimal.ZERO) : BigDecimal.ZERO;
+    };
+    final BigDecimal[] trArray = this.getCandlestickService().getSMA(trSmoothing, 2, this.getPeriod());
+    final BigDecimal[] dmPlusArray = this.getCandlestickService().getSMA(dmPlusSmoothing, 2, this.getPeriod());
+    final BigDecimal[] dmMinusArray = this.getCandlestickService().getSMA(dmMinusSmoothing, 2, this.getPeriod());
 
-  @Override
-  @Synchronized
-  public @NotNull SignalTrend getCurrentSignal() {
-    if (this.getAdxService().getAdx().dateTime().equals(LocalDateTime.MIN)) {
-      return SignalTrend.OUT;
-    } else {
-      final LocalDateTime realTime = this.getCandlestickService().getLastCandlestick().realDateTime();
-      final BigDecimal price = this.getCandlestickService().getLastCandlestick().close();
-      if (this.getAdxService().getAdx().diPlus().compareTo(this.getAdxService().getAdx().diMinus()) == 0
-          || this.getAdxService().getAdx().value().compareTo(BigDecimal.valueOf(50d)) < 0) {
-        this.getAdxService().updateDebugFile(realTime, SignalTrend.NEUTRAL, price);
-        return SignalTrend.NEUTRAL;
-      } else if (this.getAdxService().getAdx().value().compareTo(BigDecimal.valueOf(75d)) < 0) {
-        final SignalTrend trend = this.getAdxService().getAdx().diPlus().compareTo(this.getAdxService().getAdx().diMinus()) > 0 ? SignalTrend.BUY : SignalTrend.SELL;
-        this.getAdxService().updateDebugFile(realTime, trend, price);
-        return trend;
-      } else {
-        final SignalTrend trend =
-            this.getAdxService().getAdx().diPlus().compareTo(this.getAdxService().getAdx().diMinus()) > 0 ? SignalTrend.STRONG_BUY : SignalTrend.STRONG_SELL;
-        this.getAdxService().updateDebugFile(realTime, trend, price);
-        return trend;
-      }
-    }
+    final BigDecimal[] trP = IntStream.rangeClosed(0, trArray.length - this.getPeriod())
+        .mapToObj(i -> Arrays.stream(trArray, i, i + this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
+    final BigDecimal[] dmPlusP = IntStream.rangeClosed(0, dmPlusArray.length - this.getPeriod())
+        .mapToObj(i -> Arrays.stream(dmPlusArray, i, i + this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
+    final BigDecimal[] dmMinusP = IntStream.rangeClosed(0, dmMinusArray.length - this.getPeriod())
+        .mapToObj(i -> Arrays.stream(dmMinusArray, i, i + this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
+
+    final BigDecimal[] diPlus = IntStream.range(0, trP.length).mapToObj(i -> BigDecimal.valueOf(100).multiply(dmPlusP[i].divide(trP[i], 10, RoundingMode.HALF_UP)))
+        .toArray(BigDecimal[]::new);
+    final BigDecimal[] diMinus = IntStream.range(0, trP.length).mapToObj(i -> BigDecimal.valueOf(100).multiply(dmMinusP[i].divide(trP[i], 10, RoundingMode.HALF_UP)))
+        .toArray(BigDecimal[]::new);
+
+    final BigDecimal[] dx = IntStream.range(0, diPlus.length).mapToObj(i -> {
+      final BigDecimal diDiff = diPlus[i].subtract(diMinus[i]).abs();
+      final BigDecimal diSum = diPlus[i].add(diMinus[i]);
+      return BigDecimal.valueOf(100).multiply(diDiff.divide(diSum, 10, RoundingMode.HALF_UP));
+    }).toArray(BigDecimal[]::new);
+    final BigDecimal dxMed = Arrays.stream(dx).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriod()), 10, RoundingMode.HALF_UP);
+
+    this.getAdxService().addAdx(this.getCandlestickService().getOldestCandlestick().realDateTime(), dxMed, diPlus[0], diMinus[0]);
   }
 }

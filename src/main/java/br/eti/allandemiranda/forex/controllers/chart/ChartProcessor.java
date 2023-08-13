@@ -33,6 +33,7 @@ public class ChartProcessor {
   }
 
   private static @NotNull LocalDateTime getCandleDateTime(final @NotNull LocalDateTime dataTime, final @NotNull TimeFrame timeFrame) {
+    //TODO
     return switch (timeFrame) {
       case M1 -> getDateTimeLowM(dataTime, 1);
       case M5 -> getDateTimeLowM(dataTime, 5);
@@ -84,8 +85,10 @@ public class ChartProcessor {
 
   @Synchronized
   public void run() {
-    final Ticket ticket = this.getTicketService().getTicket();
-    this.candlestickService.addTicket(ticket, getCandleDateTime(ticket.dateTime(), this.getTimeFrame()));
+    if (this.getTicketService().isReady()) {
+      final Ticket ticket = this.getTicketService().getTicket();
+      this.candlestickService.addTicket(ticket, getCandleDateTime(ticket.dateTime(), this.getTimeFrame()));
+    }
   }
 
   private @NotNull TimeFrame getTimeFrame() {

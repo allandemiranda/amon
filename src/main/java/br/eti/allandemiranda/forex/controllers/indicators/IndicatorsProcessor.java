@@ -5,17 +5,18 @@ import br.eti.allandemiranda.forex.controllers.indicators.trend.CommodityChannel
 import br.eti.allandemiranda.forex.controllers.indicators.trend.EnvelopesTechnicalIndicator;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.RelativeStrengthIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.RelativeVigorIndex;
-import br.eti.allandemiranda.forex.dtos.Candlestick;
-import br.eti.allandemiranda.forex.dtos.Signal;
+import br.eti.allandemiranda.forex.exceptions.IndicatorsException;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.IndicatorService;
 import br.eti.allandemiranda.forex.services.SignalService;
+import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -74,29 +75,37 @@ public class IndicatorsProcessor {
 
   @Synchronized
   public void run() {
-    final Candlestick lastCandlestick = this.getCandlestickService().getLastCandlestick();
-    final LocalDateTime currentDataTime = lastCandlestick.realDateTime();
-    if (this.getCandlestickService().isReady() && this.getLastDataTime().plusMinutes(this.getInterval()).isBefore(currentDataTime)) {
-      this.setLastDataTime(currentDataTime);
-      final Map<String, SignalTrend> currentSignals = this.getIndicatorService().processAndGetSignals();
-      if (!currentSignals.isEmpty()) {
-        final BigDecimal price = lastCandlestick.close();
-        this.getIndicatorService().updateDebugFile(currentSignals, currentDataTime, price);
-        final List<SignalTrend> collect = currentSignals.values().stream().filter(signalTrend -> !SignalTrend.OUT.equals(signalTrend)).toList();
-        final double signalsPower =
-            collect.stream().collect(Collectors.groupingBy(signalTrend -> signalTrend, Collectors.summingInt(signalTrend -> 1))).entrySet().parallelStream()
-                .mapToInt(entry -> entry.getKey().power * entry.getValue()).sum() / (double) collect.size();
-        if (signalsPower < SignalTrend.SELL.power) {
-          this.getSignalService().addGlobalSignal(new Signal(currentDataTime, SignalTrend.STRONG_SELL, price));
-        } else if (signalsPower == SignalTrend.SELL.power) {
-          this.getSignalService().addGlobalSignal(new Signal(currentDataTime, SignalTrend.SELL, price));
-        } else if (signalsPower == SignalTrend.BUY.power) {
-          this.getSignalService().addGlobalSignal(new Signal(currentDataTime, SignalTrend.BUY, price));
-        } else if (signalsPower > SignalTrend.BUY.power) {
-          this.getSignalService().addGlobalSignal(new Signal(currentDataTime, SignalTrend.STRONG_BUY, price));
-        } else {
-          this.getSignalService().addGlobalSignal(new Signal(currentDataTime, SignalTrend.NEUTRAL, price));
+    if (this.getCandlestickService().isReady() && this.getLastDataTime().plusMinutes(this.getInterval())
+        .isBefore(this.getCandlestickService().getOldestCandlestick().realDateTime())) {
+      this.setLastDataTime(this.getCandlestickService().getOldestCandlestick().realDateTime().withSecond(0));
+      this.getIndicatorService().getIndicators().values().stream().map(Thread::new).map(thread -> {
+        thread.start();
+        return thread;
+      }).forEach(thread -> {
+        try {
+          thread.join();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new IndicatorsException(e);
         }
+      });
+      final TreeMap<String, IndicatorTrend> trendSortedMap = this.getIndicatorService().getIndicators().entrySet().stream()
+          .collect(Collectors.toMap(Entry::getKey, o -> o.getValue().getSignal(), (o1, o2) -> o1, TreeMap::new));
+      final BigDecimal average = BigDecimal.valueOf(trendSortedMap.values().stream().mapToInt(indicator -> switch (indicator) {
+        case SELL -> -1;
+        case BUY -> 1;
+        case NEUTRAL -> 0;
+      }).sum()).divide(BigDecimal.valueOf(trendSortedMap.size()), 2, RoundingMode.DOWN);
+      if (average.compareTo(BigDecimal.valueOf(-0.5)) > 0 && average.compareTo(BigDecimal.valueOf(0.5)) < 0) {
+        this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.NEUTRAL, trendSortedMap);
+      } else if (average.compareTo(BigDecimal.ONE) == 0) {
+        this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.BUY, trendSortedMap);
+      } else if (average.compareTo(BigDecimal.valueOf(-1)) == 0) {
+        this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.SELL, trendSortedMap);
+      } else if (average.compareTo(BigDecimal.ONE) > 0) {
+        this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.STRONG_BUY, trendSortedMap);
+      } else if (average.compareTo(BigDecimal.valueOf(-1)) < 0) {
+        this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.STRONG_SELL, trendSortedMap);
       }
     }
   }

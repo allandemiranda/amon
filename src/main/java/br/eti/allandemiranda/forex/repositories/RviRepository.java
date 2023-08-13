@@ -14,8 +14,8 @@ import org.springframework.stereotype.Repository;
 @Getter(AccessLevel.PRIVATE)
 public class RviRepository {
 
+  private static final int MEMORY_SIZE = 3;
   private final TreeSet<RVIEntity> dataBase = new TreeSet<>();
-  private final int memorySize = 2;
 
   public void add(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal rvi, final @NotNull BigDecimal signal) {
     if (this.getDataBase().isEmpty() || dateTime.isAfter(this.getDataBase().last().getDateTime())) {
@@ -25,18 +25,13 @@ public class RviRepository {
       entity.setValue(rvi);
       entity.setSignal(signal);
       this.getDataBase().add(entity);
-      if (this.getDataBase().size() > this.getMemorySize()) {
-        final RVIEntity older = this.getDataBase().first();
-        this.getDataBase().remove(older);
+      if (this.getDataBase().size() > MEMORY_SIZE) {
+        this.getDataBase().pollFirst();
       }
     } else if (dateTime.equals(this.getDataBase().last().getDateTime())) {
       this.getDataBase().last().setRealDateTime(realDataTime);
       this.getDataBase().last().setValue(rvi);
     }
-  }
-
-  public @NotNull RVI getLast() {
-    return this.toModel(this.getDataBase().last());
   }
 
   public RVI @NotNull [] get() {

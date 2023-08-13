@@ -5,11 +5,10 @@ import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.RVI;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.RviService;
-import br.eti.allandemiranda.forex.utils.SignalTrend;
+import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Arrays;
-import java.util.stream.IntStream;
+import java.util.function.Function;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -31,62 +30,63 @@ public class RelativeVigorIndex implements Indicator {
     this.candlestickService = candlestickService;
   }
 
-  @Override
-  public boolean run() {
-    if (this.getCandlestickService().isReady()) {
-      final Candlestick[] candlesticks = this.getCandlestickService().getCandlesticks(this.getPeriod() + 5);
-      final BigDecimal[] numerator = IntStream.range(5, candlesticks.length).mapToObj(
-          i -> ((candlesticks[i].close().subtract(candlesticks[i].open())).add(BigDecimal.TWO.multiply(candlesticks[i - 1].close().subtract(candlesticks[i - 1].open())))
-              .add(BigDecimal.TWO.multiply(candlesticks[i - 2].close().subtract(candlesticks[i - 2].open())))
-              .add(candlesticks[i - 3].close().subtract(candlesticks[i - 3].open()))).divide(BigDecimal.valueOf(6), 5, RoundingMode.DOWN)).toArray(BigDecimal[]::new);
-      final BigDecimal[] denominator = IntStream.range(5, candlesticks.length).mapToObj(
-          i -> ((candlesticks[i].high().subtract(candlesticks[i].low())).add(BigDecimal.TWO.multiply(candlesticks[i - 1].high().subtract(candlesticks[i - 1].low())))
-              .add(BigDecimal.TWO.multiply(candlesticks[i - 2].high().subtract(candlesticks[i - 2].low())))
-              .add(candlesticks[i - 3].high().subtract(candlesticks[i - 3].low()))).divide(BigDecimal.valueOf(6), 5, RoundingMode.DOWN)).toArray(BigDecimal[]::new);
-      final BigDecimal[] numeratorSMA = IntStream.range(0, 4).mapToObj(i -> Arrays.stream(numerator, i, this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)
-          .divide(BigDecimal.valueOf(this.getPeriod()), 5, RoundingMode.DOWN)).toArray(BigDecimal[]::new);
-      final BigDecimal[] denominatorSMA = IntStream.range(0, 4).mapToObj(i -> Arrays.stream(denominator, i, this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)
-          .divide(BigDecimal.valueOf(this.getPeriod()), 5, RoundingMode.DOWN)).toArray(BigDecimal[]::new);
-      final BigDecimal[] rvi = IntStream.range(0, numeratorSMA.length).mapToObj(i -> numeratorSMA[i].divide(denominatorSMA[i], 5, RoundingMode.DOWN))
-          .toArray(BigDecimal[]::new);
-      final BigDecimal signal = (rvi[rvi.length - 1].add(BigDecimal.TWO.multiply(rvi[rvi.length - 2])).add(BigDecimal.TWO.multiply(rvi[rvi.length - 3]))
-          .add(rvi[rvi.length - 4])).divide(BigDecimal.valueOf(6), 5, RoundingMode.DOWN);
-      this.getRviService()
-          .addRvi(this.getCandlestickService().getLastCandlestick().realDateTime(), this.getCandlestickService().getLastCandlestick().dateTime(), rvi[rvi.length - 1],
-              signal);
-      return true;
+  private static boolean isCross(final RVI @NotNull [] rvis) {
+    if (rvis.length == 3) {
+      if (rvis[1].value().compareTo(rvis[1].signal()) == 0) {
+        return rvis[0].value().compareTo(rvis[0].signal()) > 0 && rvis[2].value().compareTo(rvis[2].signal()) < 0
+            || rvis[0].value().compareTo(rvis[0].signal()) < 0 && rvis[2].value().compareTo(rvis[2].signal()) > 0;
+      } else {
+        return rvis[1].value().compareTo(rvis[1].signal()) > 0 && rvis[2].value().compareTo(rvis[2].signal()) < 0
+            || rvis[1].value().compareTo(rvis[1].signal()) < 0 && rvis[2].value().compareTo(rvis[2].signal()) > 0;
+      }
+    } else if (rvis.length == 2) {
+      return rvis[0].value().compareTo(rvis[0].signal()) > 0 && rvis[1].value().compareTo(rvis[1].signal()) < 0
+          || rvis[0].value().compareTo(rvis[0].signal()) < 0 && rvis[1].value().compareTo(rvis[1].signal()) > 0;
+    } else {
+      return false;
     }
-    return false;
   }
 
   @Override
-  public @NotNull SignalTrend getCurrentSignal() {
+  public void run() {
+    final Function<Candlestick[], BigDecimal> smoothingNumerator = candlesticks -> {
+      final BigDecimal a = candlesticks[0].close().subtract(candlesticks[0].open());
+      final BigDecimal b = candlesticks[1].close().subtract(candlesticks[1].open());
+      final BigDecimal c = candlesticks[2].close().subtract(candlesticks[2].open());
+      final BigDecimal d = candlesticks[3].close().subtract(candlesticks[3].open());
+      return (a.add(BigDecimal.TWO.multiply(b)).add(BigDecimal.TWO.multiply(c)).add(d)).divide(BigDecimal.valueOf(6), 10, RoundingMode.HALF_UP);
+    };
+    final BigDecimal[] numeratorSMAs = this.getCandlestickService().getSMA(smoothingNumerator, 4, this.getPeriod());
+    final Function<Candlestick[], BigDecimal> smoothingDenominator = candlesticks -> {
+      final BigDecimal a = candlesticks[0].high().subtract(candlesticks[0].low());
+      final BigDecimal b = candlesticks[1].high().subtract(candlesticks[1].low());
+      final BigDecimal c = candlesticks[2].high().subtract(candlesticks[2].low());
+      final BigDecimal d = candlesticks[3].high().subtract(candlesticks[3].low());
+      return (a.add(BigDecimal.TWO.multiply(b)).add(BigDecimal.TWO.multiply(c)).add(d)).divide(BigDecimal.valueOf(6), 10, RoundingMode.HALF_UP);
+    };
+    final BigDecimal[] denominatorSMAs = this.getCandlestickService().getSMA(smoothingDenominator, 4, this.getPeriod());
+    final BigDecimal rvi = numeratorSMAs[0].divide(denominatorSMAs[0], 10, RoundingMode.HALF_UP);
+    final BigDecimal i = numeratorSMAs[1].divide(denominatorSMAs[1], 10, RoundingMode.HALF_UP);
+    final BigDecimal j = numeratorSMAs[2].divide(denominatorSMAs[2], 10, RoundingMode.HALF_UP);
+    final BigDecimal k = numeratorSMAs[3].divide(denominatorSMAs[3], 10, RoundingMode.HALF_UP);
+    final BigDecimal signal = (rvi.add(BigDecimal.TWO.multiply(i)).add(BigDecimal.TWO.multiply(j)).add(k)).divide(BigDecimal.valueOf(6), 10, RoundingMode.HALF_UP);
+    this.getRviService()
+        .addRvi(this.getCandlestickService().getOldestCandlestick().realDateTime(), this.getCandlestickService().getOldestCandlestick().dateTime(), rvi, signal);
+  }
+
+  @Override
+  public @NotNull IndicatorTrend getSignal() {
     final RVI[] rvis = this.getRviService().getRVIs();
-    if(rvis.length > 1) {
-      if (rvis[0].value().compareTo(rvis[0].signal()) > 0 && rvis[1].value().compareTo(rvis[1].signal()) < 0
-          || rvis[0].value().compareTo(rvis[0].signal()) < 0 && rvis[1].value().compareTo(rvis[1].signal()) > 0) {
-        if (rvis[1].value().compareTo(rvis[1].signal()) < 0) {
-          this.getRviService().updateDebugFile(this.getCandlestickService().getLastCandlestick().realDateTime(), SignalTrend.STRONG_SELL,
-              this.getCandlestickService().getLastCandlestick().close());
-          return SignalTrend.STRONG_SELL;
-        } else {
-          this.getRviService().updateDebugFile(this.getCandlestickService().getLastCandlestick().realDateTime(), SignalTrend.STRONG_BUY,
-              this.getCandlestickService().getLastCandlestick().close());
-          return SignalTrend.STRONG_BUY;
-        }
-      } else {
-        if (rvis[1].value().compareTo(rvis[1].signal()) < 0) {
-          this.getRviService().updateDebugFile(this.getCandlestickService().getLastCandlestick().realDateTime(), SignalTrend.SELL,
-              this.getCandlestickService().getLastCandlestick().close());
-          return SignalTrend.SELL;
-        } else {
-          this.getRviService().updateDebugFile(this.getCandlestickService().getLastCandlestick().realDateTime(), SignalTrend.BUY,
-              this.getCandlestickService().getLastCandlestick().close());
-          return SignalTrend.BUY;
-        }
+    if (rvis.length > 1) {
+      if (rvis[rvis.length - 1].value().compareTo(rvis[rvis.length - 1].signal()) > 0 && rvis[rvis.length - 1].value().compareTo(BigDecimal.ZERO) < 0
+          && rvis[rvis.length - 1].signal().compareTo(BigDecimal.ZERO) < 0 && isCross(rvis)) {
+        return IndicatorTrend.BUY;
       }
-    } else {
-      return SignalTrend.OUT;
+      if (rvis[rvis.length - 1].value().compareTo(rvis[rvis.length - 1].signal()) < 0 && rvis[rvis.length - 1].value().compareTo(BigDecimal.ZERO) > 0
+          && rvis[rvis.length - 1].signal().compareTo(BigDecimal.ZERO) > 0 && isCross(rvis)) {
+        return IndicatorTrend.SELL;
+      }
     }
+    return IndicatorTrend.NEUTRAL;
   }
 }
