@@ -1,12 +1,14 @@
 package br.eti.allandemiranda.forex.controllers.indicators.trend;
 
 import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
+import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.EnvelopeService;
 import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Arrays;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,23 +48,27 @@ public class EnvelopesTechnicalIndicator implements Indicator {
 
   @Override
   public @NotNull IndicatorTrend getSignal() {
-    if (this.getCandlestickService().getOldestCandlestick().close().compareTo(this.getEnvelopeService().getEnvelopes().upperBand()) >= 0) {
-      this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL, this.getCandlestickService().getOldestCandlestick().close());
+    if (this.getCandlestickService().getOldestCandlestick().close().compareTo(this.getEnvelopeService().getEnvelopes().upperBand()) > 0) {
+      this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL,
+          this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.SELL;
     }
-    if (this.getCandlestickService().getOldestCandlestick().close().compareTo(this.getEnvelopeService().getEnvelopes().lowerBand()) <= 0) {
-      this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY, this.getCandlestickService().getOldestCandlestick().close());
+    if (this.getCandlestickService().getOldestCandlestick().close().compareTo(this.getEnvelopeService().getEnvelopes().lowerBand()) < 0) {
+      this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY,
+          this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.BUY;
     }
-    this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL, this.getCandlestickService().getOldestCandlestick().close());
+    this.getEnvelopeService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL,
+        this.getCandlestickService().getOldestCandlestick().close());
     return IndicatorTrend.NEUTRAL;
   }
 
   @Override
   public void run() {
-    final BigDecimal sma = this.getCandlestickService().getSMA(candlesticks -> candlesticks[0].close(), 1, this.getPeriod())[0];
+    final BigDecimal sma = this.getCandlestickService().getCandlesticks(this.getPeriod()).map(Candlestick::close).reduce(BigDecimal.ZERO, BigDecimal::add)
+        .divide(BigDecimal.valueOf(this.getPeriod()), 10, RoundingMode.HALF_UP);
     final BigDecimal upper = (BigDecimal.ONE.add(this.getPercent())).multiply(sma);
     final BigDecimal lower = (BigDecimal.ONE.subtract(this.getPercent())).multiply(sma);
-    this.getEnvelopeService().addEnvelopes(this.getCandlestickService().getOldestCandlestick().realDateTime(), upper, lower);
+    this.getEnvelopeService().addEnvelopes(this.getCandlestickService().getOldestCandlestick().dateTime(), upper, lower);
   }
 }

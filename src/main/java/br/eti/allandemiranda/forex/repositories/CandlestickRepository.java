@@ -5,6 +5,7 @@ import br.eti.allandemiranda.forex.entities.CandlestickEntity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Synchronized;
@@ -52,8 +53,8 @@ public class CandlestickRepository {
     }
   }
 
-  public Candlestick @NotNull [] get() {
-    return this.getDataBase().stream().map(this::toModel).toArray(Candlestick[]::new);
+  public Stream<Candlestick> get(final int size) {
+    return this.getDataBase().stream().limit(size).map(this::toModel);
   }
 
   private @NotNull Candlestick toModel(final @NotNull CandlestickEntity output) {

@@ -34,15 +34,18 @@ public class CommodityChannelIndex implements Indicator {
 
   @Override
   public @NotNull IndicatorTrend getSignal() {
-    if (this.getCciService().getCci().value().compareTo(BigDecimal.valueOf(100)) >= 0) {
-      this.getCciService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL, this.getCandlestickService().getOldestCandlestick().close());
+    if (this.getCciService().getCci().value().compareTo(BigDecimal.valueOf(100)) > 0) {
+      this.getCciService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL,
+          this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.SELL;
     }
-    if (this.getCciService().getCci().value().compareTo(BigDecimal.valueOf(-100)) <= 0) {
-      this.getCciService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY, this.getCandlestickService().getOldestCandlestick().close());
+    if (this.getCciService().getCci().value().compareTo(BigDecimal.valueOf(-100)) < 0) {
+      this.getCciService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY,
+          this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.BUY;
     }
-    this.getCciService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL, this.getCandlestickService().getOldestCandlestick().close());
+    this.getCciService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL,
+        this.getCandlestickService().getOldestCandlestick().close());
     return IndicatorTrend.NEUTRAL;
   }
 
@@ -50,11 +53,11 @@ public class CommodityChannelIndex implements Indicator {
   public void run() {
     final Function<Candlestick, BigDecimal> getTp = candlestick -> (candlestick.close().add(candlestick.high()).add(candlestick.low())).divide(BigDecimal.valueOf(3), 10,
         RoundingMode.HALF_UP);
-    final BigDecimal[] tps = Arrays.stream(this.getCandlestickService().getCandlesticks()).limit(this.getPeriod()).map(getTp).toArray(BigDecimal[]::new);
+    final BigDecimal[] tps = this.getCandlestickService().getCandlesticks(this.getPeriod()).map(getTp).toArray(BigDecimal[]::new);
     final BigDecimal tpSMA = Arrays.stream(tps).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriod()), 10, RoundingMode.HALF_UP);
     final BigDecimal deviation = Arrays.stream(tps).map(tp -> tpSMA.subtract(tp).abs()).reduce(BigDecimal.ZERO, BigDecimal::add)
         .divide(BigDecimal.valueOf(this.getPeriod()), 10, RoundingMode.HALF_UP);
     final BigDecimal cci = (tps[0].subtract(tpSMA)).divide((BigDecimal.valueOf(0.015).multiply(deviation)), 10, RoundingMode.HALF_UP);
-    this.getCciService().addCci(this.getCandlestickService().getOldestCandlestick().realDateTime(), cci);
+    this.getCciService().addCci(this.getCandlestickService().getOldestCandlestick().dateTime(), cci);
   }
 }

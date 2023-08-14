@@ -78,10 +78,11 @@ public class IndicatorsProcessor {
     if (this.getCandlestickService().isReady() && this.getLastDataTime().plusMinutes(this.getInterval())
         .isBefore(this.getCandlestickService().getOldestCandlestick().realDateTime())) {
       this.setLastDataTime(this.getCandlestickService().getOldestCandlestick().realDateTime().withSecond(0));
-      this.getIndicatorService().getIndicators().values().stream().map(Thread::new).map(thread -> {
+      this.getIndicatorService().getIndicators().entrySet().parallelStream().map(entry -> {
+        Thread thread = new Thread(entry.getValue(), entry.getKey());
         thread.start();
         return thread;
-      }).forEach(thread -> {
+      }).forEachOrdered(thread -> {
         try {
           thread.join();
         } catch (InterruptedException e) {

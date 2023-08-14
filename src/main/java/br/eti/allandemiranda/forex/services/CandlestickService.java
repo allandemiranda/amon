@@ -2,14 +2,11 @@ package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.Ticket;
+import br.eti.allandemiranda.forex.exceptions.ServiceException;
 import br.eti.allandemiranda.forex.repositories.CandlestickRepository;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -33,8 +30,12 @@ public class CandlestickService {
     this.getRepository().add(realDataTime, candlestickDateTime, price);
   }
 
-  public Candlestick @NotNull [] getCandlesticks() {
-    return this.getRepository().get();
+  public Stream<Candlestick> getCandlesticks(final int period) {
+    if (this.getRepository().getMemorySize() >= period) {
+      return this.getRepository().get(period);
+    } else {
+      throw new ServiceException("Can't get a Candlesticks period mode high that the memory");
+    }
   }
 
   public boolean isReady() {
@@ -43,23 +44,5 @@ public class CandlestickService {
 
   public @NotNull Candlestick getOldestCandlestick() {
     return this.getRepository().getLastUpdate();
-  }
-
-  public BigDecimal @NotNull [] getSMA(final Function<Candlestick[], BigDecimal> function, final int inputSize, final int period) {
-    final Candlestick[] candlesticks = this.getRepository().get();
-    return IntStream.range(0, candlesticks.length).mapToObj(i -> {
-      try {
-        return IntStream.range(i, period + i).mapToObj(j -> {
-          try {
-            final Candlestick[] tmp = Arrays.stream(candlesticks, j, j + inputSize).toArray(Candlestick[]::new);
-            return function.apply(tmp);
-          } catch (ArrayIndexOutOfBoundsException | NullPointerException e) {
-            throw new IllegalStateException();
-          }
-        }).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(period), 10, RoundingMode.HALF_UP);
-      } catch (IllegalStateException e) {
-        return null;
-      }
-    }).filter(Objects::nonNull).toArray(BigDecimal[]::new);
   }
 }
