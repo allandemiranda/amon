@@ -28,8 +28,6 @@ public class StochasticOscillator implements Indicator {
   private int periodK;
   @Value("${stoch.parameters.period.d:3}")
   private int periodD;
-  @Value("${stoch.parameters.slowing:3}")
-  private int slowing;
 
   @Autowired
   protected StochasticOscillator(final StochService stochService, final CandlestickService candlestickService) {
@@ -73,17 +71,17 @@ public class StochasticOscillator implements Indicator {
 
   @Override
   public void run() {
-    final Candlestick[] candlesticks = this.getCandlestickService().getCandlesticks(this.getPeriodK() + slowing - 1).toArray(Candlestick[]::new);
-    final BigDecimal[] highestHighs = IntStream.range(0, slowing)
+    final Candlestick[] candlesticks = this.getCandlestickService().getCandlesticks(this.getPeriodK() + this.getPeriodD() - 1).toArray(Candlestick[]::new);
+    final BigDecimal[] highestHighs = IntStream.range(0, this.getPeriodD())
         .mapToObj(i -> IntStream.range(i, this.getPeriodK() + i).mapToObj(j -> candlesticks[j].high()).reduce(BigDecimal.ZERO, BigDecimal::max))
         .toArray(BigDecimal[]::new);
-    final BigDecimal[] lowestLows = IntStream.range(0, slowing)
+    final BigDecimal[] lowestLows = IntStream.range(0, this.getPeriodD())
         .mapToObj(i -> IntStream.range(i, this.getPeriodK() + i).mapToObj(j -> candlesticks[j].low()).reduce(BigDecimal.valueOf(Double.MAX_VALUE), BigDecimal::min))
         .toArray(BigDecimal[]::new);
-    final BigDecimal[] ks = IntStream.range(0, slowing).mapToObj(
+    final BigDecimal[] ks = IntStream.range(0, this.getPeriodD()).mapToObj(
         i -> ((highestHighs[i].subtract(candlesticks[i].close())).divide((highestHighs[i].subtract(lowestLows[i])), 10, RoundingMode.HALF_UP)).multiply(
             BigDecimal.valueOf(100))).toArray(BigDecimal[]::new);
-    final BigDecimal d = Arrays.stream(ks).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(slowing), 10, RoundingMode.HALF_UP);
+    final BigDecimal d = Arrays.stream(ks).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriodD()), 10, RoundingMode.HALF_UP);
 
     this.getStochService()
         .addStoch(this.getCandlestickService().getOldestCandlestick().realDateTime(), this.getCandlestickService().getOldestCandlestick().dateTime(), ks[0], d);
