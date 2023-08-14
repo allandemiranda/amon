@@ -41,7 +41,8 @@ public class AverageDirectionalMovementIndex implements Indicator {
         this.getAdxService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY,
             this.getCandlestickService().getOldestCandlestick().close());
         return IndicatorTrend.BUY;
-      } else if (adx.diPlus().compareTo(adx.diMinus()) < 0) {
+      }
+      if (adx.diPlus().compareTo(adx.diMinus()) < 0) {
         this.getAdxService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL,
             this.getCandlestickService().getOldestCandlestick().close());
         return IndicatorTrend.SELL;
@@ -77,22 +78,22 @@ public class AverageDirectionalMovementIndex implements Indicator {
       return (lowLast.subtract(lowCurrent)).compareTo(highCurrent.subtract(highLast)) > 0 ? (lowLast.subtract(lowCurrent)).max(BigDecimal.ZERO) : BigDecimal.ZERO;
     }).toArray(BigDecimal[]::new);
 
-    final BigDecimal[] trSum = IntStream.rangeClosed(0, trRow.length - this.getPeriod())
-        .mapToObj(i -> Arrays.stream(trRow, 0, this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
-    final BigDecimal[] dmPlusSum = IntStream.rangeClosed(0, dmPlusRow.length - this.getPeriod())
-        .mapToObj(i -> Arrays.stream(dmPlusRow, 0, this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
-    final BigDecimal[] dmMinusSum = IntStream.rangeClosed(0, dmMinusRow.length - this.getPeriod())
-        .mapToObj(i -> Arrays.stream(dmMinusRow, 0, this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
+    final BigDecimal[] trSum = IntStream.range(0, this.getPeriod())
+        .mapToObj(i -> Arrays.stream(trRow, i, this.getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
+    final BigDecimal[] dmPlusSum = IntStream.range(0, this.getPeriod())
+        .mapToObj(i -> Arrays.stream(dmPlusRow, i, this.getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
+    final BigDecimal[] dmMinusSum = IntStream.range(0, this.getPeriod())
+        .mapToObj(i -> Arrays.stream(dmMinusRow, i, this.getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
 
-    final BigDecimal[] diPlus = IntStream.range(0, trSum.length).mapToObj(i -> BigDecimal.valueOf(100).multiply(dmPlusSum[i].divide(trSum[i], 10, RoundingMode.HALF_UP)))
+    final BigDecimal[] diPlus = IntStream.range(0, this.getPeriod()).mapToObj(i -> BigDecimal.valueOf(100).multiply(dmPlusSum[i].divide(trSum[i], 10, RoundingMode.HALF_UP)))
         .toArray(BigDecimal[]::new);
-    final BigDecimal[] diMinus = IntStream.range(0, trSum.length)
+    final BigDecimal[] diMinus = IntStream.range(0, this.getPeriod())
         .mapToObj(i -> BigDecimal.valueOf(100).multiply(dmMinusSum[i].divide(trSum[i], 10, RoundingMode.HALF_UP))).toArray(BigDecimal[]::new);
 
-    final BigDecimal[] diDiff = IntStream.range(0, diPlus.length).mapToObj(i -> diPlus[i].subtract(diMinus[i]).abs()).toArray(BigDecimal[]::new);
-    final BigDecimal[] diSum = IntStream.range(0, diPlus.length).mapToObj(i -> diPlus[i].add(diMinus[i])).toArray(BigDecimal[]::new);
+    final BigDecimal[] diDiff = IntStream.range(0, this.getPeriod()).mapToObj(i -> diPlus[i].subtract(diMinus[i]).abs()).toArray(BigDecimal[]::new);
+    final BigDecimal[] diSum = IntStream.range(0, this.getPeriod()).mapToObj(i -> diPlus[i].add(diMinus[i])).toArray(BigDecimal[]::new);
 
-    final BigDecimal[] dx = IntStream.range(0, diDiff.length).mapToObj(i -> BigDecimal.valueOf(100).multiply(diDiff[i].divide(diSum[i], 10, RoundingMode.HALF_UP)))
+    final BigDecimal[] dx = IntStream.range(0, this.getPeriod()).mapToObj(i -> BigDecimal.valueOf(100).multiply(diDiff[i].divide(diSum[i], 10, RoundingMode.HALF_UP)))
         .toArray(BigDecimal[]::new);
     final BigDecimal adx = Arrays.stream(dx).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriod()), 10, RoundingMode.HALF_UP);
 

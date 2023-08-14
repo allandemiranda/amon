@@ -7,6 +7,7 @@ import br.eti.allandemiranda.forex.services.RviService;
 import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Arrays;
 import java.util.stream.IntStream;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -56,10 +57,10 @@ public class RelativeVigorIndex implements Indicator {
             10, RoundingMode.HALF_UP)).toArray(BigDecimal[]::new);
 
     final BigDecimal[] numeratorsSMA = IntStream.rangeClosed(0, 3).mapToObj(
-        i -> java.util.Arrays.stream(numerators, i, i + this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)
+        i -> Arrays.stream(numerators, i, i + this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)
             .divide(BigDecimal.valueOf(this.getPeriod()), 10, RoundingMode.HALF_UP)).toArray(BigDecimal[]::new);
     final BigDecimal[] dominatorsSMA = IntStream.rangeClosed(0, 3).mapToObj(
-        i -> java.util.Arrays.stream(dominators, i, i + this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)
+        i -> Arrays.stream(dominators, i, i + this.getPeriod()).reduce(BigDecimal.ZERO, BigDecimal::add)
             .divide(BigDecimal.valueOf(this.getPeriod()), 10, RoundingMode.HALF_UP)).toArray(BigDecimal[]::new);
 
     final BigDecimal rvi = numeratorsSMA[0].divide(dominatorsSMA[0], 10, RoundingMode.HALF_UP);
