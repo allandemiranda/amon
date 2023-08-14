@@ -1,5 +1,5 @@
 package br.eti.allandemiranda.forex.headers;
 
-public enum SignalHeader {
+public enum SignalHeaders {
   DATE_TIME, TREND, PRICE
 }

@@ -76,14 +76,14 @@ public class RelativeVigorIndex implements Indicator {
   public @NotNull IndicatorTrend getSignal() {
     final RVI[] rvis = this.getRviService().getRVIs();
     if (rvis.length > 1) {
-      if (rvis[rvis.length - 1].value().compareTo(rvis[rvis.length - 1].signal()) > 0 && rvis[rvis.length - 1].value().compareTo(BigDecimal.ZERO) < 0
-          && rvis[rvis.length - 1].signal().compareTo(BigDecimal.ZERO) < 0 && isCross(rvis)) {
+      if (rvis[0].value().compareTo(rvis[0].signal()) > 0 && rvis[0].value().compareTo(BigDecimal.ZERO) < 0 && rvis[0].signal().compareTo(BigDecimal.ZERO) < 0 && isCross(
+          rvis)) {
         this.getRviService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY,
             this.getCandlestickService().getOldestCandlestick().close());
         return IndicatorTrend.BUY;
       }
-      if (rvis[rvis.length - 1].value().compareTo(rvis[rvis.length - 1].signal()) < 0 && rvis[rvis.length - 1].value().compareTo(BigDecimal.ZERO) > 0
-          && rvis[rvis.length - 1].signal().compareTo(BigDecimal.ZERO) > 0 && isCross(rvis)) {
+      if (rvis[0].value().compareTo(rvis[0].signal()) < 0 && rvis[0].value().compareTo(BigDecimal.ZERO) > 0 && rvis[0].signal().compareTo(BigDecimal.ZERO) > 0 && isCross(
+          rvis)) {
         this.getRviService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL,
             this.getCandlestickService().getOldestCandlestick().close());
         return IndicatorTrend.SELL;

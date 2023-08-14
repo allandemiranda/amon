@@ -23,9 +23,9 @@ public class RRepository {
     this.setDateTime(LocalDateTime.MIN);
   }
 
-  public void add(final @NotNull LocalDateTime dataTime, final @NotNull BigDecimal cci) {
+  public void add(final @NotNull LocalDateTime dataTime, final @NotNull BigDecimal r) {
     this.setDateTime(dataTime);
-    this.setValue(cci);
+    this.setValue(r);
   }
 
   public @NotNull R get() {

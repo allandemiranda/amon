@@ -1,7 +1,7 @@
 package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.RVI;
-import br.eti.allandemiranda.forex.entities.RVIEntity;
+import br.eti.allandemiranda.forex.entities.RviEntity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.TreeSet;
@@ -15,11 +15,11 @@ import org.springframework.stereotype.Repository;
 public class RviRepository {
 
   private static final int MEMORY_SIZE = 3;
-  private final TreeSet<RVIEntity> dataBase = new TreeSet<>();
+  private final TreeSet<RviEntity> dataBase = new TreeSet<>();
 
   public void add(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal rvi, final @NotNull BigDecimal signal) {
     if (this.getDataBase().isEmpty() || dateTime.isAfter(this.getDataBase().first().getDateTime())) {
-      final RVIEntity entity = new RVIEntity();
+      final RviEntity entity = new RviEntity();
       entity.setRealDateTime(realDataTime);
       entity.setDateTime(dateTime);
       entity.setValue(rvi);
@@ -38,7 +38,7 @@ public class RviRepository {
     return this.getDataBase().stream().map(this::toModel).toArray(RVI[]::new);
   }
 
-  private @NotNull RVI toModel(final @NotNull RVIEntity entity) {
+  private @NotNull RVI toModel(final @NotNull RviEntity entity) {
     return new RVI(entity.getRealDateTime(), entity.getDateTime(), entity.getValue(), entity.getSignal());
   }
 }

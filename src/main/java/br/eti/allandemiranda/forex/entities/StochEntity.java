@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 @Getter
 @Setter
 @NoArgsConstructor
-public class RVIEntity implements Serializable, Comparable<RVIEntity> {
+public class StochEntity implements Serializable, Comparable<StochEntity> {
 
   @Serial
   private static final long serialVersionUID = 1L;
@@ -24,7 +24,7 @@ public class RVIEntity implements Serializable, Comparable<RVIEntity> {
   private LocalDateTime realDateTime;
   @Id
   private LocalDateTime dateTime;
-  private BigDecimal value;
+  private BigDecimal main;
   private BigDecimal signal;
 
   @Override
@@ -35,8 +35,8 @@ public class RVIEntity implements Serializable, Comparable<RVIEntity> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final RVIEntity rviEntity = (RVIEntity) o;
-    return Objects.equals(dateTime, rviEntity.dateTime);
+    final StochEntity that = (StochEntity) o;
+    return Objects.equals(dateTime, that.dateTime);
   }
 
   @Override
@@ -45,7 +45,7 @@ public class RVIEntity implements Serializable, Comparable<RVIEntity> {
   }
 
   @Override
-  public int compareTo(@NotNull final RVIEntity o) {
+  public int compareTo(@NotNull final StochEntity o) {
     return o.getDateTime().compareTo(this.getDateTime());
   }
 }

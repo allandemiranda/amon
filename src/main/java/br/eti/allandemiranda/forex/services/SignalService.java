@@ -2,7 +2,7 @@ package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.Signal;
-import br.eti.allandemiranda.forex.headers.SignalHeader;
+import br.eti.allandemiranda.forex.headers.SignalHeaders;
 import br.eti.allandemiranda.forex.repositories.SignalRepository;
 import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
@@ -78,7 +78,7 @@ public class SignalService {
     if (this.isDebugActive() && this.getRepository().isReady()) {
       if (!this.isPrinted()) {
         try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-          csvPrinter.printRecord(Stream.concat(Arrays.stream(SignalHeader.values()), signals.keySet().stream()).toArray());
+          csvPrinter.printRecord(Stream.concat(Arrays.stream(SignalHeaders.values()), signals.keySet().stream()).toArray());
         }
         this.setPrinted(true);
       }

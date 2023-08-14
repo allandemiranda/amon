@@ -33,23 +33,29 @@ public class WilliamsPercentRange implements Indicator {
   @Override
   public @NotNull IndicatorTrend getSignal() {
     if (this.getRService().getR().value().compareTo(BigDecimal.valueOf(-20)) > 0) {
-      this.getRService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL, this.getCandlestickService().getOldestCandlestick().close());
+      this.getRService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL,
+          this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.SELL;
     }
     if (this.getRService().getR().value().compareTo(BigDecimal.valueOf(-80)) < 0) {
-      this.getRService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY, this.getCandlestickService().getOldestCandlestick().close());
+      this.getRService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY,
+          this.getCandlestickService().getOldestCandlestick().close());
       return IndicatorTrend.BUY;
     }
-    this.getRService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL, this.getCandlestickService().getOldestCandlestick().close());
+    this.getRService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL,
+        this.getCandlestickService().getOldestCandlestick().close());
     return IndicatorTrend.NEUTRAL;
   }
 
   @Override
   public void run() {
     final BigDecimal highestHigh = this.getCandlestickService().getCandlesticks(this.getPeriod()).map(Candlestick::high).reduce(BigDecimal.ZERO, BigDecimal::max);
-    final BigDecimal lowestLow = this.getCandlestickService().getCandlesticks(this.getPeriod()).map(Candlestick::low).reduce(BigDecimal.valueOf(Double.MAX_VALUE), BigDecimal::min);
+    final BigDecimal lowestLow = this.getCandlestickService().getCandlesticks(this.getPeriod()).map(Candlestick::low)
+        .reduce(BigDecimal.valueOf(Double.MAX_VALUE), BigDecimal::min);
     final Candlestick oldestCandlestick = this.getCandlestickService().getOldestCandlestick();
-    final BigDecimal r = ((highestHigh.subtract(oldestCandlestick.close())).divide((highestHigh.subtract(lowestLow)), 10, RoundingMode.HALF_UP)).multiply(BigDecimal.valueOf(-100));
+    final BigDecimal k = ((highestHigh.subtract(oldestCandlestick.close())).divide((highestHigh.subtract(lowestLow)), 10, RoundingMode.HALF_UP)).multiply(
+        BigDecimal.valueOf(100));
+    final BigDecimal r = (BigDecimal.valueOf(-1)).multiply(k);
     this.getRService().addR(oldestCandlestick.dateTime(), r);
   }
 }
