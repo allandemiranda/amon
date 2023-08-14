@@ -51,8 +51,8 @@ public class CommodityChannelIndex implements Indicator {
 
   @Override
   public void run() {
-    final Function<Candlestick, BigDecimal> getTp = candlestick -> (candlestick.close().add(candlestick.high()).add(candlestick.low())).divide(BigDecimal.valueOf(3), 10,
-        RoundingMode.HALF_UP);
+    final Function<Candlestick, BigDecimal> getTp = candlestick -> ((candlestick.close()).add(candlestick.high()).add(candlestick.low())).divide(BigDecimal.valueOf(3),
+        10, RoundingMode.HALF_UP);
     final BigDecimal[] tps = this.getCandlestickService().getCandlesticks(this.getPeriod()).map(getTp).toArray(BigDecimal[]::new);
     final BigDecimal tpSMA = Arrays.stream(tps).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriod()), 10, RoundingMode.HALF_UP);
     final BigDecimal deviation = Arrays.stream(tps).map(tp -> tpSMA.subtract(tp).abs()).reduce(BigDecimal.ZERO, BigDecimal::add)
