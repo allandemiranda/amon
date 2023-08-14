@@ -5,6 +5,7 @@ import br.eti.allandemiranda.forex.controllers.indicators.trend.CommodityChannel
 import br.eti.allandemiranda.forex.controllers.indicators.trend.EnvelopesTechnicalIndicator;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.RelativeStrengthIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.RelativeVigorIndex;
+import br.eti.allandemiranda.forex.controllers.indicators.trend.WilliamsPercentRange;
 import br.eti.allandemiranda.forex.exceptions.IndicatorsException;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.IndicatorService;
@@ -35,12 +36,14 @@ public class IndicatorsProcessor {
   private static final String CCI = "CCI";
   private static final String RSI = "RSI";
   private static final String RVI = "RVI";
+  private static final String R = "%R";
 
   private final AverageDirectionalMovementIndex averageDirectionalMovementIndex;
   private final EnvelopesTechnicalIndicator envelopesTechnicalIndicator;
   private final CommodityChannelIndex commodityChannelIndex;
   private final RelativeStrengthIndex relativeStrengthIndex;
   private final RelativeVigorIndex relativeVigorIndex;
+  private final WilliamsPercentRange williamsPercentRange;
   private final IndicatorService indicatorService;
   private final SignalService signalService;
   private final CandlestickService candlestickService;
@@ -53,7 +56,8 @@ public class IndicatorsProcessor {
   @Autowired
   protected IndicatorsProcessor(final AverageDirectionalMovementIndex averageDirectionalMovementIndex, final EnvelopesTechnicalIndicator envelopesTechnicalIndicator,
       final CommodityChannelIndex commodityChannelIndex, final RelativeStrengthIndex relativeStrengthIndex, final IndicatorService indicatorService,
-      final SignalService signalService, final CandlestickService candlestickService, final RelativeVigorIndex relativeVigorIndex) {
+      final SignalService signalService, final CandlestickService candlestickService, final RelativeVigorIndex relativeVigorIndex,
+      final WilliamsPercentRange williamsPercentRange) {
     this.averageDirectionalMovementIndex = averageDirectionalMovementIndex;
     this.envelopesTechnicalIndicator = envelopesTechnicalIndicator;
     this.commodityChannelIndex = commodityChannelIndex;
@@ -62,6 +66,7 @@ public class IndicatorsProcessor {
     this.signalService = signalService;
     this.candlestickService = candlestickService;
     this.relativeVigorIndex = relativeVigorIndex;
+    this.williamsPercentRange = williamsPercentRange;
   }
 
   @PostConstruct
@@ -71,6 +76,7 @@ public class IndicatorsProcessor {
     this.getIndicatorService().addIndicator(CCI, this.getCommodityChannelIndex());
     this.getIndicatorService().addIndicator(RSI, this.getRelativeStrengthIndex());
     this.getIndicatorService().addIndicator(RVI, this.getRelativeVigorIndex());
+    this.getIndicatorService().addIndicator(R, this.getWilliamsPercentRange());
   }
 
   @Synchronized
