@@ -1,7 +1,7 @@
 package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.STOCH;
-import br.eti.allandemiranda.forex.headers.StochHeaders;
+import br.eti.allandemiranda.forex.headers.StochHeader;
 import br.eti.allandemiranda.forex.repositories.StochRepository;
 import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
@@ -66,7 +66,7 @@ public class StochService {
   private void printDebugHeader() {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(Arrays.stream(StochHeaders.values()).map(Enum::toString).toArray());
+        csvPrinter.printRecord(Arrays.stream(StochHeader.values()).map(Enum::toString).toArray());
       }
     }
   }

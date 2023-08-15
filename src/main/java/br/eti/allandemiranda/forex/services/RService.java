@@ -1,7 +1,7 @@
 package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.R;
-import br.eti.allandemiranda.forex.headers.RHeaders;
+import br.eti.allandemiranda.forex.headers.RHeader;
 import br.eti.allandemiranda.forex.repositories.RRepository;
 import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
@@ -66,7 +66,7 @@ public class RService {
   private void printDebugHeader() {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(Arrays.stream(RHeaders.values()).map(Enum::toString).toArray());
+        csvPrinter.printRecord(Arrays.stream(RHeader.values()).map(Enum::toString).toArray());
       }
     }
   }

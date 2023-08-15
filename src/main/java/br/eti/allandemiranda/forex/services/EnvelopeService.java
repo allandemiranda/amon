@@ -1,7 +1,7 @@
 package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.Envelopes;
-import br.eti.allandemiranda.forex.headers.EnvelopesHeaders;
+import br.eti.allandemiranda.forex.headers.EnvelopesHeader;
 import br.eti.allandemiranda.forex.repositories.EnvelopeRepository;
 import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
@@ -66,7 +66,7 @@ public class EnvelopeService {
   private void printDebugHeader() {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(Arrays.stream(EnvelopesHeaders.values()).map(Enum::toString).toArray());
+        csvPrinter.printRecord(Arrays.stream(EnvelopesHeader.values()).map(Enum::toString).toArray());
       }
     }
   }

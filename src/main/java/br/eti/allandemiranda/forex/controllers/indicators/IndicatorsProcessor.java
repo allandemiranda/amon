@@ -2,6 +2,7 @@ package br.eti.allandemiranda.forex.controllers.indicators;
 
 import br.eti.allandemiranda.forex.controllers.indicators.trend.AverageDirectionalMovementIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.CommodityChannelIndex;
+import br.eti.allandemiranda.forex.controllers.indicators.trend.DeMarker;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.EnvelopesTechnicalIndicator;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.RelativeStrengthIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.RelativeVigorIndex;
@@ -39,6 +40,7 @@ public class IndicatorsProcessor {
   private static final String RVI = "RVI";
   private static final String R = "%R";
   private static final String STOCH = "STOCH";
+  private static final String DEM = "DeM";
 
   private final AverageDirectionalMovementIndex averageDirectionalMovementIndex;
   private final EnvelopesTechnicalIndicator envelopesTechnicalIndicator;
@@ -47,6 +49,7 @@ public class IndicatorsProcessor {
   private final RelativeVigorIndex relativeVigorIndex;
   private final WilliamsPercentRange williamsPercentRange;
   private final StochasticOscillator stochasticOscillator;
+  private final DeMarker deMarker;
   private final IndicatorService indicatorService;
   private final SignalService signalService;
   private final CandlestickService candlestickService;
@@ -60,7 +63,7 @@ public class IndicatorsProcessor {
   protected IndicatorsProcessor(final AverageDirectionalMovementIndex averageDirectionalMovementIndex, final EnvelopesTechnicalIndicator envelopesTechnicalIndicator,
       final CommodityChannelIndex commodityChannelIndex, final RelativeStrengthIndex relativeStrengthIndex, final IndicatorService indicatorService,
       final SignalService signalService, final CandlestickService candlestickService, final RelativeVigorIndex relativeVigorIndex,
-      final WilliamsPercentRange williamsPercentRange, final StochasticOscillator stochasticOscillator) {
+      final WilliamsPercentRange williamsPercentRange, final StochasticOscillator stochasticOscillator, final DeMarker deMarker) {
     this.averageDirectionalMovementIndex = averageDirectionalMovementIndex;
     this.envelopesTechnicalIndicator = envelopesTechnicalIndicator;
     this.commodityChannelIndex = commodityChannelIndex;
@@ -71,6 +74,7 @@ public class IndicatorsProcessor {
     this.relativeVigorIndex = relativeVigorIndex;
     this.williamsPercentRange = williamsPercentRange;
     this.stochasticOscillator = stochasticOscillator;
+    this.deMarker = deMarker;
   }
 
   @PostConstruct
@@ -82,6 +86,7 @@ public class IndicatorsProcessor {
     this.getIndicatorService().addIndicator(RVI, this.getRelativeVigorIndex());
     this.getIndicatorService().addIndicator(R, this.getWilliamsPercentRange());
     this.getIndicatorService().addIndicator(STOCH, this.getStochasticOscillator());
+    this.getIndicatorService().addIndicator(DEM, this.getDeMarker());
   }
 
   @Synchronized
