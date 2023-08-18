@@ -1,5 +1,6 @@
 package br.eti.allandemiranda.forex.controllers.indicators;
 
+import br.eti.allandemiranda.forex.controllers.indicators.trend.AceleradorOscilador;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.AverageDirectionalMovementIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.CommodityChannelIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.DeMarker;
@@ -41,6 +42,7 @@ public class IndicatorsProcessor {
   private static final String R = "%R";
   private static final String STOCH = "STOCH";
   private static final String DEM = "DeM";
+  private static final String AC = "AC";
 
   private final AverageDirectionalMovementIndex averageDirectionalMovementIndex;
   private final EnvelopesTechnicalIndicator envelopesTechnicalIndicator;
@@ -50,6 +52,7 @@ public class IndicatorsProcessor {
   private final WilliamsPercentRange williamsPercentRange;
   private final StochasticOscillator stochasticOscillator;
   private final DeMarker deMarker;
+  private final AceleradorOscilador aceleradorOscilador;
   private final IndicatorService indicatorService;
   private final SignalService signalService;
   private final CandlestickService candlestickService;
@@ -63,7 +66,8 @@ public class IndicatorsProcessor {
   protected IndicatorsProcessor(final AverageDirectionalMovementIndex averageDirectionalMovementIndex, final EnvelopesTechnicalIndicator envelopesTechnicalIndicator,
       final CommodityChannelIndex commodityChannelIndex, final RelativeStrengthIndex relativeStrengthIndex, final IndicatorService indicatorService,
       final SignalService signalService, final CandlestickService candlestickService, final RelativeVigorIndex relativeVigorIndex,
-      final WilliamsPercentRange williamsPercentRange, final StochasticOscillator stochasticOscillator, final DeMarker deMarker) {
+      final WilliamsPercentRange williamsPercentRange, final StochasticOscillator stochasticOscillator, final DeMarker deMarker,
+      final AceleradorOscilador aceleradorOscilador) {
     this.averageDirectionalMovementIndex = averageDirectionalMovementIndex;
     this.envelopesTechnicalIndicator = envelopesTechnicalIndicator;
     this.commodityChannelIndex = commodityChannelIndex;
@@ -75,6 +79,7 @@ public class IndicatorsProcessor {
     this.williamsPercentRange = williamsPercentRange;
     this.stochasticOscillator = stochasticOscillator;
     this.deMarker = deMarker;
+    this.aceleradorOscilador = aceleradorOscilador;
   }
 
   @PostConstruct
@@ -87,6 +92,7 @@ public class IndicatorsProcessor {
     this.getIndicatorService().addIndicator(R, this.getWilliamsPercentRange());
     this.getIndicatorService().addIndicator(STOCH, this.getStochasticOscillator());
     this.getIndicatorService().addIndicator(DEM, this.getDeMarker());
+    this.getIndicatorService().addIndicator(AC, this.getAceleradorOscilador());
   }
 
   @Synchronized

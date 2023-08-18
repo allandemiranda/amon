@@ -31,6 +31,7 @@ public class RviRepository {
     } else {
       this.getDataBase().first().setRealDateTime(realDataTime);
       this.getDataBase().first().setValue(rvi);
+      this.getDataBase().first().setSignal(signal);
     }
   }
 
