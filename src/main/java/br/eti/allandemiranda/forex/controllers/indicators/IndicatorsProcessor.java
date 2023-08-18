@@ -5,6 +5,7 @@ import br.eti.allandemiranda.forex.controllers.indicators.trend.AverageDirection
 import br.eti.allandemiranda.forex.controllers.indicators.trend.CommodityChannelIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.DeMarker;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.EnvelopesTechnicalIndicator;
+import br.eti.allandemiranda.forex.controllers.indicators.trend.MovingAverageConvergenceDivergence;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.RelativeStrengthIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.RelativeVigorIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.StochasticOscillator;
@@ -43,6 +44,7 @@ public class IndicatorsProcessor {
   private static final String STOCH = "STOCH";
   private static final String DEM = "DeM";
   private static final String AC = "AC";
+  private static final String MACD = "MACD";
 
   private final AverageDirectionalMovementIndex averageDirectionalMovementIndex;
   private final EnvelopesTechnicalIndicator envelopesTechnicalIndicator;
@@ -53,6 +55,7 @@ public class IndicatorsProcessor {
   private final StochasticOscillator stochasticOscillator;
   private final DeMarker deMarker;
   private final AceleradorOscilador aceleradorOscilador;
+  private final MovingAverageConvergenceDivergence movingAverageConvergenceDivergence;
   private final IndicatorService indicatorService;
   private final SignalService signalService;
   private final CandlestickService candlestickService;
@@ -67,7 +70,7 @@ public class IndicatorsProcessor {
       final CommodityChannelIndex commodityChannelIndex, final RelativeStrengthIndex relativeStrengthIndex, final IndicatorService indicatorService,
       final SignalService signalService, final CandlestickService candlestickService, final RelativeVigorIndex relativeVigorIndex,
       final WilliamsPercentRange williamsPercentRange, final StochasticOscillator stochasticOscillator, final DeMarker deMarker,
-      final AceleradorOscilador aceleradorOscilador) {
+      final AceleradorOscilador aceleradorOscilador, final MovingAverageConvergenceDivergence movingAverageConvergenceDivergence) {
     this.averageDirectionalMovementIndex = averageDirectionalMovementIndex;
     this.envelopesTechnicalIndicator = envelopesTechnicalIndicator;
     this.commodityChannelIndex = commodityChannelIndex;
@@ -80,6 +83,7 @@ public class IndicatorsProcessor {
     this.stochasticOscillator = stochasticOscillator;
     this.deMarker = deMarker;
     this.aceleradorOscilador = aceleradorOscilador;
+    this.movingAverageConvergenceDivergence = movingAverageConvergenceDivergence;
   }
 
   @PostConstruct
@@ -93,6 +97,7 @@ public class IndicatorsProcessor {
     this.getIndicatorService().addIndicator(STOCH, this.getStochasticOscillator());
     this.getIndicatorService().addIndicator(DEM, this.getDeMarker());
     this.getIndicatorService().addIndicator(AC, this.getAceleradorOscilador());
+    this.getIndicatorService().addIndicator(MACD, this.getMovingAverageConvergenceDivergence());
   }
 
   @Synchronized
