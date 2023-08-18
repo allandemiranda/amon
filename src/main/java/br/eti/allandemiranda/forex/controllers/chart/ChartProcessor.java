@@ -33,7 +33,6 @@ public class ChartProcessor {
   }
 
   private static @NotNull LocalDateTime getCandleDateTime(final @NotNull LocalDateTime dataTime, final @NotNull TimeFrame timeFrame) {
-    //TODO
     return switch (timeFrame) {
       case M1 -> getDateTimeLowM(dataTime, 1);
       case M5 -> getDateTimeLowM(dataTime, 5);
@@ -46,15 +45,15 @@ public class ChartProcessor {
 
   private static @NotNull LocalDateTime getDateTimeLowM(final @NotNull LocalDateTime ticketDateTime, final int timeFrameMin) {
     final int oneHourMin = 60;
-    final int[] minArray = IntStream.rangeClosed(0, oneHourMin / timeFrameMin).map(operand -> oneHourMin * timeFrameMin).toArray();
+    final int[] minArray = IntStream.rangeClosed(0, oneHourMin / timeFrameMin).map(operand -> timeFrameMin * operand).toArray();
     final int index = IntStream.range(1, minArray.length).filter(i -> ticketDateTime.getMinute() < minArray[i]).findFirst().orElseThrow(IllegalStateException::new);
     return LocalDateTime.of(ticketDateTime.toLocalDate(), LocalTime.of(ticketDateTime.getHour(), minArray[index - 1]));
   }
 
   private static @NotNull LocalDateTime getDateTimeLowH(final @NotNull LocalDateTime ticketDateTime, final int timeFrameHour) {
     final int oneDay = 24;
-    final int[] hourArray = IntStream.rangeClosed(0, oneDay / timeFrameHour).map(operand -> oneDay * timeFrameHour).toArray();
-    final int index = IntStream.range(1, hourArray.length).filter(i -> ticketDateTime.getMinute() < hourArray[i]).findFirst().orElseThrow(IllegalStateException::new);
+    final int[] hourArray = IntStream.rangeClosed(0, oneDay / timeFrameHour).map(operand -> operand * timeFrameHour).toArray();
+    final int index = IntStream.range(1, hourArray.length).filter(i -> ticketDateTime.getHour() < hourArray[i]).findFirst().orElseThrow(IllegalStateException::new);
     return LocalDateTime.of(ticketDateTime.toLocalDate(), LocalTime.of(hourArray[index - 1], 0));
   }
 
@@ -87,7 +86,8 @@ public class ChartProcessor {
   public void run() {
     if (this.getTicketService().isReady()) {
       final Ticket ticket = this.getTicketService().getTicket();
-      this.candlestickService.addTicket(ticket, getCandleDateTime(ticket.dateTime(), this.getTimeFrame()));
+      final LocalDateTime candleDateTime = getCandleDateTime(ticket.dateTime(), this.getTimeFrame());
+      this.candlestickService.addTicket(ticket, candleDateTime);
     }
   }
 
