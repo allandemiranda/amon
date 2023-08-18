@@ -33,7 +33,7 @@ public class AdxService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${adx.debug:true}")
+  @Value("${adx.debug:false}")
   private boolean debugActive;
 
   @Autowired

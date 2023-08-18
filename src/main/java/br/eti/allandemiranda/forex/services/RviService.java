@@ -33,7 +33,7 @@ public class RviService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${rvi.debug:true}")
+  @Value("${rvi.debug:false}")
   private boolean debugActive;
 
   @Autowired

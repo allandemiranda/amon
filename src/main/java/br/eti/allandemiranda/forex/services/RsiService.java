@@ -33,7 +33,7 @@ public class RsiService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${rsi.debug:true}")
+  @Value("${rsi.debug:false}")
   private boolean debugActive;
 
   @Autowired

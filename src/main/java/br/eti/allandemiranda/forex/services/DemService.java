@@ -33,7 +33,7 @@ public class DemService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${dem.debug:true}")
+  @Value("${dem.debug:false}")
   private boolean debugActive;
 
   @Autowired

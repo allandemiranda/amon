@@ -33,7 +33,7 @@ public class RService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${r.debug:true}")
+  @Value("${r.debug:false}")
   private boolean debugActive;
 
   @Autowired

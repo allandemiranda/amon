@@ -18,7 +18,6 @@ import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -120,20 +119,20 @@ public class IndicatorsProcessor {
       final TreeMap<String, IndicatorTrend> trendSortedMap = this.getIndicatorService().getIndicators().entrySet().stream()
           .collect(Collectors.toMap(Entry::getKey, o -> o.getValue().getSignal(), (o1, o2) -> o1, TreeMap::new));
       final BigDecimal average = BigDecimal.valueOf(trendSortedMap.values().stream().mapToInt(indicator -> switch (indicator) {
-        case SELL -> -1;
-        case BUY -> 1;
-        case NEUTRAL -> 0;
-      }).sum()).divide(BigDecimal.valueOf(trendSortedMap.size()), 2, RoundingMode.DOWN);
-      if (average.compareTo(BigDecimal.valueOf(-0.5)) > 0 && average.compareTo(BigDecimal.valueOf(0.5)) < 0) {
+        case SELL -> 1;
+        case BUY -> 3;
+        case NEUTRAL -> 2;
+      }).sum());
+      if (average.compareTo(BigDecimal.valueOf(18)) >= 0 && average.compareTo(BigDecimal.valueOf(22)) <= 0) {
         this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.NEUTRAL, trendSortedMap);
-      } else if (average.compareTo(BigDecimal.ONE) == 0) {
-        this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.BUY, trendSortedMap);
-      } else if (average.compareTo(BigDecimal.valueOf(-1)) == 0) {
-        this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.SELL, trendSortedMap);
-      } else if (average.compareTo(BigDecimal.ONE) > 0) {
-        this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.STRONG_BUY, trendSortedMap);
-      } else if (average.compareTo(BigDecimal.valueOf(-1)) < 0) {
+      } else if (average.compareTo(BigDecimal.valueOf(15)) < 0) {
         this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.STRONG_SELL, trendSortedMap);
+      } else if (average.compareTo(BigDecimal.valueOf(25)) > 0) {
+        this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.STRONG_BUY, trendSortedMap);
+      } else if (average.compareTo(BigDecimal.valueOf(18)) < 0) {
+        this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.SELL, trendSortedMap);
+      } else if (average.compareTo(BigDecimal.valueOf(22)) > 0) {
+        this.getSignalService().addGlobalSignal(this.getCandlestickService().getOldestCandlestick(), SignalTrend.BUY, trendSortedMap);
       }
     }
   }

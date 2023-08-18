@@ -33,7 +33,7 @@ public class StochService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${stoch.debug:true}")
+  @Value("${stoch.debug:false}")
   private boolean debugActive;
 
   @Autowired

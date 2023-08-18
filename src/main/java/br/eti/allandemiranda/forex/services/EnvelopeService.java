@@ -33,7 +33,7 @@ public class EnvelopeService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${envelopes.debug:true}")
+  @Value("${envelopes.debug:false}")
   private boolean debugActive;
 
   @Autowired

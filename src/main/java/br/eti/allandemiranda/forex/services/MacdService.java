@@ -33,7 +33,7 @@ public class MacdService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${macd.debug:true}")
+  @Value("${macd.debug:false}")
   private boolean debugActive;
 
   @Autowired
