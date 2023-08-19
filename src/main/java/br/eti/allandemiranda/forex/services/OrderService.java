@@ -12,8 +12,10 @@ import java.io.FileWriter;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -100,8 +102,13 @@ public class OrderService {
   }
 
   @PostConstruct
+  @SneakyThrows
   private void init() {
     this.printDebugHeader();
+    final File file = new File(this.getOutputFolder(), "fullOrder.csv");
+    try (final FileWriter fileWriter = new FileWriter(file); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+      csvPrinter.printRecord("DATA_TIME", "PRICE", "BUY", "SELL");
+    }
   }
 
   @SneakyThrows
@@ -129,5 +136,21 @@ public class OrderService {
             order.currentBalance());
       }
     }
+  }
+
+  Order lOrder = null;
+  @SneakyThrows
+  public void debugFull(final @NotNull Ticket ticket) {
+    Order order = this.getRepository().getLastOrder();
+    if(Objects.nonNull(lOrder)) {
+      final File file = new File(this.getOutputFolder(), "fullOrder.csv");
+      try (final FileWriter fileWriter = new FileWriter(file, true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+        csvPrinter.printRecord(ticket.dateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            !order.status().equals(OrderStatus.OPEN) && !lOrder.status().equals(OrderStatus.OPEN) ? getNumber(ticket.bid()) : "",
+            (lOrder.status().equals(OrderStatus.OPEN) || order.status().equals(OrderStatus.OPEN)) && order.position().equals(OrderPosition.BUY) ? getNumber(ticket.bid()) : "",
+            (lOrder.status().equals(OrderStatus.OPEN) || order.status().equals(OrderStatus.OPEN)) && order.position().equals(OrderPosition.SELL) ? getNumber(ticket.bid()) : "");
+      }
+    }
+    lOrder = order;
   }
 }

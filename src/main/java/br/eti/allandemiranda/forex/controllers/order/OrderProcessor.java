@@ -97,6 +97,7 @@ public class OrderProcessor {
     } else if (this.getSignalService().isOpenSignal()){
       operationToCloseOrder(ticket, this.getStopLoss(), this.getMaxSpread());
     }
+    this.getOrderService().debugFull(ticket);
   }
 
   private void operationToCloseOrder(final Ticket ticket, final int stopLoss, final int maxSpread) {
