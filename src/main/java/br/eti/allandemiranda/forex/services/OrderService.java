@@ -39,7 +39,7 @@ public class OrderService {
   @Value("${order.debug:false}")
   private boolean debugActive;
   @Setter(AccessLevel.PRIVATE)
-  private int newMultiplication = 1;
+  private int newMultiplication = 0;
 
   @Autowired
   protected OrderService(final OrderRepository repository) {
@@ -67,12 +67,13 @@ public class OrderService {
           this.updateDebugFile();
         }
       } else {
-        if (currentProfit >= (tradingGain * this.getNewMultiplication())) {
+        if (currentProfit >= ((tradingGain * this.getNewMultiplication()) + takeProfit)) {
           this.setNewMultiplication(this.getNewMultiplication() + 1);
         } else if (currentProfit <= Math.negateExact(stopLoss)) {
           this.closePosition(OrderStatus.CLOSE_SL);
           this.updateDebugFile();
-        } else if (this.getNewMultiplication() > 1 && currentProfit <= ((tradingGain * (this.getNewMultiplication() - 1)) - tradingLoss)) {
+        } else if ((this.getNewMultiplication() == 1 && currentProfit <= takeProfit - tradingLoss) || (this.getNewMultiplication() != 0 &&
+            currentProfit <= ((tradingGain * (this.getNewMultiplication() - 1)) + takeProfit - tradingLoss))) {
           this.closePosition(OrderStatus.CLOSE_TG);
           this.updateDebugFile();
         }
@@ -89,7 +90,7 @@ public class OrderService {
 
   public void closePosition(final @NotNull OrderStatus status) {
     if (!OrderStatus.OPEN.equals(status)) {
-      this.setNewMultiplication(1);
+      this.setNewMultiplication(0);
       this.getRepository().closePosition(status);
     }
   }
