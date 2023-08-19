@@ -33,6 +33,10 @@ public class OrderProcessor {
   @Value("${order.stop-loss:0}")
   @Setter(AccessLevel.PRIVATE)
   private int stopLoss;
+  @Value("${order.trading.gain:0}")
+  private int tradingGain;
+  @Value("${order.trading.loss:0}")
+  private int tradingLoss;
   @Value("${order.open.spread.max:0}")
   @Setter(AccessLevel.PRIVATE)
   private int maxSpread;
@@ -89,7 +93,7 @@ public class OrderProcessor {
   public void run() {
     final Ticket ticket = this.getTicketService().getTicket();
     if (OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status())) {
-      operationToOpenOrder(ticket, this.getTakeProfit(), this.getStopLoss());
+      operationToOpenOrder(ticket, this.getTakeProfit(), this.getStopLoss(), this.getTradingGain(), this.getTradingLoss());
     } else if (this.getSignalService().isOpenSignal()){
       operationToCloseOrder(ticket, this.getStopLoss(), this.getMaxSpread());
     }
@@ -122,8 +126,8 @@ public class OrderProcessor {
     }
   }
 
-  private void operationToOpenOrder(final Ticket ticket, final int takeProfit, final int stopLoss) {
-    if (OrderStatus.OPEN.equals(this.getOrderService().updateOpenPosition(ticket, takeProfit, stopLoss))) {
+  private void operationToOpenOrder(final Ticket ticket, final int takeProfit, final int stopLoss, final int tradingGain, final int tradingLoss) {
+    if (OrderStatus.OPEN.equals(this.getOrderService().updateOpenPosition(ticket, takeProfit, stopLoss, tradingGain, tradingLoss))) {
       switch (this.getSignalService().getOpenSignal().trend()) {
         case STRONG_BUY, BUY -> {
           if (this.getOrderService().getLastOrder().position().equals(OrderPosition.SELL)) {

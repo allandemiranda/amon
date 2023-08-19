@@ -34,11 +34,14 @@ public class TicketService {
   }
 
   @Synchronized
-  public void updateData(final @NotNull LocalDateTime dateTime, final double bid, final double ask) {
+  public boolean updateData(final @NotNull LocalDateTime dateTime, final double bid, final double ask) {
     if (dateTime.isAfter(this.getRepository().getCurrentTicket().dateTime())) {
       this.getRepository().update(dateTime, bid, ask);
+      return true;
     } else {
-      log.warn("Bad input ticket dataTime={} bid={} ask={}", dateTime.format(DateTimeFormatter.ISO_DATE_TIME), bid, ask);
+      // todo: removido para ser mais rápido
+      // log.warn("Bad input ticket dataTime={} bid={} ask={}", dateTime.format(DateTimeFormatter.ISO_DATE_TIME), bid, ask);
+      return false;
     }
   }
 }

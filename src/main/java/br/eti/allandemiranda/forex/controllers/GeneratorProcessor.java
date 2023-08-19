@@ -32,9 +32,12 @@ public class GeneratorProcessor {
 
   @Synchronized
   public void webSocket(final LocalDateTime time, final Double bid, final Double ask) {
-    this.getTicketService().updateData(Objects.isNull(time) ? LocalDateTime.MIN : time, Objects.isNull(bid) ? 0d : bid, Objects.isNull(ask) ? 0d : ask);
-    this.getChartProcessor().run();
-    this.getIndicatorsProcessor().run();
-    this.getOrderProcessor().run();
+    final boolean updatedData = this.getTicketService()
+        .updateData(Objects.isNull(time) ? LocalDateTime.MIN : time, Objects.isNull(bid) ? 0d : bid, Objects.isNull(ask) ? 0d : ask);
+    if (updatedData) {
+      this.getChartProcessor().run();
+      this.getIndicatorsProcessor().run();
+      this.getOrderProcessor().run();
+    }
   }
 }

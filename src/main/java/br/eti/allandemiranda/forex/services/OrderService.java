@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -37,6 +38,8 @@ public class OrderService {
   private File outputFolder;
   @Value("${order.debug:false}")
   private boolean debugActive;
+  @Setter(AccessLevel.PRIVATE)
+  private int newMultiplication = 1;
 
   @Autowired
   protected OrderService(final OrderRepository repository) {
@@ -51,16 +54,28 @@ public class OrderService {
     return this.getRepository().getLastOrder();
   }
 
-  public @NotNull OrderStatus updateOpenPosition(final @NotNull Ticket ticket, final int takeProfit, final int stopLoss) {
+  public @NotNull OrderStatus updateOpenPosition(final @NotNull Ticket ticket, final int takeProfit, final int stopLoss, final int tradingGain, final int tradingLoss) {
     if (this.getRepository().getLastOrder().lastUpdate().isBefore(ticket.dateTime())) {
       this.getRepository().updateOpenPosition(ticket);
-      final double currentProfit = this.getRepository().getLastOrder().currentProfit();
-      if (currentProfit >= takeProfit) {
-        this.closePosition(OrderStatus.CLOSE_TP);
-        this.updateDebugFile();
-      } else if (currentProfit <= Math.negateExact(stopLoss)) {
-        this.closePosition(OrderStatus.CLOSE_SL);
-        this.updateDebugFile();
+      final int currentProfit = this.getRepository().getLastOrder().currentProfit();
+      if (tradingGain == 0) {
+        if (currentProfit >= takeProfit) {
+          this.closePosition(OrderStatus.CLOSE_TP);
+          this.updateDebugFile();
+        } else if (currentProfit <= Math.negateExact(stopLoss)) {
+          this.closePosition(OrderStatus.CLOSE_SL);
+          this.updateDebugFile();
+        }
+      } else {
+        if (currentProfit >= (tradingGain * this.getNewMultiplication())) {
+          this.setNewMultiplication(this.getNewMultiplication() + 1);
+        } else if (currentProfit <= Math.negateExact(stopLoss)) {
+          this.closePosition(OrderStatus.CLOSE_SL);
+          this.updateDebugFile();
+        } else if (this.getNewMultiplication() > 1 && currentProfit <= ((tradingGain * (this.getNewMultiplication() - 1)) - tradingLoss)) {
+          this.closePosition(OrderStatus.CLOSE_TG);
+          this.updateDebugFile();
+        }
       }
     }
     return this.getRepository().getLastOrder().status();
@@ -74,6 +89,7 @@ public class OrderService {
 
   public void closePosition(final @NotNull OrderStatus status) {
     if (!OrderStatus.OPEN.equals(status)) {
+      this.setNewMultiplication(1);
       this.getRepository().closePosition(status);
     }
   }
