@@ -3,7 +3,6 @@ package br.eti.allandemiranda.forex.controllers.indicators;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.AceleradorOscilador;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.AverageDirectionalMovementIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.MovingAverageConvergenceDivergence;
-import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.exceptions.IndicatorsException;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.IndicatorService;
@@ -58,8 +57,9 @@ public class IndicatorsProcessor {
 
   @Synchronized
   public void run() {
-    final LocalDateTime candleDataTime = this.getCandlestickService().getCandlesticks(1).toArray(Candlestick[]::new)[0].candleDateTime();
-    if (this.getCandlestickService().isReady() && this.getSignalService().getLastSignal().candleDataTime().isBefore(candleDataTime)) {
+    if (this.getCandlestickService().isReady() && this.getSignalService().getLastSignal().dataTime()
+        .isBefore(this.getCandlestickService().getLastCandlestick().dateTime())) {
+      final LocalDateTime candleDataTime = this.getCandlestickService().getLastCandlestick().dateTime();
       this.getIndicatorService().getIndicators().entrySet().parallelStream().map(entry -> {
         Thread thread = new Thread(entry.getValue(), entry.getKey());
         thread.start();
@@ -83,10 +83,14 @@ public class IndicatorsProcessor {
         this.getSignalService().addGlobalSignal(candleDataTime, SignalTrend.STRONG_SELL);
       } else if (average.compareTo(BigDecimal.valueOf(3)) == 0) {
         this.getSignalService().addGlobalSignal(candleDataTime, SignalTrend.STRONG_BUY);
-      } else {
+      } else if (average.compareTo(BigDecimal.ZERO) == 0) {
         this.getSignalService().addGlobalSignal(candleDataTime, SignalTrend.NEUTRAL);
+      } else if (average.compareTo(BigDecimal.ZERO) > 0) {
+        this.getSignalService().addGlobalSignal(candleDataTime, SignalTrend.BUY);
+      } else if (average.compareTo(BigDecimal.ZERO) < 0) {
+        this.getSignalService().addGlobalSignal(candleDataTime, SignalTrend.SELL);
       }
-      this.getSignalService().updateDebugFile(this.getCandlestickService().getCandlesticks(1).toArray(Candlestick[]::new)[0], trendSortedMap);
+      this.getSignalService().updateDebugFile(this.getCandlestickService().getLastCandlestick(), trendSortedMap);
     }
   }
 }

@@ -36,7 +36,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
   @Override
   public @NotNull IndicatorTrend getSignal() {
     final ADX adx = this.getAdxService().getAdx();
-    final BigDecimal price = this.getCandlestickService().getOldestCandlestick().close();
+    final BigDecimal price = this.getCandlestickService().getLastCandlestick().close();
     if (adx.value().compareTo(BigDecimal.valueOf(25)) > 0) {
       if (adx.diPlus().compareTo(adx.diMinus()) > 0) {
         this.getAdxService().updateDebugFile(IndicatorTrend.BUY, price);
@@ -76,15 +76,15 @@ public class AverageDirectionalMovementIndex implements Indicator {
       return (lowLast.subtract(lowCurrent)).compareTo(highCurrent.subtract(highLast)) > 0 ? (lowLast.subtract(lowCurrent)).max(BigDecimal.ZERO) : BigDecimal.ZERO;
     }).toArray(BigDecimal[]::new);
 
-    final BigDecimal[] trSum = IntStream.range(0, this.getPeriod())
-        .mapToObj(i -> Arrays.stream(trRow, i, this.getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
+    final BigDecimal[] trSum = IntStream.range(0, this.getPeriod()).mapToObj(i -> Arrays.stream(trRow, i, this.getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add))
+        .toArray(BigDecimal[]::new);
     final BigDecimal[] dmPlusSum = IntStream.range(0, this.getPeriod())
         .mapToObj(i -> Arrays.stream(dmPlusRow, i, this.getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
     final BigDecimal[] dmMinusSum = IntStream.range(0, this.getPeriod())
         .mapToObj(i -> Arrays.stream(dmMinusRow, i, this.getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
 
-    final BigDecimal[] diPlus = IntStream.range(0, this.getPeriod()).mapToObj(i -> BigDecimal.valueOf(100).multiply(dmPlusSum[i].divide(trSum[i], 10, RoundingMode.HALF_UP)))
-        .toArray(BigDecimal[]::new);
+    final BigDecimal[] diPlus = IntStream.range(0, this.getPeriod())
+        .mapToObj(i -> BigDecimal.valueOf(100).multiply(dmPlusSum[i].divide(trSum[i], 10, RoundingMode.HALF_UP))).toArray(BigDecimal[]::new);
     final BigDecimal[] diMinus = IntStream.range(0, this.getPeriod())
         .mapToObj(i -> BigDecimal.valueOf(100).multiply(dmMinusSum[i].divide(trSum[i], 10, RoundingMode.HALF_UP))).toArray(BigDecimal[]::new);
 
@@ -95,6 +95,6 @@ public class AverageDirectionalMovementIndex implements Indicator {
         .toArray(BigDecimal[]::new);
     final BigDecimal adx = Arrays.stream(dx).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriod()), 10, RoundingMode.HALF_UP);
 
-    this.getAdxService().addAdx(candlesticks[0].candleDateTime(), adx, diPlus[0], diMinus[0]);
+    this.getAdxService().addAdx(candlesticks[0].dateTime(), adx, diPlus[0], diMinus[0]);
   }
 }

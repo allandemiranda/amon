@@ -73,7 +73,7 @@ public class MovingAverageConvergenceDivergence implements Indicator {
   @Override
   public @NotNull IndicatorTrend getSignal() {
     final MACD[] macds = this.getMacdService().getMacd();
-    final BigDecimal price = this.getCandlestickService().getCandlesticks(1).toArray(Candlestick[]::new)[0].close();
+    final BigDecimal price = this.getCandlestickService().getLastCandlestick().close();
     if (macds.length > 1) {
       if (macds[0].main().compareTo(macds[0].signal()) > 0 && isCross(macds)) {
         this.getMacdService().updateDebugFile(IndicatorTrend.BUY, price);
@@ -96,7 +96,6 @@ public class MovingAverageConvergenceDivergence implements Indicator {
     final BigDecimal[] slows = getEMA(slowPeriod, closes);
     final BigDecimal[] macds = IntStream.range(0, macdPeriod).mapToObj(i -> fasts[i].subtract(slows[i])).toArray(BigDecimal[]::new);
     final BigDecimal signal = Arrays.stream(macds).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(macdPeriod), 10, RoundingMode.HALF_UP);
-    this.getMacdService()
-        .addMacd(this.getCandlestickService().getCandlesticks(1).toArray(Candlestick[]::new)[0].candleDateTime(), macds[0], signal);
+    this.getMacdService().addMacd(this.getCandlestickService().getLastCandlestick().dateTime(), macds[0], signal);
   }
 }

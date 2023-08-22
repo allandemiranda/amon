@@ -88,15 +88,15 @@ public class SignalService {
             indicators.entrySet().stream().filter(entry -> entry.getValue().equals(IndicatorTrend.NEUTRAL)).map(Entry::getKey).toArray());
         final String empty = "";
         if (signal.trend().equals(SignalTrend.STRONG_BUY)) {
-          csvPrinter.printRecord(candlestick.candleDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), getNumber(candlestick.open()), getNumber(candlestick.high()),
+          csvPrinter.printRecord(candlestick.dateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), getNumber(candlestick.open()), getNumber(candlestick.high()),
               getNumber(candlestick.low()), getNumber(candlestick.close()), getNumber(candlestick.close()), empty, empty, indicatorsBuy, indicatorsSell,
               indicatorsNeutral);
         } else if (signal.trend().equals(SignalTrend.STRONG_SELL)) {
-          csvPrinter.printRecord(candlestick.candleDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), getNumber(candlestick.open()), getNumber(candlestick.high()),
+          csvPrinter.printRecord(candlestick.dateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), getNumber(candlestick.open()), getNumber(candlestick.high()),
               getNumber(candlestick.low()), getNumber(candlestick.close()), empty, getNumber(candlestick.close()), empty, indicatorsBuy, indicatorsSell,
               indicatorsNeutral);
         } else if (signal.trend().equals(SignalTrend.NEUTRAL)) {
-          csvPrinter.printRecord(candlestick.candleDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), getNumber(candlestick.open()), getNumber(candlestick.high()),
+          csvPrinter.printRecord(candlestick.dateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), getNumber(candlestick.open()), getNumber(candlestick.high()),
               getNumber(candlestick.low()), getNumber(candlestick.close()), empty, empty, getNumber(candlestick.close()), indicatorsBuy, indicatorsSell,
               indicatorsNeutral);
         }

@@ -33,7 +33,7 @@ public class AcService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${cci.debug:true}")
+  @Value("${ac.debug:false}")
   private boolean debugActive;
 
   @Autowired

@@ -1,6 +1,5 @@
 package br.eti.allandemiranda.forex.controllers.order;
 
-import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.OrderService;
@@ -49,7 +48,11 @@ public class OrderProcessor {
   @Setter(AccessLevel.PRIVATE)
   private int maxSpread;
   @Value("${order.open.onlyStrong:true}")
-  private boolean isOnlyStrong;
+  private boolean isOpenOnlyStrong;
+  @Value("${order.closeManual:true}")
+  private boolean isCloseManual;
+  @Value("${order.closeManual.onlyStrong:true}")
+  private boolean isCloseManualOnlyStrong;
   @Value("${order.monday.start:'00:00:00'}")
   private String mondayStart;
   @Value("${order.monday.end:'23:59:59'}")
@@ -104,15 +107,16 @@ public class OrderProcessor {
     final Ticket ticket = this.getTicketService().getTicket();
     if (OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status())) {
       operationToOpenOrder(ticket, this.getTakeProfit(), this.getStopLoss(), this.getTradingGain(), this.getTradingLoss());
-    } else if (!this.getSignalService().getLastSignal().trend().equals(SignalTrend.NEUTRAL) && this.getOrderService().getLastOrder().lastCandleUpdate()
-        .isBefore(this.getSignalService().getLastSignal().candleDataTime())) {
+    }
+    if (!OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status()) && !this.getSignalService().getLastSignal().trend().equals(SignalTrend.NEUTRAL)
+        && this.getOrderService().getLastOrder().openCandleDateTime().isBefore(this.getSignalService().getLastSignal().dataTime())) {
       operationToCloseOrder(ticket, this.getStopLoss(), this.getMaxSpread());
     }
   }
 
   private void operationToCloseOrder(final @NotNull Ticket ticket, final int stopLoss, final int maxSpread) {
     if (ticket.spread() < stopLoss && ticket.spread() <= maxSpread && this.checkDataTime()) {
-      final LocalDateTime candleDataTime = this.getCandlestickService().getCandlesticks(1).toArray(Candlestick[]::new)[0].candleDateTime();
+      final LocalDateTime candleDataTime = this.getCandlestickService().getLastCandlestick().dateTime();
       switch (this.getSignalService().getLastSignal().trend()) {
         case STRONG_BUY -> {
           this.getOrderService().openPosition(ticket, candleDataTime, OrderPosition.BUY);
@@ -123,13 +127,13 @@ public class OrderProcessor {
           this.getOrderService().updateDebugFile();
         }
         case BUY -> {
-          if (!this.isOnlyStrong()) {
+          if (!this.isOpenOnlyStrong()) {
             this.getOrderService().openPosition(ticket, candleDataTime, OrderPosition.BUY);
             this.getOrderService().updateDebugFile();
           }
         }
         case SELL -> {
-          if (!this.isOnlyStrong()) {
+          if (!this.isOpenOnlyStrong()) {
             this.getOrderService().openPosition(ticket, candleDataTime, OrderPosition.SELL);
             this.getOrderService().updateDebugFile();
           }
@@ -139,20 +143,34 @@ public class OrderProcessor {
   }
 
   private void operationToOpenOrder(final Ticket ticket, final int takeProfit, final int stopLoss, final int tradingGain, final int tradingLoss) {
-    if (OrderStatus.OPEN.equals(this.getOrderService()
-        .updateOpenPosition(ticket, this.getCandlestickService().getCandlesticks(1).toArray(Candlestick[]::new)[0].candleDateTime(), takeProfit, stopLoss, tradingGain,
-            tradingLoss))) {
+    if (OrderStatus.OPEN.equals(
+        this.getOrderService().updateOpenPosition(ticket, this.getCandlestickService().getLastCandlestick().dateTime(), takeProfit, stopLoss, tradingGain, tradingLoss))
+        && this.isCloseManual()) {
       switch (this.getSignalService().getLastSignal().trend()) {
-        case STRONG_BUY, BUY -> {
+        case STRONG_BUY -> {
           if (this.getOrderService().getLastOrder().position().equals(OrderPosition.SELL)) {
             this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
             this.getOrderService().updateDebugFile();
           }
         }
-        case STRONG_SELL, SELL -> {
+        case STRONG_SELL -> {
           if (this.getOrderService().getLastOrder().position().equals(OrderPosition.BUY)) {
             this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
             this.getOrderService().updateDebugFile();
+          }
+        }
+        case BUY -> {
+          if (!this.isCloseManualOnlyStrong() && this.getOrderService().getLastOrder().position().equals(OrderPosition.SELL)) {
+            this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+            this.getOrderService().updateDebugFile();
+
+          }
+        }
+        case SELL -> {
+          if (!this.isCloseManualOnlyStrong() && this.getOrderService().getLastOrder().position().equals(OrderPosition.BUY)) {
+            this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
+            this.getOrderService().updateDebugFile();
+
           }
         }
       }

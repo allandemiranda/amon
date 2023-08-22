@@ -87,7 +87,7 @@ public class ChartProcessor {
     if (this.getTicketService().isReady()) {
       final Ticket ticket = this.getTicketService().getTicket();
       final LocalDateTime candleDateTime = getCandleDateTime(ticket.dateTime(), this.getTimeFrame());
-      this.candlestickService.addTicket(ticket, candleDateTime);
+      this.getCandlestickService().addTicket(ticket, candleDateTime);
     }
   }
 

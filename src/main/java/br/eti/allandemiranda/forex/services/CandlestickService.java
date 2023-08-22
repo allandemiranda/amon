@@ -26,8 +26,7 @@ public class CandlestickService {
 
   public void addTicket(final @NotNull Ticket ticket, final @NotNull LocalDateTime candlestickDateTime) {
     final BigDecimal price = ticket.bid();
-    final LocalDateTime realDataTime = ticket.dateTime();
-    this.getRepository().add(realDataTime, candlestickDateTime, price);
+    this.getRepository().add(candlestickDateTime, price);
   }
 
   public Stream<Candlestick> getCandlesticks(final int period) {
@@ -42,7 +41,12 @@ public class CandlestickService {
     return this.getRepository().isReady();
   }
 
-  public @NotNull Candlestick getOldestCandlestick() {
+  //TODO: remove this method
+  public @NotNull Candlestick getCurrentCandlestick() {
     return this.getRepository().getLastUpdate();
+  }
+
+  public @NotNull Candlestick getLastCandlestick() {
+    return this.getCandlesticks(1).toArray(Candlestick[]::new)[0];
   }
 }

@@ -15,16 +15,16 @@ import org.springframework.stereotype.Repository;
 @Setter(AccessLevel.PRIVATE)
 public class SignalRepository {
 
-  private LocalDateTime candleDataTime = LocalDateTime.MIN;
+  private LocalDateTime dataTime = LocalDateTime.MIN;
   private SignalTrend trend = SignalTrend.NEUTRAL;
 
   @Synchronized
   public void add(final @NotNull LocalDateTime candleDataTime, final @NotNull SignalTrend trend) {
-    this.setCandleDataTime(candleDataTime);
+    this.setDataTime(candleDataTime);
     this.setTrend(trend);
   }
 
   public Signal get() {
-    return new Signal(this.getCandleDataTime(), this.getTrend());
+    return new Signal(this.getDataTime(), this.getTrend());
   }
 }

@@ -24,7 +24,7 @@ public class AcRepository {
       final AcEntity entity = new AcEntity();
       entity.setDateTime(dateTime);
       entity.setValue(ac);
-      if(!this.getDataBase().add(entity)){
+      if (!this.getDataBase().add(entity)) {
         this.getDataBase().remove(entity);
         this.getDataBase().add(entity);
       }

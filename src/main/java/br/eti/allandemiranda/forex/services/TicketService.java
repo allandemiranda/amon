@@ -4,7 +4,6 @@ import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.repositories.TicketRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Synchronized;

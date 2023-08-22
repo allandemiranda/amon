@@ -6,6 +6,6 @@ import java.time.LocalDateTime;
 import lombok.experimental.Accessors;
 
 @Accessors(fluent = true)
-public record Signal(@NotNull LocalDateTime candleDataTime, @NotNull SignalTrend trend) {
+public record Signal(@NotNull LocalDateTime dataTime, @NotNull SignalTrend trend) {
 
 }

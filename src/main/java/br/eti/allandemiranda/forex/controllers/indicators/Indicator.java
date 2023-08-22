@@ -4,6 +4,6 @@ import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import org.jetbrains.annotations.NotNull;
 
 public interface Indicator extends Runnable {
-  @NotNull
-  IndicatorTrend getSignal();
+
+  @NotNull IndicatorTrend getSignal();
 }

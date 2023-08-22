@@ -2,7 +2,6 @@ package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
 import br.eti.allandemiranda.forex.repositories.IndicatorRepository;
-import java.util.Map;
 import java.util.SortedMap;
 import lombok.AccessLevel;
 import lombok.Getter;

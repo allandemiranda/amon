@@ -17,9 +17,10 @@ import org.springframework.stereotype.Repository;
 @Getter(AccessLevel.PRIVATE)
 public class CandlestickRepository {
 
+  private static final int SKIP_CURRENT_CANDLESTICK = 1;
   private final TreeSet<CandlestickEntity> dataBase = new TreeSet<>();
 
-  @Value("${candlestick.repository.memory:15}")
+  @Value("${candlestick.repository.memory:41}")
   @Getter(AccessLevel.PUBLIC)
   private int memorySize;
 
@@ -28,12 +29,11 @@ public class CandlestickRepository {
   }
 
   @Synchronized
-  public void add(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime candlestickDateTime, final @NotNull BigDecimal price) {
+  public void add(final @NotNull LocalDateTime candlestickDateTime, final @NotNull BigDecimal price) {
     final CandlestickEntity entity = new CandlestickEntity();
-    entity.setCandleDateTime(candlestickDateTime);
+    entity.setDateTime(candlestickDateTime);
     if (this.getDataBase().contains(entity)) {
       final CandlestickEntity older = this.getDataBase().first();
-      older.setRealDateTime(realDataTime);
       older.setClose(price);
       if (older.getClose().compareTo(older.getHigh()) > 0) {
         older.setHigh(price);
@@ -41,7 +41,6 @@ public class CandlestickRepository {
         older.setLow(price);
       }
     } else {
-      entity.setRealDateTime(realDataTime);
       entity.setHigh(price);
       entity.setLow(price);
       entity.setOpen(price);
@@ -54,11 +53,11 @@ public class CandlestickRepository {
   }
 
   public Stream<Candlestick> get(final int size) {
-    return this.getDataBase().stream().skip(1).limit(size).map(this::toModel);
+    return this.getDataBase().stream().skip(SKIP_CURRENT_CANDLESTICK).limit(size).map(this::toModel);
   }
 
   private @NotNull Candlestick toModel(final @NotNull CandlestickEntity output) {
-    return new Candlestick(output.getRealDateTime(), output.getCandleDateTime(), output.getOpen(), output.getHigh(), output.getLow(), output.getClose());
+    return new Candlestick(output.getDateTime(), output.getOpen(), output.getHigh(), output.getLow(), output.getClose());
   }
 
   public @NotNull Candlestick getLastUpdate() {

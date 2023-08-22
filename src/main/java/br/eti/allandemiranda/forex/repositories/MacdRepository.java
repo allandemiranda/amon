@@ -23,7 +23,7 @@ public class MacdRepository {
       entity.setDateTime(dateTime);
       entity.setMain(macd);
       entity.setSignal(signal);
-      if(!this.getDataBase().add(entity)) {
+      if (!this.getDataBase().add(entity)) {
         this.getDataBase().remove(entity);
         this.getDataBase().add(entity);
       }

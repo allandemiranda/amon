@@ -21,9 +21,8 @@ public class CandlestickEntity implements Serializable, Comparable<CandlestickEn
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private LocalDateTime realDateTime;
   @Id
-  private LocalDateTime candleDateTime;
+  private LocalDateTime dateTime;
   private BigDecimal open;
   private BigDecimal high;
   private BigDecimal low;
@@ -38,16 +37,16 @@ public class CandlestickEntity implements Serializable, Comparable<CandlestickEn
       return false;
     }
     final CandlestickEntity entity = (CandlestickEntity) o;
-    return Objects.equals(candleDateTime, entity.candleDateTime);
+    return Objects.equals(dateTime, entity.dateTime);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(candleDateTime);
+    return Objects.hash(dateTime);
   }
 
   @Override
   public int compareTo(@NotNull final CandlestickEntity o) {
-    return o.getCandleDateTime().compareTo(this.getCandleDateTime());
+    return o.getDateTime().compareTo(this.getDateTime());
   }
 }
