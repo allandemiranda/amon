@@ -90,7 +90,6 @@ public class IndicatorsProcessor {
       } else if (average.compareTo(BigDecimal.ZERO) < 0) {
         this.getSignalService().addGlobalSignal(candleDataTime, SignalTrend.SELL);
       }
-      this.getSignalService().updateDebugFile(this.getCandlestickService().getLastCandlestick(), trendSortedMap);
     }
   }
 }
