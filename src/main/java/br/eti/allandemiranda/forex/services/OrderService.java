@@ -63,21 +63,17 @@ public class OrderService {
       if (tradingGain == 0) {
         if (currentProfit >= takeProfit) {
           this.closePosition(OrderStatus.CLOSE_TP);
-          this.updateDebugFile();
         } else if (currentProfit <= Math.negateExact(stopLoss)) {
           this.closePosition(OrderStatus.CLOSE_SL);
-          this.updateDebugFile();
         }
       } else {
         if (currentProfit >= ((tradingGain * this.getNewMultiplication()) + takeProfit)) {
           this.setNewMultiplication(this.getNewMultiplication() + 1);
         } else if (currentProfit <= Math.negateExact(stopLoss)) {
           this.closePosition(OrderStatus.CLOSE_SL);
-          this.updateDebugFile();
         } else if ((this.getNewMultiplication() == 1 && currentProfit <= takeProfit - tradingLoss) || (this.getNewMultiplication() != 0 && currentProfit <= (
             (tradingGain * (this.getNewMultiplication() - 1)) + takeProfit - tradingLoss))) {
           this.closePosition(OrderStatus.CLOSE_TG);
-          this.updateDebugFile();
         }
       }
     }
@@ -87,6 +83,7 @@ public class OrderService {
   public void openPosition(final @NotNull Ticket ticket, final @NotNull LocalDateTime candleDataTime, final @NotNull OrderPosition position) {
     if (this.getRepository().getLastOrder().lastUpdate().isBefore(ticket.dateTime())) {
       this.getRepository().openPosition(ticket, candleDataTime, position);
+      this.updateDebugFile();
     }
   }
 
@@ -94,6 +91,7 @@ public class OrderService {
     if (!OrderStatus.OPEN.equals(status)) {
       this.setNewMultiplication(0);
       this.getRepository().closePosition(status);
+      this.updateDebugFile();
     }
   }
 
@@ -116,7 +114,7 @@ public class OrderService {
     }
   }
 
-  public void updateDebugFile() {
+  private void updateDebugFile() {
     if (this.isDebugActive()) {
       this.debugUpdate(this.getOutputFile());
     }

@@ -120,22 +120,18 @@ public class OrderProcessor {
       switch (this.getSignalService().getLastSignal().trend()) {
         case STRONG_BUY -> {
           this.getOrderService().openPosition(ticket, candleDataTime, OrderPosition.BUY);
-          this.getOrderService().updateDebugFile();
         }
         case STRONG_SELL -> {
           this.getOrderService().openPosition(ticket, candleDataTime, OrderPosition.SELL);
-          this.getOrderService().updateDebugFile();
         }
         case BUY -> {
           if (!this.isOpenOnlyStrong()) {
             this.getOrderService().openPosition(ticket, candleDataTime, OrderPosition.BUY);
-            this.getOrderService().updateDebugFile();
           }
         }
         case SELL -> {
           if (!this.isOpenOnlyStrong()) {
             this.getOrderService().openPosition(ticket, candleDataTime, OrderPosition.SELL);
-            this.getOrderService().updateDebugFile();
           }
         }
       }
@@ -150,27 +146,22 @@ public class OrderProcessor {
         case STRONG_BUY -> {
           if (this.getOrderService().getLastOrder().position().equals(OrderPosition.SELL)) {
             this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
-            this.getOrderService().updateDebugFile();
           }
         }
         case STRONG_SELL -> {
           if (this.getOrderService().getLastOrder().position().equals(OrderPosition.BUY)) {
             this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
-            this.getOrderService().updateDebugFile();
           }
         }
         case BUY -> {
           if (!this.isCloseManualOnlyStrong() && this.getOrderService().getLastOrder().position().equals(OrderPosition.SELL)) {
             this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
-            this.getOrderService().updateDebugFile();
 
           }
         }
         case SELL -> {
           if (!this.isCloseManualOnlyStrong() && this.getOrderService().getLastOrder().position().equals(OrderPosition.BUY)) {
             this.getOrderService().closePosition(OrderStatus.CLOSE_MANUAL);
-            this.getOrderService().updateDebugFile();
-
           }
         }
       }
