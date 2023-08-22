@@ -40,7 +40,12 @@ public class ChartProcessor {
       case M30 -> getDateTimeToM30(dataTime);
       case H1 -> getDateTimeLowH(dataTime, 1);
       case H2 -> getDateTimeLowH(dataTime, 2);
+      case D1 -> getDateTimeOneDay(dataTime);
     };
+  }
+
+  private static @NotNull LocalDateTime getDateTimeOneDay(final @NotNull LocalDateTime ticketDateTime) {
+    return ticketDateTime.toLocalDate().atStartOfDay();
   }
 
   private static @NotNull LocalDateTime getDateTimeLowM(final @NotNull LocalDateTime ticketDateTime, final int timeFrameMin) {
