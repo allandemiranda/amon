@@ -30,7 +30,7 @@ public class OrderRepository {
   private int highProfit;
   private int lowProfit;
   private int currentProfit;
-  private int currentBalance;
+  private BigDecimal currentBalance;
 
   private static int getPoints(final @NotNull BigDecimal price, final int digits) {
     return price.multiply(BigDecimal.valueOf(Math.pow(10, digits))).intValue();
@@ -43,6 +43,7 @@ public class OrderRepository {
     this.setLastUpdate(LocalDateTime.MIN);
     this.setOpenCandleDateTime(LocalDateTime.MIN);
     this.setLastCandleUpdate(LocalDateTime.MIN);
+    this.setCurrentBalance(BigDecimal.ZERO);
   }
 
   public @NotNull Order getLastOrder() {
@@ -57,12 +58,12 @@ public class OrderRepository {
     this.setLastCandleUpdate(candleDataTime);
     if (OrderPosition.BUY.equals(this.getPosition())) {
       final BigDecimal bid = ticket.bid();
-      this.setCurrentBalance(this.getCurrentBalance() + getPoints(bid.subtract(this.getClosePrice()), digits));
+      this.setCurrentBalance(this.getCurrentBalance().add(BigDecimal.valueOf(getPoints(bid.subtract(this.getClosePrice()), digits))));
       this.setClosePrice(bid);
       this.setCurrentProfit(getPoints(bid.subtract(this.getOpenPrice()), digits));
     } else {
       final BigDecimal ask = ticket.ask();
-      this.setCurrentBalance(this.getCurrentBalance() + getPoints(this.getClosePrice().subtract(ask), digits));
+      this.setCurrentBalance(this.getCurrentBalance().add(BigDecimal.valueOf(getPoints(this.getClosePrice().subtract(ask), digits))));
       this.setClosePrice(ask);
       this.setCurrentProfit(getPoints(this.getOpenPrice().subtract(ask), digits));
     }
@@ -94,7 +95,7 @@ public class OrderRepository {
       this.setClosePrice(ask);
     }
     this.setCurrentProfit(Math.negateExact(spread));
-    this.setCurrentBalance(this.getCurrentBalance() + this.getCurrentProfit());
+    this.setCurrentBalance(this.getCurrentBalance().add(BigDecimal.valueOf(this.getCurrentProfit())));
     this.setHighProfit(this.getCurrentProfit());
     this.setLowProfit(this.getCurrentProfit());
   }
