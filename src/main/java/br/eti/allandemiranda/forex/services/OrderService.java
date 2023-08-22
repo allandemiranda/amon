@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -128,7 +129,10 @@ public class OrderService {
       try (final FileWriter fileWriter = new FileWriter(file, true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastUpdate().format(DateTimeFormatter.ISO_DATE_TIME),
             order.openCandleDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastCandleUpdate().format(DateTimeFormatter.ISO_DATE_TIME), order.status(),
-            order.position(), getNumber(order.openPrice()), getNumber(order.closePrice()), order.highProfit(), order.lowProfit(), order.currentProfit(),
+            order.position(), getNumber(order.openPrice()), getNumber(order.closePrice()),
+            String.format("%s %s:%s:%s", ChronoUnit.DAYS.between(order.openDateTime(), order.lastUpdate()),
+                ChronoUnit.HOURS.between(order.openDateTime(), order.lastUpdate()) % 24, ChronoUnit.MINUTES.between(order.openDateTime(), order.lastUpdate()) % 60,
+                ChronoUnit.SECONDS.between(order.openDateTime(), order.lastUpdate()) % 60), order.highProfit(), order.lowProfit(), order.currentProfit(),
             order.currentBalance());
       }
     }

@@ -14,6 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -35,6 +36,8 @@ public class AcService {
   private File outputFolder;
   @Value("${ac.debug:false}")
   private boolean debugActive;
+  @Setter(AccessLevel.PRIVATE)
+  private IndicatorTrend lastTrend = IndicatorTrend.NEUTRAL;
 
   @Autowired
   protected AcService(final AcRepository repository) {
@@ -76,9 +79,12 @@ public class AcService {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         final AC ac = this.getRepository().get()[0];
-        csvPrinter.printRecord(ac.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), trend.equals(IndicatorTrend.BUY) ? getNumber(ac.value()) : "",
-            trend.equals(IndicatorTrend.SELL) ? getNumber(ac.value()) : "", trend.equals(IndicatorTrend.NEUTRAL) ? getNumber(ac.value()) : "", getNumber(price));
+        csvPrinter.printRecord(ac.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
+            trend.equals(IndicatorTrend.BUY) || this.getLastTrend().equals(IndicatorTrend.BUY) ? getNumber(ac.value()) : "",
+            trend.equals(IndicatorTrend.SELL) || this.getLastTrend().equals(IndicatorTrend.SELL) ? getNumber(ac.value()) : "",
+            trend.equals(IndicatorTrend.NEUTRAL) || this.getLastTrend().equals(IndicatorTrend.NEUTRAL) ? getNumber(ac.value()) : "", getNumber(price));
       }
+      this.setLastTrend(trend);
     }
   }
 }

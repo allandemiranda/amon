@@ -14,6 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -35,6 +36,8 @@ public class AdxService {
   private File outputFolder;
   @Value("${adx.debug:true}")
   private boolean debugActive;
+  @Setter(AccessLevel.PRIVATE)
+  private IndicatorTrend lastTrend = IndicatorTrend.NEUTRAL;
 
   @Autowired
   protected AdxService(final AdxRepository repository) {
@@ -76,10 +79,13 @@ public class AdxService {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         final ADX adx = this.getRepository().get();
-        csvPrinter.printRecord(adx.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), trend.equals(IndicatorTrend.BUY) ? getNumber(adx.value()) : "",
-            trend.equals(IndicatorTrend.SELL) ? getNumber(adx.value()) : "", trend.equals(IndicatorTrend.NEUTRAL) ? getNumber(adx.value()) : "", getNumber(adx.diPlus()),
+        csvPrinter.printRecord(adx.dateTime().format(DateTimeFormatter.ISO_DATE_TIME),
+            trend.equals(IndicatorTrend.BUY) || this.getLastTrend().equals(IndicatorTrend.BUY) ? getNumber(adx.value()) : "",
+            trend.equals(IndicatorTrend.SELL) || this.getLastTrend().equals(IndicatorTrend.SELL) ? getNumber(adx.value()) : "",
+            trend.equals(IndicatorTrend.NEUTRAL) || this.getLastTrend().equals(IndicatorTrend.NEUTRAL) ? getNumber(adx.value()) : "", getNumber(adx.diPlus()),
             getNumber(adx.diMinus()), getNumber(price));
       }
+      this.setLastTrend(trend);
     }
   }
 }

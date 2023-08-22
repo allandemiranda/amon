@@ -77,8 +77,7 @@ public class MacdService {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         final MACD macd = this.getRepository().get()[0];
         csvPrinter.printRecord(macd.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), trend.equals(IndicatorTrend.BUY) ? getNumber(macd.main()) : "",
-            trend.equals(IndicatorTrend.SELL) ? getNumber(macd.main()) : "", trend.equals(IndicatorTrend.NEUTRAL) ? getNumber(macd.main()) : "", getNumber(macd.signal()),
-            getNumber(price));
+            trend.equals(IndicatorTrend.SELL) ? getNumber(macd.main()) : "", getNumber(macd.main()), getNumber(macd.signal()), getNumber(price));
       }
     }
   }
