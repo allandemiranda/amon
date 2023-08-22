@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -47,8 +48,12 @@ public class OrderService {
     this.repository = repository;
   }
 
-  private static @NotNull String getNumber(final @NotNull BigDecimal value) {
+  private static @NotNull String getPriceNumber(final @NotNull BigDecimal value) {
     return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
+  }
+
+  private static @NotNull String getBalanceNumber(final @NotNull BigDecimal value) {
+    return new DecimalFormat("#0.00#").format(value.doubleValue()).replace(".", ",");
   }
 
   public @NotNull Order getLastOrder() {
@@ -56,9 +61,9 @@ public class OrderService {
   }
 
   public @NotNull OrderStatus updateOpenPosition(final @NotNull Ticket ticket, final @NotNull LocalDateTime candleDataTime, final int takeProfit, final int stopLoss,
-      final int tradingGain, final int tradingLoss) {
+      final int tradingGain, final int tradingLoss, final @NotNull DayOfWeek swapTriple, final BigDecimal longPosition, final BigDecimal shortPosition) {
     if (this.getRepository().getLastOrder().lastUpdate().isBefore(ticket.dateTime())) {
-      this.getRepository().updateOpenPosition(ticket, candleDataTime);
+      this.getRepository().updateOpenPosition(ticket, candleDataTime, swapTriple, longPosition, shortPosition);
       final int currentProfit = this.getRepository().getLastOrder().currentProfit();
       if (tradingGain == 0) {
         if (currentProfit >= takeProfit) {
@@ -127,11 +132,11 @@ public class OrderService {
       try (final FileWriter fileWriter = new FileWriter(file, true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastUpdate().format(DateTimeFormatter.ISO_DATE_TIME),
             order.openCandleDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastCandleUpdate().format(DateTimeFormatter.ISO_DATE_TIME), order.status(),
-            order.position(), getNumber(order.openPrice()), getNumber(order.closePrice()),
-            String.format("%s %s:%s:%s", ChronoUnit.DAYS.between(order.openDateTime(), order.lastUpdate()),
+            order.position(), getPriceNumber(order.openPrice()), getPriceNumber(order.closePrice()),
+            String.format("%sd %s:%s:%s", ChronoUnit.DAYS.between(order.openDateTime(), order.lastUpdate()),
                 ChronoUnit.HOURS.between(order.openDateTime(), order.lastUpdate()) % 24, ChronoUnit.MINUTES.between(order.openDateTime(), order.lastUpdate()) % 60,
                 ChronoUnit.SECONDS.between(order.openDateTime(), order.lastUpdate()) % 60), order.highProfit(), order.lowProfit(), order.currentProfit(),
-            order.currentBalance());
+            getBalanceNumber(order.swapBalance()), getBalanceNumber(order.currentBalance()));
       }
     }
   }
