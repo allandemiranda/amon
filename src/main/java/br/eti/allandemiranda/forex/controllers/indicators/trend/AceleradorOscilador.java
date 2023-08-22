@@ -30,20 +30,18 @@ public class AceleradorOscilador implements Indicator {
 
   @Override
   public @NotNull IndicatorTrend getSignal() {
+    final BigDecimal price = this.getCandlestickService().getCandlesticks(1).toArray(Candlestick[]::new)[0].close();
     if(this.getAcService().getAc().length > 1) {
       if (this.getAcService().getAc()[0].value().compareTo(this.getAcService().getAc()[1].value()) > 0) {
-        this.getAcService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY, this.getCandlestickService().getOldestCandlestick()
-            .close());
+        this.getAcService().updateDebugFile(price, IndicatorTrend.BUY);
         return IndicatorTrend.BUY;
       }
       if (this.getAcService().getAc()[0].value().compareTo(this.getAcService().getAc()[1].value()) < 0) {
-        this.getAcService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL, this.getCandlestickService().getOldestCandlestick()
-            .close());
+        this.getAcService().updateDebugFile(price, IndicatorTrend.SELL);
         return IndicatorTrend.SELL;
       }
     }
-    this.getAcService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL, this.getCandlestickService().getOldestCandlestick()
-        .close());
+    this.getAcService().updateDebugFile(price, IndicatorTrend.NEUTRAL);
     return IndicatorTrend.NEUTRAL;
   }
 
@@ -60,6 +58,6 @@ public class AceleradorOscilador implements Indicator {
         .toArray(BigDecimal[]::new);
     final BigDecimal[] aos = IntStream.range(0, 5).mapToObj(i -> smaFive[i].subtract(smaThirtyFour[i])).toArray(BigDecimal[]::new);
     final BigDecimal ac = aos[0].subtract(Arrays.stream(aos).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(5), 10, RoundingMode.HALF_UP));
-    this.getAcService().addAc(this.getCandlestickService().getOldestCandlestick().realDateTime(), this.getCandlestickService().getOldestCandlestick().dateTime(), ac);
+    this.getAcService().addAc(candlesticks[0].candleDateTime(), ac);
   }
 }

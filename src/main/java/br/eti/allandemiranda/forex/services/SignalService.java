@@ -6,19 +6,18 @@ import br.eti.allandemiranda.forex.headers.SignalHeader;
 import br.eti.allandemiranda.forex.repositories.SignalRepository;
 import br.eti.allandemiranda.forex.utils.IndicatorTrend;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
+import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Map.Entry;
 import java.util.SortedMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.SneakyThrows;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -40,8 +39,6 @@ public class SignalService {
   private File outputFolder;
   @Value("${signal.debug:false}")
   private boolean debugActive;
-  @Setter(AccessLevel.PRIVATE)
-  private boolean isPrinted = false;
 
   @Autowired
   protected SignalService(final SignalRepository repository) {
@@ -52,40 +49,57 @@ public class SignalService {
     return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
-  public void addGlobalSignal(final @NotNull Candlestick candlestick, final @NotNull SignalTrend globalSignal, final @NotNull SortedMap<String, IndicatorTrend> signals) {
-    this.getRepository().add(candlestick.realDateTime(), globalSignal, candlestick.close());
-    this.updateDebugFile(signals);
+  public void addGlobalSignal(final @NotNull LocalDateTime candleDataTime, final @NotNull SignalTrend globalSignal) {
+    this.getRepository().add(candleDataTime, globalSignal);
   }
 
-  public boolean isOpenSignal() {
-    if (this.getRepository().isReady()) {
-      return Arrays.stream(this.getRepository().get()).map(Signal::trend).collect(Collectors.toCollection(HashSet::new)).size() == 1;
-    } else {
-      return false;
-    }
-  }
-
-  public Signal getOpenSignal() {
-    return this.getRepository().getLastSignal();
+  public Signal getLastSignal() {
+    return this.getRepository().get();
   }
 
   private @NotNull File getOutputFile() {
     return new File(this.getOutputFolder(), OUTPUT_FILE_NAME);
   }
 
+  @PostConstruct
+  private void init() {
+    printDebugHeader();
+  }
+
   @SneakyThrows
-  private void updateDebugFile(final @NotNull SortedMap<String, IndicatorTrend> signals) {
-    if (this.isDebugActive() && this.getRepository().isReady()) {
-      if (!this.isPrinted()) {
-        try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-          csvPrinter.printRecord(Stream.concat(Arrays.stream(SignalHeader.values()), signals.keySet().stream()).toArray());
-        }
-        this.setPrinted(true);
+  private void printDebugHeader() {
+    if (this.isDebugActive()) {
+      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+        csvPrinter.printRecord(Arrays.stream(SignalHeader.values()).map(Enum::toString).toArray());
       }
+    }
+  }
+
+  @SneakyThrows
+  public void updateDebugFile(final @NotNull Candlestick candlestick, final @NotNull SortedMap<String, IndicatorTrend> indicators) {
+    if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        final Signal signal = this.getRepository().getLastSignal();
-        csvPrinter.printRecord(Stream.concat(Stream.of(signal.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), signal.trend(), getNumber(signal.price())),
-            signals.values().stream().map(Enum::toString)).toArray());
+        final Signal signal = this.getRepository().get();
+        final String indicatorsBuy = Arrays.toString(
+            indicators.entrySet().stream().filter(entry -> entry.getValue().equals(IndicatorTrend.BUY)).map(Entry::getKey).toArray());
+        final String indicatorsSell = Arrays.toString(
+            indicators.entrySet().stream().filter(entry -> entry.getValue().equals(IndicatorTrend.SELL)).map(Entry::getKey).toArray());
+        final String indicatorsNeutral = Arrays.toString(
+            indicators.entrySet().stream().filter(entry -> entry.getValue().equals(IndicatorTrend.NEUTRAL)).map(Entry::getKey).toArray());
+        final String empty = "";
+        if (signal.trend().equals(SignalTrend.STRONG_BUY)) {
+          csvPrinter.printRecord(candlestick.candleDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), getNumber(candlestick.open()), getNumber(candlestick.high()),
+              getNumber(candlestick.low()), getNumber(candlestick.close()), getNumber(candlestick.close()), empty, empty, indicatorsBuy, indicatorsSell,
+              indicatorsNeutral);
+        } else if (signal.trend().equals(SignalTrend.STRONG_SELL)) {
+          csvPrinter.printRecord(candlestick.candleDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), getNumber(candlestick.open()), getNumber(candlestick.high()),
+              getNumber(candlestick.low()), getNumber(candlestick.close()), empty, getNumber(candlestick.close()), empty, indicatorsBuy, indicatorsSell,
+              indicatorsNeutral);
+        } else if (signal.trend().equals(SignalTrend.NEUTRAL)) {
+          csvPrinter.printRecord(candlestick.candleDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), getNumber(candlestick.open()), getNumber(candlestick.high()),
+              getNumber(candlestick.low()), getNumber(candlestick.close()), empty, empty, getNumber(candlestick.close()), indicatorsBuy, indicatorsSell,
+              indicatorsNeutral);
+        }
       }
     }
   }

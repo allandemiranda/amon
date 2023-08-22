@@ -21,7 +21,6 @@ public class MacdEntity implements Serializable, Comparable<MacdEntity> {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private LocalDateTime realDateTime;
   @Id
   private LocalDateTime dateTime;
   private BigDecimal main;

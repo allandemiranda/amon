@@ -33,7 +33,7 @@ public class AdxService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${adx.debug:false}")
+  @Value("${adx.debug:true}")
   private boolean debugActive;
 
   @Autowired
@@ -72,12 +72,13 @@ public class AdxService {
   }
 
   @SneakyThrows
-  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull IndicatorTrend trend, final @NotNull BigDecimal price) {
+  public void updateDebugFile(final @NotNull IndicatorTrend trend, final @NotNull BigDecimal price) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         final ADX adx = this.getRepository().get();
-        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), adx.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(adx.value()),
-            getNumber(adx.diPlus()), getNumber(adx.diMinus()), trend, getNumber(price));
+        csvPrinter.printRecord(adx.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), trend.equals(IndicatorTrend.BUY) ? getNumber(adx.value()) : "",
+            trend.equals(IndicatorTrend.SELL) ? getNumber(adx.value()) : "", trend.equals(IndicatorTrend.NEUTRAL) ? getNumber(adx.value()) : "", getNumber(adx.diPlus()),
+            getNumber(adx.diMinus()), getNumber(price));
       }
     }
   }

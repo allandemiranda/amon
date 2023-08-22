@@ -30,7 +30,7 @@ public class CandlestickRepository {
   @Synchronized
   public void add(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime candlestickDateTime, final @NotNull BigDecimal price) {
     final CandlestickEntity entity = new CandlestickEntity();
-    entity.setDateTime(candlestickDateTime);
+    entity.setCandleDateTime(candlestickDateTime);
     if (this.getDataBase().contains(entity)) {
       final CandlestickEntity older = this.getDataBase().first();
       older.setRealDateTime(realDataTime);
@@ -54,11 +54,11 @@ public class CandlestickRepository {
   }
 
   public Stream<Candlestick> get(final int size) {
-    return this.getDataBase().stream().limit(size).map(this::toModel);
+    return this.getDataBase().stream().skip(1).limit(size).map(this::toModel);
   }
 
   private @NotNull Candlestick toModel(final @NotNull CandlestickEntity output) {
-    return new Candlestick(output.getRealDateTime(), output.getDateTime(), output.getOpen(), output.getHigh(), output.getLow(), output.getClose());
+    return new Candlestick(output.getRealDateTime(), output.getCandleDateTime(), output.getOpen(), output.getHigh(), output.getLow(), output.getClose());
   }
 
   public @NotNull Candlestick getLastUpdate() {

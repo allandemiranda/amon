@@ -21,6 +21,8 @@ public class OrderRepository {
 
   private LocalDateTime openDateTime;
   private LocalDateTime lastUpdate;
+  private LocalDateTime openCandleDateTime;
+  private LocalDateTime lastCandleUpdate;
   private OrderStatus status;
   private OrderPosition position;
   private BigDecimal openPrice;
@@ -39,17 +41,20 @@ public class OrderRepository {
     this.setStatus(OrderStatus.CLOSE_MANUAL);
     this.setOpenDateTime(LocalDateTime.MIN);
     this.setLastUpdate(LocalDateTime.MIN);
+    this.setOpenCandleDateTime(LocalDateTime.MIN);
+    this.setLastCandleUpdate(LocalDateTime.MIN);
   }
 
   public @NotNull Order getLastOrder() {
-    return new Order(this.getOpenDateTime(), this.getLastUpdate(), this.getStatus(), this.getPosition(), this.getOpenPrice(), this.getClosePrice(), this.getHighProfit(),
-        this.getLowProfit(), this.getCurrentProfit(), this.getCurrentBalance());
+    return new Order(this.getOpenDateTime(), this.getLastUpdate(), this.getOpenCandleDateTime(), this.getLastCandleUpdate(), this.getStatus(), this.getPosition(),
+        this.getOpenPrice(), this.getClosePrice(), this.getHighProfit(), this.getLowProfit(), this.getCurrentProfit(), this.getCurrentBalance());
   }
 
   @Synchronized
-  public void updateOpenPosition(final @NotNull Ticket ticket) {
+  public void updateOpenPosition(final @NotNull Ticket ticket, final @NotNull LocalDateTime candleDataTime) {
     final int digits = ticket.digits();
     this.setLastUpdate(ticket.dateTime());
+    this.setLastCandleUpdate(candleDataTime);
     if (OrderPosition.BUY.equals(this.getPosition())) {
       final BigDecimal bid = ticket.bid();
       this.setCurrentBalance(this.getCurrentBalance() + getPoints(bid.subtract(this.getClosePrice()), digits));
@@ -70,13 +75,15 @@ public class OrderRepository {
   }
 
   @Synchronized
-  public void openPosition(final @NotNull Ticket ticket, final @NotNull OrderPosition position) {
+  public void openPosition(final @NotNull Ticket ticket, final @NotNull LocalDateTime candleDataTime, final @NotNull OrderPosition position) {
     final LocalDateTime dateTime = ticket.dateTime();
     final BigDecimal ask = ticket.ask();
     final BigDecimal bid = ticket.bid();
     final int spread = ticket.spread();
     this.setOpenDateTime(dateTime);
     this.setLastUpdate(dateTime);
+    this.setOpenCandleDateTime(candleDataTime);
+    this.setLastCandleUpdate(candleDataTime);
     this.setStatus(OrderStatus.OPEN);
     this.setPosition(position);
     if (OrderPosition.BUY.equals(position)) {

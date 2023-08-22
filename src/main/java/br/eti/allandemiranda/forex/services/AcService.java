@@ -33,7 +33,7 @@ public class AcService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${cci.debug:false}")
+  @Value("${cci.debug:true}")
   private boolean debugActive;
 
   @Autowired
@@ -45,8 +45,8 @@ public class AcService {
     return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
-  public void addAc(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime dataTime, final @NotNull BigDecimal ac) {
-    this.getRepository().add(realDataTime, dataTime, ac);
+  public void addAc(final @NotNull LocalDateTime dataTime, final @NotNull BigDecimal ac) {
+    this.getRepository().add(dataTime, ac);
   }
 
   public AC[] getAc() {
@@ -72,12 +72,12 @@ public class AcService {
   }
 
   @SneakyThrows
-  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull IndicatorTrend trend, final @NotNull BigDecimal price) {
+  public void updateDebugFile(final @NotNull BigDecimal price, final @NotNull IndicatorTrend trend) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         final AC ac = this.getRepository().get()[0];
-        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), ac.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(ac.value()), trend,
-            getNumber(price));
+        csvPrinter.printRecord(ac.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), trend.equals(IndicatorTrend.BUY) ? getNumber(ac.value()) : "",
+            trend.equals(IndicatorTrend.SELL) ? getNumber(ac.value()) : "", trend.equals(IndicatorTrend.NEUTRAL) ? getNumber(ac.value()) : "", getNumber(price));
       }
     }
   }

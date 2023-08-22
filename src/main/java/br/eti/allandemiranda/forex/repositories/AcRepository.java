@@ -19,18 +19,19 @@ public class AcRepository {
   private static final int MEMORY_SIZE = 2;
   private final TreeSet<AcEntity> dataBase = new TreeSet<>();
 
-  public void add(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal ac) {
+  public void add(final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal ac) {
     if (this.getDataBase().isEmpty() || dateTime.isAfter(this.getDataBase().first().getDateTime())) {
       final AcEntity entity = new AcEntity();
-      entity.setRealDateTime(realDataTime);
       entity.setDateTime(dateTime);
       entity.setValue(ac);
-      this.getDataBase().add(entity);
+      if(!this.getDataBase().add(entity)){
+        this.getDataBase().remove(entity);
+        this.getDataBase().add(entity);
+      }
       if (this.getDataBase().size() > MEMORY_SIZE) {
         this.getDataBase().pollLast();
       }
     } else {
-      this.getDataBase().first().setRealDateTime(realDataTime);
       this.getDataBase().first().setValue(ac);
     }
   }
@@ -40,6 +41,6 @@ public class AcRepository {
   }
 
   private @NotNull AC toModel(final @NotNull AcEntity entity) {
-    return new AC(entity.getRealDateTime(), entity.getDateTime(), entity.getValue());
+    return new AC(entity.getDateTime(), entity.getValue());
   }
 }

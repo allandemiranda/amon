@@ -29,19 +29,16 @@ public class StringConfig {
   @Bean
   void processor() {
     // MOCKED
-    try (final FileReader fileReader = new FileReader(inputFile); final CSVParser csvParser = CSVFormat.TDF.builder().build()
-        .parse(fileReader)) {
-      StreamSupport.stream(csvParser.spliterator(), false)
-          .skip(1)
-          .limit(4000000).forEach(csvRecord -> {
-            String date = csvRecord.get(0);
-            String time = csvRecord.get(1);
-            String dataTime = date.replace(".", "-").concat("T").concat(time);
-            LocalDateTime localDateTime = LocalDateTime.parse(dataTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-            Double bid = csvRecord.get(2).isEmpty() ? null : Double.parseDouble(csvRecord.get(2));
-            Double ask = csvRecord.get(3).isEmpty() ? null : Double.parseDouble(csvRecord.get(3));
-            generatorProcessor.webSocket(localDateTime, bid, ask);
-          });
+    try (final FileReader fileReader = new FileReader(inputFile); final CSVParser csvParser = CSVFormat.TDF.builder().build().parse(fileReader)) {
+      StreamSupport.stream(csvParser.spliterator(), false).skip(1).forEach(csvRecord -> {
+        String date = csvRecord.get(0);
+        String time = csvRecord.get(1);
+        String dataTime = date.replace(".", "-").concat("T").concat(time);
+        LocalDateTime localDateTime = LocalDateTime.parse(dataTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        Double bid = csvRecord.get(2).isEmpty() ? null : Double.parseDouble(csvRecord.get(2));
+        Double ask = csvRecord.get(3).isEmpty() ? null : Double.parseDouble(csvRecord.get(3));
+        generatorProcessor.webSocket(localDateTime, bid, ask);
+      });
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }

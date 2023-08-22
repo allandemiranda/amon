@@ -17,19 +17,20 @@ public class MacdRepository {
   private static final int MEMORY_SIZE = 3;
   private final TreeSet<MacdEntity> dataBase = new TreeSet<>();
 
-  public void add(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal macd, final @NotNull BigDecimal signal) {
+  public void add(final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal macd, final @NotNull BigDecimal signal) {
     if (this.getDataBase().isEmpty() || dateTime.isAfter(this.getDataBase().first().getDateTime())) {
       final MacdEntity entity = new MacdEntity();
-      entity.setRealDateTime(realDataTime);
       entity.setDateTime(dateTime);
       entity.setMain(macd);
       entity.setSignal(signal);
-      this.getDataBase().add(entity);
+      if(!this.getDataBase().add(entity)) {
+        this.getDataBase().remove(entity);
+        this.getDataBase().add(entity);
+      }
       if (this.getDataBase().size() > MEMORY_SIZE) {
         this.getDataBase().pollLast();
       }
     } else {
-      this.getDataBase().first().setRealDateTime(realDataTime);
       this.getDataBase().first().setMain(macd);
       this.getDataBase().first().setSignal(signal);
     }
@@ -40,6 +41,6 @@ public class MacdRepository {
   }
 
   private @NotNull MACD toModel(final @NotNull MacdEntity entity) {
-    return new MACD(entity.getRealDateTime(), entity.getDateTime(), entity.getMain(), entity.getSignal());
+    return new MACD(entity.getDateTime(), entity.getMain(), entity.getSignal());
   }
 }

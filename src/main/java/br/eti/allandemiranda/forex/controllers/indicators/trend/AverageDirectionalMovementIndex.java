@@ -36,20 +36,18 @@ public class AverageDirectionalMovementIndex implements Indicator {
   @Override
   public @NotNull IndicatorTrend getSignal() {
     final ADX adx = this.getAdxService().getAdx();
-    if (adx.value().compareTo(BigDecimal.valueOf(50)) > 0) {
+    final BigDecimal price = this.getCandlestickService().getOldestCandlestick().close();
+    if (adx.value().compareTo(BigDecimal.valueOf(25)) > 0) {
       if (adx.diPlus().compareTo(adx.diMinus()) > 0) {
-        this.getAdxService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY,
-            this.getCandlestickService().getOldestCandlestick().close());
+        this.getAdxService().updateDebugFile(IndicatorTrend.BUY, price);
         return IndicatorTrend.BUY;
       }
       if (adx.diPlus().compareTo(adx.diMinus()) < 0) {
-        this.getAdxService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL,
-            this.getCandlestickService().getOldestCandlestick().close());
+        this.getAdxService().updateDebugFile(IndicatorTrend.SELL, price);
         return IndicatorTrend.SELL;
       }
     }
-    this.getAdxService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL,
-        this.getCandlestickService().getOldestCandlestick().close());
+    this.getAdxService().updateDebugFile(IndicatorTrend.NEUTRAL, price);
     return IndicatorTrend.NEUTRAL;
   }
 
@@ -97,6 +95,6 @@ public class AverageDirectionalMovementIndex implements Indicator {
         .toArray(BigDecimal[]::new);
     final BigDecimal adx = Arrays.stream(dx).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriod()), 10, RoundingMode.HALF_UP);
 
-    this.getAdxService().addAdx(this.getCandlestickService().getOldestCandlestick().dateTime(), adx, diPlus[0], diMinus[0]);
+    this.getAdxService().addAdx(candlesticks[0].candleDateTime(), adx, diPlus[0], diMinus[0]);
   }
 }

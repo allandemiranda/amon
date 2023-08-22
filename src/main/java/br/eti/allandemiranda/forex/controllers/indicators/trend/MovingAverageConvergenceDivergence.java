@@ -73,20 +73,18 @@ public class MovingAverageConvergenceDivergence implements Indicator {
   @Override
   public @NotNull IndicatorTrend getSignal() {
     final MACD[] macds = this.getMacdService().getMacd();
+    final BigDecimal price = this.getCandlestickService().getCandlesticks(1).toArray(Candlestick[]::new)[0].close();
     if (macds.length > 1) {
       if (macds[0].main().compareTo(macds[0].signal()) > 0 && isCross(macds)) {
-        this.getMacdService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.BUY,
-            this.getCandlestickService().getOldestCandlestick().close());
+        this.getMacdService().updateDebugFile(IndicatorTrend.BUY, price);
         return IndicatorTrend.BUY;
       }
       if (macds[0].main().compareTo(macds[0].signal()) < 0 && isCross(macds)) {
-        this.getMacdService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.SELL,
-            this.getCandlestickService().getOldestCandlestick().close());
+        this.getMacdService().updateDebugFile(IndicatorTrend.SELL, price);
         return IndicatorTrend.SELL;
       }
     }
-    this.getMacdService().updateDebugFile(this.getCandlestickService().getOldestCandlestick().realDateTime(), IndicatorTrend.NEUTRAL,
-        this.getCandlestickService().getOldestCandlestick().close());
+    this.getMacdService().updateDebugFile(IndicatorTrend.NEUTRAL, price);
     return IndicatorTrend.NEUTRAL;
   }
 
@@ -99,6 +97,6 @@ public class MovingAverageConvergenceDivergence implements Indicator {
     final BigDecimal[] macds = IntStream.range(0, macdPeriod).mapToObj(i -> fasts[i].subtract(slows[i])).toArray(BigDecimal[]::new);
     final BigDecimal signal = Arrays.stream(macds).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(macdPeriod), 10, RoundingMode.HALF_UP);
     this.getMacdService()
-        .addMacd(this.getCandlestickService().getOldestCandlestick().realDateTime(), this.getCandlestickService().getOldestCandlestick().dateTime(), macds[0], signal);
+        .addMacd(this.getCandlestickService().getCandlesticks(1).toArray(Candlestick[]::new)[0].candleDateTime(), macds[0], signal);
   }
 }

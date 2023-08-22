@@ -1,5 +1,6 @@
 package br.eti.allandemiranda.forex.headers;
 
 public enum SignalHeader {
-  DATE_TIME, TREND, PRICE
+  CANDLE_DATE_TIME, OPEN, HIGH, LOW, CLOSE, TREND_BUY, TREND_SELL, TREND_NEUTRAL, INDICATORS_BUY, INDICATORS_SELL, INDICATORS_NEUTRAL
+
 }

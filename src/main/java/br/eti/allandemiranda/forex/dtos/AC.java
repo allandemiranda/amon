@@ -6,6 +6,6 @@ import java.time.LocalDateTime;
 import lombok.experimental.Accessors;
 
 @Accessors(fluent = true)
-public record AC(@NotNull LocalDateTime realDateTime, @NotNull LocalDateTime dateTime, @NotNull BigDecimal value) {
+public record AC(@NotNull LocalDateTime dateTime, @NotNull BigDecimal value) {
 
 }

@@ -33,7 +33,7 @@ public class MacdService {
 
   @Value("${config.root.folder}")
   private File outputFolder;
-  @Value("${macd.debug:false}")
+  @Value("${macd.debug:true}")
   private boolean debugActive;
 
   @Autowired
@@ -45,9 +45,8 @@ public class MacdService {
     return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
-  public void addMacd(final @NotNull LocalDateTime realDataTime, final @NotNull LocalDateTime dataTime, final @NotNull BigDecimal macd,
-      final @NotNull BigDecimal signal) {
-    this.getRepository().add(realDataTime, dataTime, macd, signal);
+  public void addMacd(final @NotNull LocalDateTime dataTime, final @NotNull BigDecimal macd, final @NotNull BigDecimal signal) {
+    this.getRepository().add(dataTime, macd, signal);
   }
 
   public MACD[] getMacd() {
@@ -73,12 +72,13 @@ public class MacdService {
   }
 
   @SneakyThrows
-  public void updateDebugFile(final @NotNull LocalDateTime realTime, final @NotNull IndicatorTrend trend, final @NotNull BigDecimal price) {
+  public void updateDebugFile(final @NotNull IndicatorTrend trend, final @NotNull BigDecimal price) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        final MACD[] macds = this.getRepository().get();
-        csvPrinter.printRecord(realTime.format(DateTimeFormatter.ISO_DATE_TIME), macds[0].dateTime().format(DateTimeFormatter.ISO_DATE_TIME), getNumber(macds[0].main()),
-            getNumber(macds[0].signal()), trend, getNumber(price));
+        final MACD macd = this.getRepository().get()[0];
+        csvPrinter.printRecord(macd.dateTime().format(DateTimeFormatter.ISO_DATE_TIME), trend.equals(IndicatorTrend.BUY) ? getNumber(macd.main()) : "",
+            trend.equals(IndicatorTrend.SELL) ? getNumber(macd.main()) : "", trend.equals(IndicatorTrend.NEUTRAL) ? getNumber(macd.main()) : "", getNumber(macd.signal()),
+            getNumber(price));
       }
     }
   }

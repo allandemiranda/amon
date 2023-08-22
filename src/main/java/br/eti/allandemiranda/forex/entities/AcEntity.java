@@ -21,7 +21,6 @@ public class AcEntity implements Serializable, Comparable<AcEntity> {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private LocalDateTime realDateTime;
   @Id
   private LocalDateTime dateTime;
   private BigDecimal value;

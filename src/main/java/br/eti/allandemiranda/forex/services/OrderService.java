@@ -12,10 +12,8 @@ import java.io.FileWriter;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -56,9 +54,10 @@ public class OrderService {
     return this.getRepository().getLastOrder();
   }
 
-  public @NotNull OrderStatus updateOpenPosition(final @NotNull Ticket ticket, final int takeProfit, final int stopLoss, final int tradingGain, final int tradingLoss) {
+  public @NotNull OrderStatus updateOpenPosition(final @NotNull Ticket ticket, final @NotNull LocalDateTime candleDataTime, final int takeProfit, final int stopLoss,
+      final int tradingGain, final int tradingLoss) {
     if (this.getRepository().getLastOrder().lastUpdate().isBefore(ticket.dateTime())) {
-      this.getRepository().updateOpenPosition(ticket);
+      this.getRepository().updateOpenPosition(ticket, candleDataTime);
       final int currentProfit = this.getRepository().getLastOrder().currentProfit();
       if (tradingGain == 0) {
         if (currentProfit >= takeProfit) {
@@ -74,8 +73,8 @@ public class OrderService {
         } else if (currentProfit <= Math.negateExact(stopLoss)) {
           this.closePosition(OrderStatus.CLOSE_SL);
           this.updateDebugFile();
-        } else if ((this.getNewMultiplication() == 1 && currentProfit <= takeProfit - tradingLoss) || (this.getNewMultiplication() != 0 &&
-            currentProfit <= ((tradingGain * (this.getNewMultiplication() - 1)) + takeProfit - tradingLoss))) {
+        } else if ((this.getNewMultiplication() == 1 && currentProfit <= takeProfit - tradingLoss) || (this.getNewMultiplication() != 0 && currentProfit <= (
+            (tradingGain * (this.getNewMultiplication() - 1)) + takeProfit - tradingLoss))) {
           this.closePosition(OrderStatus.CLOSE_TG);
           this.updateDebugFile();
         }
@@ -84,9 +83,9 @@ public class OrderService {
     return this.getRepository().getLastOrder().status();
   }
 
-  public void openPosition(final @NotNull Ticket ticket, final @NotNull OrderPosition position) {
+  public void openPosition(final @NotNull Ticket ticket, final @NotNull LocalDateTime candleDataTime, final @NotNull OrderPosition position) {
     if (this.getRepository().getLastOrder().lastUpdate().isBefore(ticket.dateTime())) {
-      this.getRepository().openPosition(ticket, position);
+      this.getRepository().openPosition(ticket, candleDataTime, position);
     }
   }
 
@@ -105,10 +104,6 @@ public class OrderService {
   @SneakyThrows
   private void init() {
     this.printDebugHeader();
-    final File file = new File(this.getOutputFolder(), "fullOrder.csv");
-    try (final FileWriter fileWriter = new FileWriter(file); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-      csvPrinter.printRecord("DATA_TIME", "PRICE", "BUY", "SELL");
-    }
   }
 
   @SneakyThrows
@@ -131,26 +126,11 @@ public class OrderService {
     Order order = this.getRepository().getLastOrder();
     if (!order.lastUpdate().equals(LocalDateTime.MIN)) {
       try (final FileWriter fileWriter = new FileWriter(file, true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastUpdate().format(DateTimeFormatter.ISO_DATE_TIME), order.status(),
+        csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastUpdate().format(DateTimeFormatter.ISO_DATE_TIME),
+            order.openCandleDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.lastCandleUpdate().format(DateTimeFormatter.ISO_DATE_TIME), order.status(),
             order.position(), getNumber(order.openPrice()), getNumber(order.closePrice()), order.highProfit(), order.lowProfit(), order.currentProfit(),
             order.currentBalance());
       }
     }
-  }
-
-  Order lOrder = null;
-  @SneakyThrows
-  public void debugFull(final @NotNull Ticket ticket) {
-    Order order = this.getRepository().getLastOrder();
-    if(Objects.nonNull(lOrder)) {
-      final File file = new File(this.getOutputFolder(), "fullOrder.csv");
-      try (final FileWriter fileWriter = new FileWriter(file, true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(ticket.dateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-            !order.status().equals(OrderStatus.OPEN) && !lOrder.status().equals(OrderStatus.OPEN) ? getNumber(ticket.bid()) : "",
-            (lOrder.status().equals(OrderStatus.OPEN) || order.status().equals(OrderStatus.OPEN)) && order.position().equals(OrderPosition.BUY) ? getNumber(ticket.bid()) : "",
-            (lOrder.status().equals(OrderStatus.OPEN) || order.status().equals(OrderStatus.OPEN)) && order.position().equals(OrderPosition.SELL) ? getNumber(ticket.bid()) : "");
-      }
-    }
-    lOrder = order;
   }
 }

@@ -1,5 +1,5 @@
 package br.eti.allandemiranda.forex.headers;
 
 public enum AdxHeader {
-  REAL_DATE_TIME, CANDLE_DATE_TIME, ADX, DI_PLUS, DI_MINUS, TREND, PRICE
+  CANDLE_DATE_TIME, ADX_BUY, ADX_SELL, ADX_NEUTRAL, DI_PLUS, DI_MINUS, PRICE
 }
