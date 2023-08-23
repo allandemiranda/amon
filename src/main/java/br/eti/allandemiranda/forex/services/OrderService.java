@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.TreeSet;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -37,12 +36,11 @@ public class OrderService {
   private static final String OUTPUT_FILE_NAME = "orders.csv";
 
   private final OrderRepository repository;
-
+  private final TreeSet<LocalDateTime> badPositions = new TreeSet<>();
   @Value("${config.root.folder}")
   private File outputFolder;
   @Value("${order.debug:false}")
   private boolean debugActive;
-
   @Value("${order.open.spread.max:12}")
   @Getter(AccessLevel.PUBLIC)
   private int maxSpread;
@@ -79,7 +77,6 @@ public class OrderService {
   private int loseSequence;
   @Value("${order.safe.lose.time.hours:2}")
   private int loseHours;
-  private final TreeSet<LocalDateTime> badPositions = new TreeSet<>();
 
   @Autowired
   protected OrderService(final OrderRepository repository) {
@@ -101,7 +98,7 @@ public class OrderService {
       this.setTakeProfit(0);
       this.setStopLoss(0);
     }
-    if(this.isSafeLose() && this.getLoseSequence() <= 0) {
+    if (this.isSafeLose() && this.getLoseSequence() <= 0) {
       this.setLoseSequence(Integer.MAX_VALUE);
     }
   }
@@ -116,7 +113,7 @@ public class OrderService {
           BigDecimal.valueOf(this.getSwapShort()));
       final int currentProfit = this.getRepository().getLastOrder().currentProfit();
       if (this.isTakeProfit() && !this.isGain()) {
-        if (this.getTakeProfit() <= currentProfit) {
+        if (this.getTakeProfit() > 0 && this.getTakeProfit() <= currentProfit) {
           this.closePosition(OrderStatus.CLOSE_TP);
         }
         if (this.getStopLoss() > 0 && Math.negateExact(this.getStopLoss()) >= currentProfit) {
@@ -167,11 +164,11 @@ public class OrderService {
     if (ticket.spread() <= this.getMaxSpread() && (!this.isTakeProfit() || this.getStopLoss() <= 0 || ticket.spread() <= this.getStopLoss()) && (!this.isGain()
         || ticket.spread() <= this.getTradingLoss()) && this.getRepository().getLastOrder().lastUpdate().isBefore(ticket.dateTime())) {
       this.getBadPositions().forEach(dateTime -> {
-        if(!dateTime.toLocalDate().equals(ticket.dateTime().toLocalDate())) {
+        if (!dateTime.toLocalDate().equals(ticket.dateTime().toLocalDate())) {
           this.getBadPositions().remove(dateTime);
         }
       });
-      if(this.getBadPositions().size() < this.getLoseSequence()) {
+      if (this.getBadPositions().size() < this.getLoseSequence()) {
         openPositionConfiguration(ticket, candleDataTime, position);
       } else if (this.getBadPositions().last().plusHours(this.getLoseHours()).isBefore(ticket.dateTime())) {
         openPositionConfiguration(ticket, candleDataTime, position);
@@ -190,7 +187,7 @@ public class OrderService {
   public void closePosition(final @NotNull OrderStatus status) {
     if (!OrderStatus.OPEN.equals(status)) {
       this.getRepository().closePosition(status);
-      if(status.equals(OrderStatus.CLOSE_SL) || status.equals(OrderStatus.CLOSE_MANUAL)) {
+      if (status.equals(OrderStatus.CLOSE_SL) || status.equals(OrderStatus.CLOSE_MANUAL)) {
         this.getBadPositions().add(this.getRepository().getLastOrder().lastUpdate());
       }
       this.updateDebugFile();
