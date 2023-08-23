@@ -98,9 +98,6 @@ public class OrderService {
       this.setTakeProfit(0);
       this.setStopLoss(0);
     }
-    if (this.isSafeLose() && this.getLoseSequence() <= 0) {
-      this.setLoseSequence(Integer.MAX_VALUE);
-    }
   }
 
   public @NotNull Order getLastOrder() {
@@ -168,7 +165,9 @@ public class OrderService {
           this.getBadPositions().remove(dateTime);
         }
       });
-      if (this.getBadPositions().size() < this.getLoseSequence()) {
+      if (!this.isSafeLose()) {
+        openPositionConfiguration(ticket, candleDataTime, position);
+      } else if (this.getBadPositions().size() < this.getLoseSequence()) {
         openPositionConfiguration(ticket, candleDataTime, position);
       } else if (this.getBadPositions().last().plusHours(this.getLoseHours()).isBefore(ticket.dateTime())) {
         openPositionConfiguration(ticket, candleDataTime, position);
