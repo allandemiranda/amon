@@ -8,15 +8,11 @@ import br.eti.allandemiranda.forex.services.TicketService;
 import br.eti.allandemiranda.forex.utils.OrderPosition;
 import br.eti.allandemiranda.forex.utils.OrderStatus;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
-import jakarta.annotation.PostConstruct;
-import java.math.BigDecimal;
-import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.Synchronized;
 import org.apache.commons.csv.CSVFormat;
 import org.jetbrains.annotations.NotNull;
@@ -36,19 +32,6 @@ public class OrderProcessor {
   private final OrderService orderService;
   private final CandlestickService candlestickService;
 
-  @Value("${order.take-profit:0}")
-  @Setter(AccessLevel.PRIVATE)
-  private int takeProfit;
-  @Value("${order.stop-loss:0}")
-  @Setter(AccessLevel.PRIVATE)
-  private int stopLoss;
-  @Value("${order.trading.gain:0}")
-  private int tradingGain;
-  @Value("${order.trading.loss:0}")
-  private int tradingLoss;
-  @Value("${order.open.spread.max:12}")
-  @Setter(AccessLevel.PRIVATE)
-  private int maxSpread;
   @Value("${order.open.onlyStrong:true}")
   private boolean isOpenOnlyStrong;
   @Value("${order.closeManual:true}")
@@ -75,12 +58,6 @@ public class OrderProcessor {
   private String fridayStart;
   @Value("${order.friday.end:'23:59:59'}")
   private String fridayEnd;
-  @Value("${order.swap.long:-5.46}")
-  private double swapLong;
-  @Value("${order.swap.short:0.61}")
-  private double swapShort;
-  @Value("${order.swap.rate.triple:WEDNESDAY}")
-  private String swapRateTriple;
 
   @Autowired
   protected OrderProcessor(final SignalService signalService, final TicketService ticketService, final OrderService orderService,
@@ -97,33 +74,20 @@ public class OrderProcessor {
     return !localTime.isBefore(start) && !localTime.isAfter(end);
   }
 
-  @PostConstruct
-  private void init() {
-    if (this.getTakeProfit() <= 0) {
-      this.setTakeProfit(Integer.MAX_VALUE);
-    }
-    if (this.getStopLoss() <= 0) {
-      this.setStopLoss(Integer.MAX_VALUE);
-    }
-    if (this.getMaxSpread() <= 0) {
-      this.setMaxSpread(Integer.MAX_VALUE);
-    }
-  }
-
   @Synchronized
   public void run() {
-    final Ticket ticket = this.getTicketService().getTicket();
     if (OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status())) {
-      operationToOpenOrder(ticket, this.getTakeProfit(), this.getStopLoss(), this.getTradingGain(), this.getTradingLoss());
+      operationToOpenOrder();
     }
     if (!OrderStatus.OPEN.equals(this.getOrderService().getLastOrder().status()) && !this.getSignalService().getLastSignal().trend().equals(SignalTrend.NEUTRAL)
         && this.getOrderService().getLastOrder().openCandleDateTime().isBefore(this.getSignalService().getLastSignal().dataTime())) {
-      operationToCloseOrder(ticket, this.getStopLoss(), this.getMaxSpread());
+      operationToCloseOrder();
     }
   }
 
-  private void operationToCloseOrder(final @NotNull Ticket ticket, final int stopLoss, final int maxSpread) {
-    if (ticket.spread() < stopLoss && ticket.spread() <= maxSpread && this.checkDataTime()) {
+  private void operationToCloseOrder() {
+    final Ticket ticket = this.getTicketService().getTicket();
+    if (this.checkDataTime()) {
       final LocalDateTime candleDataTime = this.getCandlestickService().getLastCandlestick().dateTime();
       switch (this.getSignalService().getLastSignal().trend()) {
         case STRONG_BUY -> this.getOrderService().openPosition(ticket, candleDataTime, OrderPosition.BUY);
@@ -142,10 +106,10 @@ public class OrderProcessor {
     }
   }
 
-  private void operationToOpenOrder(final Ticket ticket, final int takeProfit, final int stopLoss, final int tradingGain, final int tradingLoss) {
-    if (OrderStatus.OPEN.equals(this.getOrderService()
-        .updateOpenPosition(ticket, this.getCandlestickService().getLastCandlestick().dateTime(), takeProfit, stopLoss, tradingGain, tradingLoss,
-            DayOfWeek.valueOf(this.getSwapRateTriple()), BigDecimal.valueOf(this.getSwapLong()), BigDecimal.valueOf(this.getSwapShort()))) && this.isCloseManual()) {
+  private void operationToOpenOrder() {
+    final Ticket ticket = this.getTicketService().getTicket();
+    if (OrderStatus.OPEN.equals(this.getOrderService().updateOpenPosition(ticket, this.getCandlestickService().getLastCandlestick().dateTime()))
+        && this.isCloseManual()) {
       switch (this.getSignalService().getLastSignal().trend()) {
         case STRONG_BUY -> {
           if (this.getOrderService().getLastOrder().position().equals(OrderPosition.SELL)) {
