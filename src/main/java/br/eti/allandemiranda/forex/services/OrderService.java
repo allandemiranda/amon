@@ -110,7 +110,7 @@ public class OrderService {
           BigDecimal.valueOf(this.getSwapShort()));
       final int currentProfit = this.getRepository().getLastOrder().currentProfit();
       if (this.isTakeProfit() && !this.isGain()) {
-        if (this.getTakeProfit() > 0 && this.getTakeProfit() <= currentProfit) {
+        if (this.getTakeProfit() != 0 && this.getTakeProfit() <= currentProfit) {
           this.closePosition(OrderStatus.CLOSE_TP);
         }
         if (this.getStopLoss() > 0 && Math.negateExact(this.getStopLoss()) >= currentProfit) {
