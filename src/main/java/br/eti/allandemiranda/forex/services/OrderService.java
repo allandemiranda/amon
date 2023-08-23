@@ -160,18 +160,20 @@ public class OrderService {
   public void openPosition(final @NotNull Ticket ticket, final @NotNull LocalDateTime candleDataTime, final @NotNull OrderPosition position) {
     if (ticket.spread() <= this.getMaxSpread() && (!this.isTakeProfit() || this.getStopLoss() <= 0 || ticket.spread() <= this.getStopLoss()) && (!this.isGain()
         || ticket.spread() <= this.getTradingLoss()) && this.getRepository().getLastOrder().lastUpdate().isBefore(ticket.dateTime())) {
-      this.getBadPositions().forEach(dateTime -> {
-        if (!dateTime.toLocalDate().equals(ticket.dateTime().toLocalDate())) {
-          this.getBadPositions().remove(dateTime);
-        }
-      });
       if (!this.isSafeLose()) {
         openPositionConfiguration(ticket, candleDataTime, position);
-      } else if (this.getBadPositions().size() < this.getLoseSequence()) {
-        openPositionConfiguration(ticket, candleDataTime, position);
-      } else if (this.getBadPositions().last().plusHours(this.getLoseHours()).isBefore(ticket.dateTime())) {
-        openPositionConfiguration(ticket, candleDataTime, position);
-        this.getBadPositions().clear();
+      } else {
+        this.getBadPositions().forEach(dateTime -> {
+          if (!dateTime.toLocalDate().equals(ticket.dateTime().toLocalDate())) {
+            this.getBadPositions().remove(dateTime);
+          }
+        });
+        if (this.getBadPositions().size() < this.getLoseSequence()) {
+          openPositionConfiguration(ticket, candleDataTime, position);
+        } else if (this.getBadPositions().last().plusHours(this.getLoseHours()).isBefore(ticket.dateTime())) {
+          openPositionConfiguration(ticket, candleDataTime, position);
+          this.getBadPositions().clear();
+        }
       }
     }
   }
@@ -186,7 +188,7 @@ public class OrderService {
   public void closePosition(final @NotNull OrderStatus status) {
     if (!OrderStatus.OPEN.equals(status)) {
       this.getRepository().closePosition(status);
-      if (status.equals(OrderStatus.CLOSE_SL) || status.equals(OrderStatus.CLOSE_MANUAL)) {
+      if (this.isSafeLose() && (status.equals(OrderStatus.CLOSE_SL) || status.equals(OrderStatus.CLOSE_MANUAL))) {
         this.getBadPositions().add(this.getRepository().getLastOrder().lastUpdate());
       }
       this.updateDebugFile();
