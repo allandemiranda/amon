@@ -158,8 +158,7 @@ public class OrderService {
   }
 
   public void openPosition(final @NotNull Ticket ticket, final @NotNull LocalDateTime candleDataTime, final @NotNull OrderPosition position) {
-    if (ticket.spread() <= this.getMaxSpread() && (!this.isTakeProfit() || this.getStopLoss() <= 0 || ticket.spread() <= this.getStopLoss()) && (!this.isGain()
-        || ticket.spread() <= this.getTradingLoss()) && this.getRepository().getLastOrder().lastUpdate().isBefore(ticket.dateTime())) {
+    if (ticket.spread() <= this.getMaxSpread()) {
       if (!this.isSafeLose()) {
         openPositionConfiguration(ticket, candleDataTime, position);
       } else {
