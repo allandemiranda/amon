@@ -90,7 +90,7 @@ public class MovingAverageConvergenceDivergence implements Indicator {
 
   @Override
   public void run() {
-    final BigDecimal[] closes = this.getCandlestickService().getCandlesticks(Math.max(slowPeriod, fastPeriod) + macdPeriod - 1).map(Candlestick::close)
+    final BigDecimal[] closes = this.getCandlestickService().getCandlesticksClose(Math.max(slowPeriod, fastPeriod) + macdPeriod - 1).map(Candlestick::close)
         .toArray(BigDecimal[]::new);
     final BigDecimal[] fasts = getEMA(fastPeriod, closes);
     final BigDecimal[] slows = getEMA(slowPeriod, closes);

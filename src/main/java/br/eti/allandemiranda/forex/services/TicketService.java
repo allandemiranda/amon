@@ -24,21 +24,40 @@ public class TicketService {
     this.repository = repository;
   }
 
+  /**
+   * Get the last ticket generated
+   *
+   * @return The last ticket
+   */
   public @NotNull Ticket getTicket() {
     return this.getRepository().getCurrentTicket();
   }
 
+  /**
+   * Check if the ticket information is valid to be used. This happened because the data sometimes come with only BID or ASK value, and for processes of price is
+   * necessary to be on database the double values valid.
+   *
+   * @return If is ready to use the Ticket information
+   */
   public boolean isReady() {
     return this.getRepository().getCurrentTicket().bid().compareTo(BigDecimal.ZERO) > 0 && this.getRepository().getCurrentTicket().ask().compareTo(BigDecimal.ZERO) > 0;
   }
 
+  /**
+   * Inset new ticket information
+   *
+   * @param dateTime The new DateTime ticket
+   * @param bid      The new BID price ticket (zero if not have a price)
+   * @param ask      The new ASK price ticket (zero if not have a price)
+   * @return If the update is valid
+   */
   @Synchronized
   public boolean updateData(final @NotNull LocalDateTime dateTime, final double bid, final double ask) {
     if (dateTime.isAfter(this.getRepository().getCurrentTicket().dateTime())) {
       this.getRepository().update(dateTime, bid, ask);
       return true;
     } else {
-      // todo: removido para ser mais rápido
+      //! TODO: Create a log information for debug of problem if the input of ticket information from outside service
       // log.warn("Bad input ticket dataTime={} bid={} ask={}", dateTime.format(DateTimeFormatter.ISO_DATE_TIME), bid, ask);
       return false;
     }

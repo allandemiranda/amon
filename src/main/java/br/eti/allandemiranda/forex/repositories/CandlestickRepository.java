@@ -17,17 +17,32 @@ import org.springframework.stereotype.Repository;
 @Getter(AccessLevel.PRIVATE)
 public class CandlestickRepository {
 
-  private static final int SKIP_CURRENT_CANDLESTICK = 1;
   private final TreeSet<CandlestickEntity> dataBase = new TreeSet<>();
 
+  /**
+   * Number of candlestick necessary to start the data process
+   */
   @Value("${candlestick.repository.memory:41}")
   @Getter(AccessLevel.PUBLIC)
   private int memorySize;
 
+  /**
+   * Check if the database contains the minimal number of candlestick necessary to start the data use.
+   *
+   * @return If is ready to use the database
+   */
   public boolean isReady() {
     return this.getDataBase().size() >= this.getMemorySize();
   }
 
+  /**
+   * To add a new candlestick data on the database by DateTime.
+   * If the DateTime exist, means that the candlestick exist, so we will update the price on candlestick.
+   * If not, we will create a new candlestick.
+   *
+   * @param candlestickDateTime Current time of candlestick
+   * @param price               Current price of candlestick
+   */
   @Synchronized
   public void add(final @NotNull LocalDateTime candlestickDateTime, final @NotNull BigDecimal price) {
     final CandlestickEntity entity = new CandlestickEntity();
@@ -52,14 +67,40 @@ public class CandlestickRepository {
     }
   }
 
+  /**
+   * Method to return the last candlesticks on DataBase with limit data
+   *
+   * @param size number of candlesticks
+   * @return A Stream of candlesticks
+   */
   public Stream<Candlestick> get(final int size) {
-    return this.getDataBase().stream().skip(SKIP_CURRENT_CANDLESTICK).limit(size).map(this::toModel);
+    return this.getDataBase().stream().limit(size).map(this::toModel);
   }
 
+  /**
+   * Method to return the last candlesticks on DataBase
+   *
+   * @return A Stream of candlesticks (the chart)
+   */
+  public Stream<Candlestick> get() {
+    return this.getDataBase().stream().map(this::toModel);
+  }
+
+  /**
+   * Convert an entity in a model
+   *
+   * @param output The entity to be converted
+   * @return The model
+   */
   private @NotNull Candlestick toModel(final @NotNull CandlestickEntity output) {
     return new Candlestick(output.getDateTime(), output.getOpen(), output.getHigh(), output.getLow(), output.getClose());
   }
 
+  /**
+   * Get the last candlestick on the database (candlestick not close)
+   *
+   * @return The last candlestick
+   */
   public @NotNull Candlestick getLastUpdate() {
     return this.toModel(this.getDataBase().first());
   }

@@ -53,7 +53,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
 
   @Override
   public void run() {
-    final Candlestick[] candlesticks = this.candlestickService.getCandlesticks((3 * this.getPeriod()) - 2).toArray(Candlestick[]::new);
+    final Candlestick[] candlesticks = this.candlestickService.getCandlesticksClose((3 * this.getPeriod()) - 2).toArray(Candlestick[]::new);
 
     final BigDecimal[] trRow = IntStream.rangeClosed(0, candlesticks.length - 2).mapToObj(i -> {
       final BigDecimal highCurrent = candlesticks[i].high();

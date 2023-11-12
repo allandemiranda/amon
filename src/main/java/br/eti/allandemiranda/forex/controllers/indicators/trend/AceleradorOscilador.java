@@ -47,7 +47,7 @@ public class AceleradorOscilador implements Indicator {
 
   @Override
   public void run() {
-    final Candlestick[] candlesticks = this.getCandlestickService().getCandlesticks(38).toArray(Candlestick[]::new);
+    final Candlestick[] candlesticks = this.getCandlestickService().getCandlesticksClose(38).toArray(Candlestick[]::new);
     final BigDecimal[] medianPrices = Arrays.stream(candlesticks)
         .map(candlestick -> (candlestick.high().add(candlestick.low())).divide(BigDecimal.TWO, 10, RoundingMode.HALF_UP)).toArray(BigDecimal[]::new);
     final BigDecimal[] smaFive = IntStream.range(0, 5).mapToObj(
