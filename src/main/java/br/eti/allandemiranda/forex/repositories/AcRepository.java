@@ -19,6 +19,12 @@ public class AcRepository {
   private static final int MEMORY_SIZE = 2;
   private final TreeSet<AcEntity> dataBase = new TreeSet<>();
 
+  /**
+   * To add an AC new value to the repository. If the date time exists, will replace the indicator value.
+   *
+   * @param dateTime The date time
+   * @param ac       The indicator value
+   */
   public void add(final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal ac) {
     if (this.getDataBase().isEmpty() || dateTime.isAfter(this.getDataBase().first().getDateTime())) {
       final AcEntity entity = new AcEntity();
@@ -36,10 +42,21 @@ public class AcRepository {
     }
   }
 
+  /**
+   * Get database values
+   *
+   * @return Array of AC
+   */
   public AC @NotNull [] get() {
     return this.getDataBase().stream().map(this::toModel).toArray(AC[]::new);
   }
 
+  /**
+   * Convert an entity in a model
+   *
+   * @param entity The entity to be converted
+   * @return The model
+   */
   private @NotNull AC toModel(final @NotNull AcEntity entity) {
     return new AC(entity.getDateTime(), entity.getValue());
   }

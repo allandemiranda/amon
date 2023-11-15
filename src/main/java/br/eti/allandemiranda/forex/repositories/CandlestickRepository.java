@@ -89,11 +89,11 @@ public class CandlestickRepository {
   /**
    * Convert an entity in a model
    *
-   * @param output The entity to be converted
+   * @param entity The entity to be converted
    * @return The model
    */
-  private @NotNull Candlestick toModel(final @NotNull CandlestickEntity output) {
-    return new Candlestick(output.getDateTime(), output.getOpen(), output.getHigh(), output.getLow(), output.getClose());
+  private @NotNull Candlestick toModel(final @NotNull CandlestickEntity entity) {
+    return new Candlestick(entity.getDateTime(), entity.getOpen(), entity.getHigh(), entity.getLow(), entity.getClose());
   }
 
   /**

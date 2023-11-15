@@ -192,7 +192,6 @@ public class CandlestickService {
    * @return The last candlestick close
    */
   public @NotNull Candlestick getLastCloseCandlestick() {
-    //! TODO: testar se isso aqui funciona, se pega mesmo o ultimo e se nos indicadores ele está calculando direito
     return this.getChart().skip(SKIP_CURRENT_CANDLESTICK).limit(1).findFirst()
         .orElseThrow(() -> new ServiceException("Can't last close Candlesticks because don't have memory to get"));
   }

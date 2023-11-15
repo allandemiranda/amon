@@ -43,11 +43,13 @@ public class MovingAverageConvergenceDivergence implements Indicator {
   }
 
   private static BigDecimal @NotNull [] getEMA(final int period, final BigDecimal @NotNull [] closes) {
-    final BigDecimal a = BigDecimal.TWO.divide(BigDecimal.valueOf(period + 1L), 10, RoundingMode.HALF_UP);
     final BigDecimal[] list = invertArray(closes);
-    AtomicReference<BigDecimal> prevEMA = new AtomicReference<>(list[0]);
-    final BigDecimal[] emaList = IntStream.range(0, list.length).mapToObj(index -> {
-      if (index == 0) {
+    final BigDecimal smaToFirstElement = Arrays.stream(list, 0, period).reduce(BigDecimal.ZERO, BigDecimal::add)
+        .divide(BigDecimal.valueOf(period), 10, RoundingMode.HALF_UP);
+    AtomicReference<BigDecimal> prevEMA = new AtomicReference<>(smaToFirstElement);
+    final BigDecimal a = BigDecimal.TWO.divide(BigDecimal.valueOf(period + 1L), 10, RoundingMode.HALF_UP);
+    final BigDecimal[] emaList = IntStream.range(period - 1, list.length).mapToObj(index -> {
+      if (index == (period - 1)) {
         return prevEMA.get();
       } else {
         BigDecimal ema = (a.multiply(list[index])).add(BigDecimal.ONE.subtract(a).multiply(prevEMA.get()));

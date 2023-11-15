@@ -53,22 +53,22 @@ public class AverageDirectionalMovementIndex implements Indicator {
 
   @Override
   public void run() {
-    final Candlestick[] candlesticks = this.candlestickService.getCandlesticksClose((3 * this.getPeriod()) - 2).toArray(Candlestick[]::new);
+    final Candlestick[] candlesticks = this.candlestickService.getCandlesticksClose(2 * this.getPeriod()).toArray(Candlestick[]::new);
 
-    final BigDecimal[] trRow = IntStream.rangeClosed(0, candlesticks.length - 2).mapToObj(i -> {
+    final BigDecimal[] trRow = IntStream.range(0, candlesticks.length - 1).mapToObj(i -> {
       final BigDecimal highCurrent = candlesticks[i].high();
       final BigDecimal lowCurrent = candlesticks[i].low();
       final BigDecimal closeLast = candlesticks[i + 1].close();
-      return (highCurrent.subtract(lowCurrent)).max(highCurrent.subtract(closeLast).abs()).max(lowCurrent.subtract(closeLast).abs());
+      return (highCurrent.subtract(lowCurrent)).max((highCurrent.subtract(closeLast)).abs()).max((lowCurrent.subtract(closeLast)).abs());
     }).toArray(BigDecimal[]::new);
-    final BigDecimal[] dmPlusRow = IntStream.rangeClosed(0, candlesticks.length - 2).mapToObj(i -> {
+    final BigDecimal[] dmPlusRow = IntStream.range(0, candlesticks.length - 1).mapToObj(i -> {
       final BigDecimal highCurrent = candlesticks[i].high();
       final BigDecimal highLast = candlesticks[i + 1].high();
       final BigDecimal lowCurrent = candlesticks[i].low();
       final BigDecimal lowLast = candlesticks[i + 1].low();
       return (highCurrent.subtract(highLast)).compareTo(lowLast.subtract(lowCurrent)) > 0 ? (highCurrent.subtract(highLast)).max(BigDecimal.ZERO) : BigDecimal.ZERO;
     }).toArray(BigDecimal[]::new);
-    final BigDecimal[] dmMinusRow = IntStream.rangeClosed(0, candlesticks.length - 2).mapToObj(i -> {
+    final BigDecimal[] dmMinusRow = IntStream.range(0, candlesticks.length - 1).mapToObj(i -> {
       final BigDecimal highCurrent = candlesticks[i].high();
       final BigDecimal highLast = candlesticks[i + 1].high();
       final BigDecimal lowCurrent = candlesticks[i].low();
