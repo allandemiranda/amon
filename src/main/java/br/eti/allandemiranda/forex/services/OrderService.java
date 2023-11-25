@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -101,10 +102,22 @@ public class OrderService {
     this.repository = repository;
   }
 
+  /**
+   * String number format to price value
+   *
+   * @param value The price value
+   * @return The text price value
+   */
   private static @NotNull String getNumberPrice(final @NotNull BigDecimal value) {
     return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
+  /**
+   * String number format to balance value
+   *
+   * @param value The balance value
+   * @return The text balance value
+   */
   private static @NotNull String getNumberBalance(final @NotNull BigDecimal value) {
     return new DecimalFormat("#0.00#").format(value.doubleValue()).replace(".", ",");
   }
@@ -126,10 +139,12 @@ public class OrderService {
     listToUpdate.forEach(order -> this.getRepository().updateOrder(order));
 
     // Check to open a new order
-    final Optional<Order> openOrder = this.openOrder(ticket, signal, this.getMaxOpenPositions());
-    if (openOrder.isPresent()) {
-      this.getRepository().addOrder(openOrder.get());
-      this.setLastSignalOpenDateTime(signal.dataTime());
+    if(checkDataTime(ticket.dateTime())) {
+      final Optional<Order> openOrder = this.openOrder(ticket, signal, this.getMaxOpenPositions());
+      if (openOrder.isPresent()) {
+        this.getRepository().addOrder(openOrder.get());
+        this.setLastSignalOpenDateTime(signal.dataTime());
+      }
     }
 
     // Update the current balance
@@ -331,6 +346,38 @@ public class OrderService {
     final int spread = Math.negateExact(ticket.spread());
     return new Order(ticketDateTime, signalDateTime, trend, ticketDateTime, TIME_OPEN, OrderStatus.OPEN, orderPosition, openPrice, closePrice, spread, spread, spread,
         BigDecimal.ZERO);
+  }
+
+  /**
+   * Get confirmation time
+   *
+   * @param startTime The start time to open an order
+   * @param endTime   The end time to close an order
+   * @param localTime The current time
+   * @return If you can open on this day an order
+   */
+  private static boolean getDataConfirmation(final @NotNull String startTime, final @NotNull String endTime, final @NotNull LocalTime localTime) {
+    final LocalTime start = LocalTime.parse(startTime, DateTimeFormatter.ISO_TIME);
+    final LocalTime end = LocalTime.parse(endTime, DateTimeFormatter.ISO_TIME);
+    return !localTime.isBefore(start) && !localTime.isAfter(end);
+  }
+
+  /**
+   * Check if the day of the week and time is able to open an order
+   *
+   * @param dateTime The current data time
+   * @return If you can open
+   */
+  private boolean checkDataTime(final @NotNull LocalDateTime dateTime) {
+    final LocalTime localTime = dateTime.toLocalTime();
+    return switch (dateTime.getDayOfWeek()) {
+      case MONDAY -> getDataConfirmation(this.getMondayStart(), this.getMondayEnd(), localTime);
+      case TUESDAY -> getDataConfirmation(this.getTuesdayStart(), this.getTuesdayEnd(), localTime);
+      case WEDNESDAY -> getDataConfirmation(this.getWednesdayStart(), this.getWednesdayEnd(), localTime);
+      case THURSDAY -> getDataConfirmation(this.getThursdayStart(), this.getThursdayEnd(), localTime);
+      case FRIDAY -> getDataConfirmation(this.getFridayStart(), this.getFridayEnd(), localTime);
+      case SUNDAY, SATURDAY -> false;
+    };
   }
 
   @PostConstruct
