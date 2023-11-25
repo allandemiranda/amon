@@ -101,7 +101,11 @@ public class OrderService {
     this.repository = repository;
   }
 
-  private static @NotNull String getNumber(final @NotNull BigDecimal value) {
+  private static @NotNull String getNumberPrice(final @NotNull BigDecimal value) {
+    return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
+  }
+
+  private static @NotNull String getNumberBalance(final @NotNull BigDecimal value) {
     return new DecimalFormat("#0.00#").format(value.doubleValue()).replace(".", ",");
   }
 
@@ -132,7 +136,7 @@ public class OrderService {
     this.setCurrentBalance(getNewBalance(this.getRepository().getOrders(), this.getCurrentBalance()));
 
     // Print the close orders
-    Arrays.stream(this.getRepository().getOrders()).filter(order -> !order.orderStatus().equals(OrderStatus.OPEN)).forEachOrdered(this::updateDebugFile);
+    Arrays.stream(this.getRepository().getOrders()).filter(order -> !order.orderStatus().equals(OrderStatus.OPEN)).forEachOrdered(order -> updateDebugFile(order, this.getCurrentBalance()));
 
     // Remove che closed orders
     this.getRepository().removeCloseOrders();
@@ -348,13 +352,13 @@ public class OrderService {
   }
 
   @SneakyThrows
-  private void updateDebugFile(final @NotNull Order order) {
+  private void updateDebugFile(final @NotNull Order order, final @NotNull BigDecimal currentBalance) {
     if (this.isDebugActive()) {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.signalDateTime().format(DateTimeFormatter.ISO_DATE_TIME),
             order.signalTrend(), order.lastUpdateDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.timeOpen(), order.orderStatus(), order.orderPosition(),
-            getNumber(order.openPrice()), getNumber(order.closePrice()), order.highProfit(), order.lowProfit(), order.currentProfit(), getNumber(order.swapProfit()),
-            getNumber(this.getCurrentBalance()));
+            getNumberPrice(order.openPrice()), getNumberPrice(order.closePrice()), order.highProfit(), order.lowProfit(), order.currentProfit(), getNumberBalance(order.swapProfit()),
+            getNumberBalance(currentBalance), order.openDateTime().getDayOfWeek(), order.openDateTime().toLocalTime().format(DateTimeFormatter.ISO_TIME));
       }
     }
   }
