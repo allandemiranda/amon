@@ -32,9 +32,10 @@ public class GeneratorProcessor {
 
   /**
    * Web Socket to receive the ticket information
+   *
    * @param time The time to create ticket
-   * @param bid The BID price to create the ticket
-   * @param ask The ASK price to create the ticket
+   * @param bid  The BID price to create the ticket
+   * @param ask  The ASK price to create the ticket
    */
   @Synchronized
   public void webSocket(final LocalDateTime time, final Double bid, final Double ask) {
@@ -44,8 +45,7 @@ public class GeneratorProcessor {
     if (updatedData) {
       this.getChartProcessor().run();
       this.getIndicatorsProcessor().run();
-      // TODO VALIDANDO OS INDICADORES ANTES DE REFATORAR O ORDER PROCESS
-//      this.getOrderProcessor().run();
+      this.getOrderProcessor().run();
     }
   }
 }
