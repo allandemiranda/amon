@@ -11,6 +11,7 @@ import br.eti.allandemiranda.forex.utils.SignalTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.DayOfWeek;
@@ -18,10 +19,13 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -52,25 +56,25 @@ public class OrderService {
   @Value("${order.open.maxOpenPositions:999}")
   private int maxOpenPositions;
 
-  @Value("${order.open.monday.start:'00:00:00'}")
+  @Value("${order.open.monday.start:00:00:00}")
   private String mondayStart;
-  @Value("${order.open.monday.end:'23:59:59'}")
+  @Value("${order.open.monday.end:23:59:59}")
   private String mondayEnd;
-  @Value("${order.open.tuesday.start:'00:00:00'}")
+  @Value("${order.open.tuesday.start:00:00:00}")
   private String tuesdayStart;
-  @Value("${order.open.tuesday.end:'23:59:59'}")
+  @Value("${order.open.tuesday.end:23:59:59}")
   private String tuesdayEnd;
-  @Value("${order.open.wednesday.start:'00:00:00'}")
+  @Value("${order.open.wednesday.start:00:00:00}")
   private String wednesdayStart;
-  @Value("${order.open.wednesday.end:'23:59:59'}")
+  @Value("${order.open.wednesday.end:23:59:59}")
   private String wednesdayEnd;
-  @Value("${order.open.thursday.start:'00:00:00'}")
+  @Value("${order.open.thursday.start:00:00:00}")
   private String thursdayStart;
-  @Value("${order.open.thursday.end:'23:59:59'}")
+  @Value("${order.open.thursday.end:23:59:59}")
   private String thursdayEnd;
-  @Value("${order.open.friday.start:'00:00:00'}")
+  @Value("${order.open.friday.start:00:00:00}")
   private String fridayStart;
-  @Value("${order.open.friday.end:'23:59:59'}")
+  @Value("${order.open.friday.end:23:59:59}")
   private String fridayEnd;
 
   @Value("${order.safe.take-profit:150}")
@@ -134,12 +138,11 @@ public class OrderService {
    */
   public void insertTicketAndSignal(final @NotNull Ticket ticket, final @NotNull Signal signal) {
     // Update open tickets
-    final Collection<Order> listToUpdate = this.updateTicket(ticket, this.getTakeProfit(), this.getStopLoss(), BigDecimal.valueOf(this.getSwapLong()),
-        BigDecimal.valueOf(this.getSwapShort()), DayOfWeek.valueOf(this.getSwapRateTriple()));
-    listToUpdate.forEach(order -> this.getRepository().updateOrder(order));
+    this.updateTicket(Arrays.stream(this.getRepository().getOrders()).toList(), ticket, this.getTakeProfit(), this.getStopLoss(), BigDecimal.valueOf(this.getSwapLong()),
+        BigDecimal.valueOf(this.getSwapShort()), DayOfWeek.valueOf(this.getSwapRateTriple())).forEach(order -> this.getRepository().updateOrder(order));
 
     // Check to open a new order
-    if(checkDataTime(ticket.dateTime())) {
+    if (checkDataTime(ticket.dateTime())) {
       final Optional<Order> openOrder = this.openOrder(ticket, signal, this.getMaxOpenPositions());
       if (openOrder.isPresent()) {
         this.getRepository().addOrder(openOrder.get());
@@ -151,7 +154,8 @@ public class OrderService {
     this.setCurrentBalance(getNewBalance(this.getRepository().getOrders(), this.getCurrentBalance()));
 
     // Print the close orders
-    Arrays.stream(this.getRepository().getOrders()).filter(order -> !order.orderStatus().equals(OrderStatus.OPEN)).forEachOrdered(order -> updateDebugFile(order, this.getCurrentBalance()));
+    Arrays.stream(this.getRepository().getOrders()).filter(order -> !order.orderStatus().equals(OrderStatus.OPEN))
+        .forEachOrdered(order -> updateDebugFile(order, this.getCurrentBalance()));
 
     // Remove che closed orders
     this.getRepository().removeCloseOrders();
@@ -179,9 +183,9 @@ public class OrderService {
    * @param swapShort  The swap short in points
    * @return The list of orders to be updated
    */
-  private @NotNull Collection<Order> updateTicket(final @NotNull Ticket ticket, final int takeProfit, final int stopLoss, final @NotNull BigDecimal swapLong,
+  private @NotNull Collection<Order> updateTicket(final @NotNull Collection<Order> orders, final @NotNull Ticket ticket, final int takeProfit, final int stopLoss, final @NotNull BigDecimal swapLong,
       final @NotNull BigDecimal swapShort, final DayOfWeek swapRateTriple) {
-    return Arrays.stream(this.getRepository().getOrders()).parallel().map(order -> {
+    return orders.parallelStream().map(order -> {
       // Check if is necessary add a swap to this order
       final BigDecimal swapProfit = getSwapProfitProcess(ticket, swapLong, swapShort, swapRateTriple, order);
 
