@@ -1,5 +1,6 @@
 package br.eti.allandemiranda.forex.repositories;
 
+import br.eti.allandemiranda.forex.headers.OrderHeader;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.utils.TimeFrame;
 import jakarta.annotation.PostConstruct;
@@ -59,6 +60,14 @@ public class StatisticRepository {
     Arrays.stream(DayOfWeek.values()).filter(dayOfWeek -> !dayOfWeek.equals(DayOfWeek.SATURDAY) && !dayOfWeek.equals(DayOfWeek.SUNDAY)).forEachOrdered(dayOfWeek -> this.getDataBase().put(dayOfWeek,
         localTimeList.parallelStream().map(localTime -> new SimpleEntry<>(localTime, Pair.of(new AtomicInteger(0), new AtomicInteger(0))))
             .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue, (a, b) -> a, TreeMap::new))));
+    this.printDebugHeader();
+  }
+
+  @SneakyThrows
+  private void printDebugHeader() {
+    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+      csvPrinter.printRecord("DAY", "TIME", "WIN", "LOSE");
+    }
   }
 
   public void addResultWin(final @NotNull LocalDateTime localDateTime) {
