@@ -15,6 +15,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -32,6 +33,13 @@ public class CandlestickService {
   private static final int ONE_DAY_HOUR = 24;
   private static final int SKIP_CURRENT_CANDLESTICK = 1;
 
+  /**
+   * Time frame of chart
+   */
+  @Getter(AccessLevel.PUBLIC)
+  @Value("${chart.timeframe:M15}")
+  private String timeFrame;
+
   private final CandlestickRepository repository;
 
   @Autowired
@@ -46,7 +54,7 @@ public class CandlestickService {
    * @param timeFrame The time frame request
    * @return The DataTime to the candlestick
    */
-  private static @NotNull LocalDateTime getCandleDateTime(final @NotNull LocalDateTime dataTime, final @NotNull TimeFrame timeFrame) {
+  public @NotNull LocalDateTime getCandleDateTime(final @NotNull LocalDateTime dataTime, final @NotNull TimeFrame timeFrame) {
     return switch (timeFrame) {
       case M1 -> getDateTimeLowM(dataTime, TIME_FRAME_ONE);
       case M5 -> getDateTimeLowM(dataTime, TIME_FRAME_FIVE);
@@ -64,7 +72,7 @@ public class CandlestickService {
    * @param ticketDateTime The Ticket DataTime request
    * @return The DataTime of candlestick
    */
-  private static @NotNull LocalDateTime getDateTimeOneDay(final @NotNull LocalDateTime ticketDateTime) {
+  private @NotNull LocalDateTime getDateTimeOneDay(final @NotNull LocalDateTime ticketDateTime) {
     return ticketDateTime.toLocalDate().atStartOfDay();
   }
 
@@ -75,7 +83,7 @@ public class CandlestickService {
    * @param timeFrameMin   The low minute time frame request
    * @return The DataTime of candlestick
    */
-  private static @NotNull LocalDateTime getDateTimeLowM(final @NotNull LocalDateTime ticketDateTime, final int timeFrameMin) {
+  private @NotNull LocalDateTime getDateTimeLowM(final @NotNull LocalDateTime ticketDateTime, final int timeFrameMin) {
     final int[] minArray = IntStream.rangeClosed(0, ONE_HOUR_MIN / timeFrameMin).map(operand -> timeFrameMin * operand).toArray();
     final int index = IntStream.range(TIME_FRAME_ONE, minArray.length).filter(i -> ticketDateTime.getMinute() < minArray[i]).findFirst()
         .orElseThrow(IllegalStateException::new);
@@ -89,7 +97,7 @@ public class CandlestickService {
    * @param timeFrameHour  The low hours time frame request
    * @return The DataTime of candlestick
    */
-  private static @NotNull LocalDateTime getDateTimeLowH(final @NotNull LocalDateTime ticketDateTime, final int timeFrameHour) {
+  private @NotNull LocalDateTime getDateTimeLowH(final @NotNull LocalDateTime ticketDateTime, final int timeFrameHour) {
     final int[] hourArray = IntStream.rangeClosed(0, ONE_DAY_HOUR / timeFrameHour).map(operand -> operand * timeFrameHour).toArray();
     final int index = IntStream.range(TIME_FRAME_ONE, hourArray.length).filter(i -> ticketDateTime.getHour() < hourArray[i]).findFirst()
         .orElseThrow(IllegalStateException::new);
@@ -102,7 +110,7 @@ public class CandlestickService {
    * @param ticketDateTime The Ticket DataTime request
    * @return The DataTime of candlestick
    */
-  private static @NotNull LocalDateTime getDateTimeToM15(final @NotNull LocalDateTime ticketDateTime) {
+  private @NotNull LocalDateTime getDateTimeToM15(final @NotNull LocalDateTime ticketDateTime) {
     final LocalDate localDate = ticketDateTime.toLocalDate();
     final int hour = ticketDateTime.getHour();
     final int minute = ticketDateTime.getMinute();
@@ -123,7 +131,7 @@ public class CandlestickService {
    * @param ticketDateTime The Ticket DataTime request
    * @return The DataTime of candlestick
    */
-  private static @NotNull LocalDateTime getDateTimeToM30(final @NotNull LocalDateTime ticketDateTime) {
+  private @NotNull LocalDateTime getDateTimeToM30(final @NotNull LocalDateTime ticketDateTime) {
     final LocalDate localDate = ticketDateTime.toLocalDate();
     final int hour = ticketDateTime.getHour();
     if (ticketDateTime.getMinute() < MINUTE_THIRTY) {
@@ -134,14 +142,13 @@ public class CandlestickService {
   }
 
   /**
-   * To add a Ticket data on the chart of candlesticks
+   * To add an Ticket date on the chart of candlesticks
    *
-   * @param ticket    The ticket to be add
-   * @param timeFrame The time frame of chart candlesticks
+   * @param ticket    The ticket to be added
    */
-  public void addTicket(final @NotNull Ticket ticket, final @NotNull TimeFrame timeFrame) {
+  public void addTicket(final @NotNull Ticket ticket) {
     final BigDecimal price = ticket.bid();
-    final LocalDateTime candleDateTime = getCandleDateTime(ticket.dateTime(), timeFrame);
+    final LocalDateTime candleDateTime = getCandleDateTime(ticket.dateTime(), TimeFrame.valueOf(this.getTimeFrame()));
     this.getRepository().add(candleDateTime, price);
   }
 

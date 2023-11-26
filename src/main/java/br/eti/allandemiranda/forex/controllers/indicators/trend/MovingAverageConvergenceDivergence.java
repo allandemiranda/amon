@@ -38,11 +38,11 @@ public class MovingAverageConvergenceDivergence implements Indicator {
     this.candlestickService = candlestickService;
   }
 
-  private static BigDecimal @NotNull [] invertArray(BigDecimal @NotNull [] array) {
+  private BigDecimal @NotNull [] invertArray(BigDecimal @NotNull [] array) {
     return IntStream.rangeClosed(1, array.length).mapToObj(i -> array[array.length - i]).toArray(BigDecimal[]::new);
   }
 
-  private static BigDecimal @NotNull [] getEMA(final int period, final BigDecimal @NotNull [] closes) {
+  private BigDecimal @NotNull [] getEMA(final int period, final BigDecimal @NotNull [] closes) {
     final BigDecimal[] list = invertArray(closes);
     final BigDecimal smaToFirstElement = Arrays.stream(list, 0, period).reduce(BigDecimal.ZERO, BigDecimal::add)
         .divide(BigDecimal.valueOf(period), 10, RoundingMode.HALF_UP);
@@ -60,7 +60,7 @@ public class MovingAverageConvergenceDivergence implements Indicator {
     return invertArray(emaList);
   }
 
-  private static boolean isCross(final MACD @NotNull [] macds) {
+  private boolean isCross(final MACD @NotNull [] macds) {
     if (macds.length == 3 && macds[1].main().compareTo(macds[1].signal()) == 0) {
       return macds[0].main().compareTo(macds[0].signal()) > 0 && macds[2].main().compareTo(macds[2].signal()) < 0
           || macds[0].main().compareTo(macds[0].signal()) < 0 && macds[2].main().compareTo(macds[2].signal()) > 0;

@@ -36,7 +36,7 @@ public class TicketRepository {
    * @param digits The number of digits
    * @return The number of points
    */
-  private static int getPoints(final @NotNull BigDecimal price, final int digits) {
+  private int getPoints(final @NotNull BigDecimal price, final int digits) {
     return price.multiply(BigDecimal.valueOf(Math.pow(10, digits))).intValue();
   }
 

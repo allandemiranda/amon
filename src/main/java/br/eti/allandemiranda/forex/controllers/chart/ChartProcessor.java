@@ -3,12 +3,10 @@ package br.eti.allandemiranda.forex.controllers.chart;
 import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.TicketService;
-import br.eti.allandemiranda.forex.utils.TimeFrame;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Synchronized;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 
 @Controller
@@ -17,12 +15,6 @@ public class ChartProcessor {
 
   private final CandlestickService candlestickService;
   private final TicketService ticketService;
-
-  /**
-   * Time frame of chart
-   */
-  @Value("${chart.timeframe:M15}")
-  private String timeFrame;
 
   @Autowired
   protected ChartProcessor(final CandlestickService candlestickService, final TicketService ticketService) {
@@ -37,7 +29,7 @@ public class ChartProcessor {
   public void run() {
     if (this.getTicketService().isReady()) {
       final Ticket ticket = this.getTicketService().getTicket();
-      this.getCandlestickService().addTicket(ticket, TimeFrame.valueOf(this.getTimeFrame()));
+      this.getCandlestickService().addTicket(ticket);
     }
   }
 }

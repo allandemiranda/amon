@@ -5,13 +5,13 @@ import br.eti.allandemiranda.forex.dtos.Signal;
 import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.headers.OrderHeader;
 import br.eti.allandemiranda.forex.repositories.OrderRepository;
+import br.eti.allandemiranda.forex.repositories.StatisticRepository;
 import br.eti.allandemiranda.forex.utils.OrderPosition;
 import br.eti.allandemiranda.forex.utils.OrderStatus;
 import br.eti.allandemiranda.forex.utils.SignalTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.DayOfWeek;
@@ -19,13 +19,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -42,13 +39,12 @@ import org.springframework.stereotype.Service;
 @Getter(AccessLevel.PRIVATE)
 public class OrderService {
 
+  public static final String TIME_OPEN = "0 00:00:00";
   private static final String TIME_OPEN_FORMAT = "%sd %s:%s:%s";
   private static final String OUTPUT_FILE_NAME = "order.csv";
   private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
-  public static final String TIME_OPEN = "0 00:00:00";
 
-  @Value("${order.open.spread.max:12}")
-  private int maxSpread;
+  private final OrderRepository repository;
 
   @Value("${order.open.onlyStrong:false}")
   private boolean isOpenOnlyStrong;
@@ -77,6 +73,8 @@ public class OrderService {
   @Value("${order.open.friday.end:23:59:59}")
   private String fridayEnd;
 
+  @Value("${order.open.spread.max:12}")
+  private int maxSpread;
   @Value("${order.safe.take-profit:150}")
   private int takeProfit;
   @Value("${order.safe.stop-loss:100}")
@@ -99,11 +97,12 @@ public class OrderService {
   @Setter(AccessLevel.PRIVATE)
   private BigDecimal currentBalance = BigDecimal.ZERO;
 
-  private final OrderRepository repository;
+  private final StatisticRepository statisticRepository;
 
   @Autowired
-  protected OrderService(final OrderRepository repository) {
+  protected OrderService(final OrderRepository repository, final StatisticRepository statisticRepository) {
     this.repository = repository;
+    this.statisticRepository = statisticRepository;
   }
 
   /**
@@ -112,7 +111,7 @@ public class OrderService {
    * @param value The price value
    * @return The text price value
    */
-  private static @NotNull String getNumberPrice(final @NotNull BigDecimal value) {
+  private @NotNull String getNumberPrice(final @NotNull BigDecimal value) {
     return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
@@ -122,7 +121,7 @@ public class OrderService {
    * @param value The balance value
    * @return The text balance value
    */
-  private static @NotNull String getNumberBalance(final @NotNull BigDecimal value) {
+  private @NotNull String getNumberBalance(final @NotNull BigDecimal value) {
     return new DecimalFormat("#0.00#").format(value.doubleValue()).replace(".", ",");
   }
 
@@ -156,6 +155,10 @@ public class OrderService {
     // Print the close orders
     Arrays.stream(this.getRepository().getOrders()).filter(order -> !order.orderStatus().equals(OrderStatus.OPEN))
         .forEachOrdered(order -> updateDebugFile(order, this.getCurrentBalance()));
+    Arrays.stream(this.getRepository().getOrders()).filter(order -> order.orderStatus().equals(OrderStatus.CLOSE_TP))
+        .forEachOrdered(order -> this.getStatisticRepository().addResultWin(order.openDateTime()));
+    Arrays.stream(this.getRepository().getOrders()).filter(order -> order.orderStatus().equals(OrderStatus.CLOSE_SL))
+        .forEachOrdered(order -> this.getStatisticRepository().addResultLose(order.openDateTime()));
 
     // Remove che closed orders
     this.getRepository().removeCloseOrders();
@@ -183,8 +186,8 @@ public class OrderService {
    * @param swapShort  The swap short in points
    * @return The list of orders to be updated
    */
-  private @NotNull Collection<Order> updateTicket(final @NotNull Collection<Order> orders, final @NotNull Ticket ticket, final int takeProfit, final int stopLoss, final @NotNull BigDecimal swapLong,
-      final @NotNull BigDecimal swapShort, final DayOfWeek swapRateTriple) {
+  private @NotNull Collection<Order> updateTicket(final @NotNull Collection<Order> orders, final @NotNull Ticket ticket, final int takeProfit, final int stopLoss,
+      final @NotNull BigDecimal swapLong, final @NotNull BigDecimal swapShort, final DayOfWeek swapRateTriple) {
     return orders.parallelStream().map(order -> {
       // Check if is necessary add a swap to this order
       final BigDecimal swapProfit = getSwapProfitProcess(ticket, swapLong, swapShort, swapRateTriple, order);
@@ -360,7 +363,7 @@ public class OrderService {
    * @param localTime The current time
    * @return If you can open on this day an order
    */
-  private static boolean getDataConfirmation(final @NotNull String startTime, final @NotNull String endTime, final @NotNull LocalTime localTime) {
+  private boolean getDataConfirmation(final @NotNull String startTime, final @NotNull String endTime, final @NotNull LocalTime localTime) {
     final LocalTime start = LocalTime.parse(startTime, DateTimeFormatter.ISO_TIME);
     final LocalTime end = LocalTime.parse(endTime, DateTimeFormatter.ISO_TIME);
     return !localTime.isBefore(start) && !localTime.isAfter(end);
@@ -408,8 +411,8 @@ public class OrderService {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.signalDateTime().format(DateTimeFormatter.ISO_DATE_TIME),
             order.signalTrend(), order.lastUpdateDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.timeOpen(), order.orderStatus(), order.orderPosition(),
-            getNumberPrice(order.openPrice()), getNumberPrice(order.closePrice()), order.highProfit(), order.lowProfit(), order.currentProfit(), getNumberBalance(order.swapProfit()),
-            getNumberBalance(currentBalance), order.openDateTime().getDayOfWeek(), order.openDateTime().toLocalTime().format(DateTimeFormatter.ISO_TIME));
+            getNumberPrice(order.openPrice()), getNumberPrice(order.closePrice()), order.highProfit(), order.lowProfit(), order.currentProfit(),
+            getNumberBalance(order.swapProfit()), getNumberBalance(currentBalance));
       }
     }
   }

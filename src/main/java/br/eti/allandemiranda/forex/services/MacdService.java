@@ -41,7 +41,7 @@ public class MacdService {
     this.repository = repository;
   }
 
-  private static @NotNull String getNumber(final @NotNull BigDecimal value) {
+  private @NotNull String getNumber(final @NotNull BigDecimal value) {
     return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
