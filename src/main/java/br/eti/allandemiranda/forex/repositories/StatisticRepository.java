@@ -56,7 +56,7 @@ public class StatisticRepository {
             localTime -> this.getCandlestickService()
                 .getCandleDateTime(LocalDateTime.of(LocalDate.now(), localTime), TimeFrame.valueOf(this.getCandlestickService().getTimeFrame())))
         .map(LocalDateTime::toLocalTime).map(localTime -> localTime.withSecond(0)).map(localTime -> localTime.withNano(0)).toList();
-    Arrays.stream(DayOfWeek.values()).forEachOrdered(dayOfWeek -> this.getDataBase().put(dayOfWeek,
+    Arrays.stream(DayOfWeek.values()).filter(dayOfWeek -> !dayOfWeek.equals(DayOfWeek.SATURDAY) && !dayOfWeek.equals(DayOfWeek.SUNDAY)).forEachOrdered(dayOfWeek -> this.getDataBase().put(dayOfWeek,
         localTimeList.parallelStream().map(localTime -> new SimpleEntry<>(localTime, Pair.of(new AtomicInteger(0), new AtomicInteger(0))))
             .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue, (a, b) -> a, TreeMap::new))));
   }
