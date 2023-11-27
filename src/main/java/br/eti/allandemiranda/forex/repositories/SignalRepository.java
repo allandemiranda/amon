@@ -1,7 +1,7 @@
 package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.Signal;
-import br.eti.allandemiranda.forex.utils.SignalTrend;
+import br.eti.allandemiranda.forex.enums.SignalTrend;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;

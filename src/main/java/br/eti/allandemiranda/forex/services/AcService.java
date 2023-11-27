@@ -3,7 +3,7 @@ package br.eti.allandemiranda.forex.services;
 import br.eti.allandemiranda.forex.dtos.AC;
 import br.eti.allandemiranda.forex.headers.AcHeader;
 import br.eti.allandemiranda.forex.repositories.AcRepository;
-import br.eti.allandemiranda.forex.utils.IndicatorTrend;
+import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;

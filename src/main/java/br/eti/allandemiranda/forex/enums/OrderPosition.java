@@ -1,4 +1,4 @@
-package br.eti.allandemiranda.forex.utils;
+package br.eti.allandemiranda.forex.enums;
 
 public enum OrderPosition {
   BUY, SELL

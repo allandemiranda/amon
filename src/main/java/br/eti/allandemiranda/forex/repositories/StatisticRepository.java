@@ -1,8 +1,7 @@
 package br.eti.allandemiranda.forex.repositories;
 
-import br.eti.allandemiranda.forex.headers.OrderHeader;
 import br.eti.allandemiranda.forex.services.CandlestickService;
-import br.eti.allandemiranda.forex.utils.TimeFrame;
+import br.eti.allandemiranda.forex.enums.TimeFrame;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.File;

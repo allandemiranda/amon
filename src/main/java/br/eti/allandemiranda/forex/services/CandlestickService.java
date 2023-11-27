@@ -4,7 +4,7 @@ import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.Ticket;
 import br.eti.allandemiranda.forex.exceptions.ServiceException;
 import br.eti.allandemiranda.forex.repositories.CandlestickRepository;
-import br.eti.allandemiranda.forex.utils.TimeFrame;
+import br.eti.allandemiranda.forex.enums.TimeFrame;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

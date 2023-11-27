@@ -3,7 +3,7 @@ package br.eti.allandemiranda.forex.services;
 import br.eti.allandemiranda.forex.dtos.ADX;
 import br.eti.allandemiranda.forex.headers.AdxHeader;
 import br.eti.allandemiranda.forex.repositories.AdxRepository;
-import br.eti.allandemiranda.forex.utils.IndicatorTrend;
+import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
@@ -31,6 +31,10 @@ public class AdxService {
   private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
 
   private final AdxRepository repository;
+
+  @Getter(AccessLevel.PUBLIC)
+  @Value("${adx.parameters.period:14}")
+  private int period;
 
   @Value("${config.root.folder}")
   private File outputFolder;

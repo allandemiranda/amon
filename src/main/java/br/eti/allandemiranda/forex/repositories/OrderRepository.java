@@ -2,7 +2,7 @@ package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.Order;
 import br.eti.allandemiranda.forex.entities.OrderEntity;
-import br.eti.allandemiranda.forex.utils.OrderStatus;
+import br.eti.allandemiranda.forex.enums.OrderStatus;
 import java.util.TreeSet;
 import lombok.AccessLevel;
 import lombok.Getter;

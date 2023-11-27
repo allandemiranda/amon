@@ -5,7 +5,8 @@ import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.MACD;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.MacdService;
-import br.eti.allandemiranda.forex.utils.IndicatorTrend;
+import br.eti.allandemiranda.forex.enums.IndicatorTrend;
+import br.eti.allandemiranda.forex.utils.Tools;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
@@ -15,7 +16,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 
 @Controller
@@ -25,39 +25,10 @@ public class MovingAverageConvergenceDivergence implements Indicator {
   private final MacdService macdService;
   private final CandlestickService candlestickService;
 
-  @Value("${macd.parameters.fast.period:12}")
-  private int fastPeriod;
-  @Value("${macd.parameters.slow.period:26}")
-  private int slowPeriod;
-  @Value("${macd.parameters.macd.period:9}")
-  private int macdPeriod;
-
   @Autowired
   protected MovingAverageConvergenceDivergence(final MacdService macdService, final CandlestickService candlestickService) {
     this.macdService = macdService;
     this.candlestickService = candlestickService;
-  }
-
-  private BigDecimal @NotNull [] invertArray(BigDecimal @NotNull [] array) {
-    return IntStream.rangeClosed(1, array.length).mapToObj(i -> array[array.length - i]).toArray(BigDecimal[]::new);
-  }
-
-  private BigDecimal @NotNull [] getEMA(final int period, final BigDecimal @NotNull [] closes) {
-    final BigDecimal[] list = invertArray(closes);
-    final BigDecimal smaToFirstElement = Arrays.stream(list, 0, period).reduce(BigDecimal.ZERO, BigDecimal::add)
-        .divide(BigDecimal.valueOf(period), 10, RoundingMode.HALF_UP);
-    AtomicReference<BigDecimal> prevEMA = new AtomicReference<>(smaToFirstElement);
-    final BigDecimal a = BigDecimal.TWO.divide(BigDecimal.valueOf(period + 1L), 10, RoundingMode.HALF_UP);
-    final BigDecimal[] emaList = IntStream.range(period - 1, list.length).mapToObj(index -> {
-      if (index == (period - 1)) {
-        return prevEMA.get();
-      } else {
-        BigDecimal ema = (a.multiply(list[index])).add(BigDecimal.ONE.subtract(a).multiply(prevEMA.get()));
-        prevEMA.set(ema);
-        return ema;
-      }
-    }).toArray(BigDecimal[]::new);
-    return invertArray(emaList);
   }
 
   private boolean isCross(final MACD @NotNull [] macds) {
@@ -92,12 +63,12 @@ public class MovingAverageConvergenceDivergence implements Indicator {
 
   @Override
   public void run() {
-    final BigDecimal[] closes = this.getCandlestickService().getCandlesticksClose(Math.max(slowPeriod, fastPeriod) + macdPeriod - 1).map(Candlestick::close)
+    final BigDecimal[] closes = this.getCandlestickService().getCandlesticksClose(Math.max(this.getMacdService().getSlowPeriod(), this.getMacdService().getFastPeriod()) + this.getMacdService().getMacdPeriod() - 1).map(Candlestick::close)
         .toArray(BigDecimal[]::new);
-    final BigDecimal[] fasts = getEMA(fastPeriod, closes);
-    final BigDecimal[] slows = getEMA(slowPeriod, closes);
-    final BigDecimal[] macds = IntStream.range(0, macdPeriod).mapToObj(i -> fasts[i].subtract(slows[i])).toArray(BigDecimal[]::new);
-    final BigDecimal signal = Arrays.stream(macds).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(macdPeriod), 10, RoundingMode.HALF_UP);
+    final BigDecimal[] fasts = Tools.getEMA(this.getMacdService().getFastPeriod(), closes);
+    final BigDecimal[] slows = Tools.getEMA(this.getMacdService().getSlowPeriod(), closes);
+    final BigDecimal[] macds = IntStream.range(0, this.getMacdService().getMacdPeriod()).mapToObj(i -> fasts[i].subtract(slows[i])).toArray(BigDecimal[]::new);
+    final BigDecimal signal = Arrays.stream(macds).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getMacdService().getMacdPeriod()), 10, RoundingMode.HALF_UP);
     this.getMacdService().addMacd(this.getCandlestickService().getLastCandlestick().dateTime(), macds[0], signal);
   }
 }

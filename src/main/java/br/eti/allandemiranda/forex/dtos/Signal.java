@@ -1,6 +1,6 @@
 package br.eti.allandemiranda.forex.dtos;
 
-import br.eti.allandemiranda.forex.utils.SignalTrend;
+import br.eti.allandemiranda.forex.enums.SignalTrend;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import lombok.experimental.Accessors;

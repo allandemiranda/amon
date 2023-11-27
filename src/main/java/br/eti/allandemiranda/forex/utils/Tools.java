@@ -1,0 +1,50 @@
+package br.eti.allandemiranda.forex.utils;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
+import org.jetbrains.annotations.NotNull;
+
+public class Tools {
+
+  private Tools() {
+    throw new IllegalCallerException();
+  }
+
+  /**
+   * Invert the array
+   *
+   * @param array The array
+   * @return The inverted array
+   */
+  public static BigDecimal @NotNull [] invertArray(BigDecimal @NotNull [] array) {
+    return IntStream.rangeClosed(1, array.length).mapToObj(i -> array[array.length - i]).toArray(BigDecimal[]::new);
+  }
+
+  /**
+   * get the EMA vector
+   *
+   * @param period The period value
+   * @param values The array with values
+   * @return The EMA array
+   */
+  public static BigDecimal @NotNull [] getEMA(final int period, final BigDecimal @NotNull [] values) {
+    final BigDecimal[] list = invertArray(values);
+    final BigDecimal smaToFirstElement = Arrays.stream(list, 0, period).reduce(BigDecimal.ZERO, BigDecimal::add)
+        .divide(BigDecimal.valueOf(period), 10, RoundingMode.HALF_UP);
+    AtomicReference<BigDecimal> prevEMA = new AtomicReference<>(smaToFirstElement);
+    final BigDecimal a = BigDecimal.TWO.divide(BigDecimal.valueOf(period + 1L), 10, RoundingMode.HALF_UP);
+    final BigDecimal[] emaList = IntStream.range(period - 1, list.length).mapToObj(index -> {
+      if (index == (period - 1)) {
+        return prevEMA.get();
+      } else {
+        BigDecimal ema = (a.multiply(list[index])).add(BigDecimal.ONE.subtract(a).multiply(prevEMA.get()));
+        prevEMA.set(ema);
+        return ema;
+      }
+    }).toArray(BigDecimal[]::new);
+    return invertArray(emaList);
+  }
+}

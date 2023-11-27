@@ -3,11 +3,12 @@ package br.eti.allandemiranda.forex.controllers.indicators;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.AceleradorOscilador;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.AverageDirectionalMovementIndex;
 import br.eti.allandemiranda.forex.controllers.indicators.trend.MovingAverageConvergenceDivergence;
+import br.eti.allandemiranda.forex.controllers.indicators.trend.TradingPerformance;
 import br.eti.allandemiranda.forex.exceptions.IndicatorsException;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.IndicatorService;
 import br.eti.allandemiranda.forex.services.SignalService;
-import br.eti.allandemiranda.forex.utils.SignalTrend;
+import br.eti.allandemiranda.forex.enums.SignalTrend;
 import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -30,17 +31,19 @@ public class IndicatorsProcessor {
   private final IndicatorService indicatorService;
   private final SignalService signalService;
   private final CandlestickService candlestickService;
+  private final TradingPerformance tradingPerformance;
 
   @Autowired
   protected IndicatorsProcessor(final AverageDirectionalMovementIndex averageDirectionalMovementIndex, final AceleradorOscilador aceleradorOscilador,
       final MovingAverageConvergenceDivergence movingAverageConvergenceDivergence, final IndicatorService indicatorService, final SignalService signalService,
-      final CandlestickService candlestickService) {
+      final CandlestickService candlestickService, final TradingPerformance tradingPerformance) {
     this.averageDirectionalMovementIndex = averageDirectionalMovementIndex;
     this.aceleradorOscilador = aceleradorOscilador;
     this.movingAverageConvergenceDivergence = movingAverageConvergenceDivergence;
     this.indicatorService = indicatorService;
     this.signalService = signalService;
     this.candlestickService = candlestickService;
+    this.tradingPerformance = tradingPerformance;
   }
 
   /**
@@ -79,15 +82,15 @@ public class IndicatorsProcessor {
           case NEUTRAL -> 0;
         }).sum();
         if (signalSum == -3) {
-          this.getSignalService().addGlobalSignal(lastCandleDataTime, SignalTrend.STRONG_SELL);
+          this.getSignalService().addGlobalSignal(lastCandleDataTime, this.getTradingPerformance().checkCompatible(SignalTrend.STRONG_SELL) ? SignalTrend.STRONG_SELL : SignalTrend.NEUTRAL);
         } else if (signalSum == 3) {
-          this.getSignalService().addGlobalSignal(lastCandleDataTime, SignalTrend.STRONG_BUY);
+          this.getSignalService().addGlobalSignal(lastCandleDataTime, this.getTradingPerformance().checkCompatible(SignalTrend.STRONG_BUY) ? SignalTrend.STRONG_BUY : SignalTrend.NEUTRAL);
         } else if (signalSum == 0) {
           this.getSignalService().addGlobalSignal(lastCandleDataTime, SignalTrend.NEUTRAL);
         } else if (signalSum > 0) {
-          this.getSignalService().addGlobalSignal(lastCandleDataTime, SignalTrend.BUY);
+          this.getSignalService().addGlobalSignal(lastCandleDataTime, this.getTradingPerformance().checkCompatible(SignalTrend.BUY) ? SignalTrend.BUY : SignalTrend.NEUTRAL);
         } else {
-          this.getSignalService().addGlobalSignal(lastCandleDataTime, SignalTrend.SELL);
+          this.getSignalService().addGlobalSignal(lastCandleDataTime, this.getTradingPerformance().checkCompatible(SignalTrend.SELL) ? SignalTrend.SELL : SignalTrend.NEUTRAL);
         }
       }
     }

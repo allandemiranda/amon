@@ -1,8 +1,8 @@
 package br.eti.allandemiranda.forex.dtos;
 
-import br.eti.allandemiranda.forex.utils.OrderPosition;
-import br.eti.allandemiranda.forex.utils.OrderStatus;
-import br.eti.allandemiranda.forex.utils.SignalTrend;
+import br.eti.allandemiranda.forex.enums.OrderPosition;
+import br.eti.allandemiranda.forex.enums.OrderStatus;
+import br.eti.allandemiranda.forex.enums.SignalTrend;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

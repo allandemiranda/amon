@@ -5,7 +5,7 @@ import br.eti.allandemiranda.forex.dtos.ADX;
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.services.AdxService;
 import br.eti.allandemiranda.forex.services.CandlestickService;
-import br.eti.allandemiranda.forex.utils.IndicatorTrend;
+import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
@@ -14,7 +14,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 
 @Controller
@@ -23,9 +22,6 @@ public class AverageDirectionalMovementIndex implements Indicator {
 
   private final AdxService adxService;
   private final CandlestickService candlestickService;
-
-  @Value("${adx.parameters.period:14}")
-  private int period;
 
   @Autowired
   protected AverageDirectionalMovementIndex(final AdxService adxService, final CandlestickService candlestickService) {
@@ -53,7 +49,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
 
   @Override
   public void run() {
-    final Candlestick[] candlesticks = this.candlestickService.getCandlesticksClose(2 * this.getPeriod()).toArray(Candlestick[]::new);
+    final Candlestick[] candlesticks = this.candlestickService.getCandlesticksClose(2 * this.getAdxService().getPeriod()).toArray(Candlestick[]::new);
 
     final BigDecimal[] trRow = IntStream.range(0, candlesticks.length - 1).mapToObj(i -> {
       final BigDecimal highCurrent = candlesticks[i].high();
@@ -76,24 +72,24 @@ public class AverageDirectionalMovementIndex implements Indicator {
       return (lowLast.subtract(lowCurrent)).compareTo(highCurrent.subtract(highLast)) > 0 ? (lowLast.subtract(lowCurrent)).max(BigDecimal.ZERO) : BigDecimal.ZERO;
     }).toArray(BigDecimal[]::new);
 
-    final BigDecimal[] trSum = IntStream.range(0, this.getPeriod()).mapToObj(i -> Arrays.stream(trRow, i, this.getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add))
+    final BigDecimal[] trSum = IntStream.range(0, this.getAdxService().getPeriod()).mapToObj(i -> Arrays.stream(trRow, i, this.getAdxService().getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add))
         .toArray(BigDecimal[]::new);
-    final BigDecimal[] dmPlusSum = IntStream.range(0, this.getPeriod())
-        .mapToObj(i -> Arrays.stream(dmPlusRow, i, this.getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
-    final BigDecimal[] dmMinusSum = IntStream.range(0, this.getPeriod())
-        .mapToObj(i -> Arrays.stream(dmMinusRow, i, this.getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
+    final BigDecimal[] dmPlusSum = IntStream.range(0, this.getAdxService().getPeriod())
+        .mapToObj(i -> Arrays.stream(dmPlusRow, i, this.getAdxService().getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
+    final BigDecimal[] dmMinusSum = IntStream.range(0, this.getAdxService().getPeriod())
+        .mapToObj(i -> Arrays.stream(dmMinusRow, i, this.getAdxService().getPeriod() + i).reduce(BigDecimal.ZERO, BigDecimal::add)).toArray(BigDecimal[]::new);
 
-    final BigDecimal[] diPlus = IntStream.range(0, this.getPeriod())
+    final BigDecimal[] diPlus = IntStream.range(0, this.getAdxService().getPeriod())
         .mapToObj(i -> BigDecimal.valueOf(100).multiply(dmPlusSum[i].divide(trSum[i], 10, RoundingMode.HALF_UP))).toArray(BigDecimal[]::new);
-    final BigDecimal[] diMinus = IntStream.range(0, this.getPeriod())
+    final BigDecimal[] diMinus = IntStream.range(0, this.getAdxService().getPeriod())
         .mapToObj(i -> BigDecimal.valueOf(100).multiply(dmMinusSum[i].divide(trSum[i], 10, RoundingMode.HALF_UP))).toArray(BigDecimal[]::new);
 
-    final BigDecimal[] diDiff = IntStream.range(0, this.getPeriod()).mapToObj(i -> diPlus[i].subtract(diMinus[i]).abs()).toArray(BigDecimal[]::new);
-    final BigDecimal[] diSum = IntStream.range(0, this.getPeriod()).mapToObj(i -> diPlus[i].add(diMinus[i])).toArray(BigDecimal[]::new);
+    final BigDecimal[] diDiff = IntStream.range(0, this.getAdxService().getPeriod()).mapToObj(i -> diPlus[i].subtract(diMinus[i]).abs()).toArray(BigDecimal[]::new);
+    final BigDecimal[] diSum = IntStream.range(0, this.getAdxService().getPeriod()).mapToObj(i -> diPlus[i].add(diMinus[i])).toArray(BigDecimal[]::new);
 
-    final BigDecimal[] dx = IntStream.range(0, this.getPeriod()).mapToObj(i -> BigDecimal.valueOf(100).multiply(diDiff[i].divide(diSum[i], 10, RoundingMode.HALF_UP)))
+    final BigDecimal[] dx = IntStream.range(0, this.getAdxService().getPeriod()).mapToObj(i -> BigDecimal.valueOf(100).multiply(diDiff[i].divide(diSum[i], 10, RoundingMode.HALF_UP)))
         .toArray(BigDecimal[]::new);
-    final BigDecimal adx = Arrays.stream(dx).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getPeriod()), 10, RoundingMode.HALF_UP);
+    final BigDecimal adx = Arrays.stream(dx).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getAdxService().getPeriod()), 10, RoundingMode.HALF_UP);
 
     this.getAdxService().addAdx(candlesticks[0].dateTime(), adx, diPlus[0], diMinus[0]);
   }

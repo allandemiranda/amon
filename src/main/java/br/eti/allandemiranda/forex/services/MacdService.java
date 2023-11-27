@@ -3,7 +3,7 @@ package br.eti.allandemiranda.forex.services;
 import br.eti.allandemiranda.forex.dtos.MACD;
 import br.eti.allandemiranda.forex.headers.MacdHeader;
 import br.eti.allandemiranda.forex.repositories.MacdRepository;
-import br.eti.allandemiranda.forex.utils.IndicatorTrend;
+import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
@@ -30,6 +30,16 @@ public class MacdService {
   private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
 
   private final MacdRepository repository;
+
+  @Getter(AccessLevel.PUBLIC)
+  @Value("${macd.parameters.fast.period:12}")
+  private int fastPeriod;
+  @Getter(AccessLevel.PUBLIC)
+  @Value("${macd.parameters.slow.period:26}")
+  private int slowPeriod;
+  @Getter(AccessLevel.PUBLIC)
+  @Value("${macd.parameters.macd.period:9}")
+  private int macdPeriod;
 
   @Value("${config.root.folder}")
   private File outputFolder;
