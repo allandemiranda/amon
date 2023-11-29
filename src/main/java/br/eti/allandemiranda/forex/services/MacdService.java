@@ -1,9 +1,9 @@
 package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.MACD;
+import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import br.eti.allandemiranda.forex.headers.MacdHeader;
 import br.eti.allandemiranda.forex.repositories.MacdRepository;
-import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
@@ -55,10 +55,22 @@ public class MacdService {
     return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
-  public void addMacd(final @NotNull LocalDateTime dataTime, final @NotNull BigDecimal macd, final @NotNull BigDecimal signal) {
-    this.getRepository().add(dataTime, macd, signal);
+  /**
+   * Add MACD indicator
+   *
+   * @param candlestickTime The last candlestick data time
+   * @param macd            The MACD value
+   * @param signal          The signal trend
+   */
+  public void addMacd(final @NotNull LocalDateTime candlestickTime, final @NotNull BigDecimal macd, final @NotNull BigDecimal signal) {
+    this.getRepository().add(candlestickTime, macd, signal);
   }
 
+  /**
+   * Get the array of MACD
+   *
+   * @return The MACD array
+   */
   public MACD[] getMacd() {
     return this.getRepository().get();
   }

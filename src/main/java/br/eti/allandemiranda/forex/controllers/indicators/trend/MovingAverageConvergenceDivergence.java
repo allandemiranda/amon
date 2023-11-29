@@ -3,14 +3,14 @@ package br.eti.allandemiranda.forex.controllers.indicators.trend;
 import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.MACD;
+import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import br.eti.allandemiranda.forex.services.CandlestickService;
 import br.eti.allandemiranda.forex.services.MacdService;
-import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import br.eti.allandemiranda.forex.utils.Tools;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -63,12 +63,16 @@ public class MovingAverageConvergenceDivergence implements Indicator {
 
   @Override
   public void run() {
-    final BigDecimal[] closes = this.getCandlestickService().getCandlesticksClose(Math.max(this.getMacdService().getSlowPeriod(), this.getMacdService().getFastPeriod()) + this.getMacdService().getMacdPeriod() - 1).map(Candlestick::close)
+    final int slowPeriod = this.getMacdService().getSlowPeriod();
+    final int fastPeriod = this.getMacdService().getFastPeriod();
+    final int macdPeriod = this.getMacdService().getMacdPeriod();
+    final BigDecimal[] closes = this.getCandlestickService().getCandlesticksClose(Math.max(slowPeriod, fastPeriod) + macdPeriod - 1).map(Candlestick::close)
         .toArray(BigDecimal[]::new);
-    final BigDecimal[] fasts = Tools.getEMA(this.getMacdService().getFastPeriod(), closes);
-    final BigDecimal[] slows = Tools.getEMA(this.getMacdService().getSlowPeriod(), closes);
-    final BigDecimal[] macds = IntStream.range(0, this.getMacdService().getMacdPeriod()).mapToObj(i -> fasts[i].subtract(slows[i])).toArray(BigDecimal[]::new);
-    final BigDecimal signal = Arrays.stream(macds).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getMacdService().getMacdPeriod()), 10, RoundingMode.HALF_UP);
-    this.getMacdService().addMacd(this.getCandlestickService().getLastCandlestick().dateTime(), macds[0], signal);
+    final BigDecimal[] fasts = Tools.getEMA(fastPeriod, closes);
+    final BigDecimal[] slows = Tools.getEMA(slowPeriod, closes);
+    final BigDecimal[] macds = IntStream.range(0, macdPeriod).mapToObj(i -> fasts[i].subtract(slows[i])).toArray(BigDecimal[]::new);
+    final BigDecimal signal = Arrays.stream(macds).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(macdPeriod), 10, RoundingMode.HALF_UP);
+    final LocalDateTime candlestickTime = this.getCandlestickService().getLastCandlestick().dateTime();
+    this.getMacdService().addMacd(candlestickTime, macds[0], signal);
   }
 }

@@ -39,9 +39,10 @@ public class GeneratorProcessor {
    */
   @Synchronized
   public void webSocket(final LocalDateTime time, final Double bid, final Double ask) {
-    //! TODO: Check input data handling for a real web socket with MT5
-    final boolean updatedData = this.getTicketService()
-        .updateData(Objects.isNull(time) ? LocalDateTime.MIN : time, Objects.isNull(bid) ? 0d : bid, Objects.isNull(ask) ? 0d : ask);
+    final LocalDateTime dateTime = Objects.isNull(time) ? LocalDateTime.MIN : time;
+    final double bidFixed = Objects.isNull(bid) ? 0d : bid;
+    final double askFixed = Objects.isNull(ask) ? 0d : ask;
+    final boolean updatedData = this.getTicketService().updateData(dateTime, bidFixed, askFixed);
     if (updatedData) {
       this.getChartProcessor().run();
       this.getIndicatorsProcessor().run();

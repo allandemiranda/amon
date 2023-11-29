@@ -20,10 +20,21 @@ public class IndicatorService {
     this.repository = repository;
   }
 
+  /**
+   * Add an indicator on the repository
+   *
+   * @param name      The name of indicator
+   * @param indicator The Class indicator
+   */
   public void addIndicator(final @NotNull String name, final Indicator indicator) {
     this.getRepository().add(name, indicator);
   }
 
+  /**
+   * Get the indicator list
+   *
+   * @return The indicators runing on sistem
+   */
   public SortedMap<String, Indicator> getIndicators() {
     return this.getRepository().get();
   }

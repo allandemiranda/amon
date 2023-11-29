@@ -2,9 +2,9 @@ package br.eti.allandemiranda.forex.controllers.indicators.trend;
 
 import br.eti.allandemiranda.forex.controllers.indicators.Indicator;
 import br.eti.allandemiranda.forex.dtos.Candlestick;
+import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import br.eti.allandemiranda.forex.services.AcService;
 import br.eti.allandemiranda.forex.services.CandlestickService;
-import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;

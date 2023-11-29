@@ -34,10 +34,11 @@ public class TradingPerformance {
    */
   public boolean checkCompatible(final @NotNull SignalTrend signalTrend) {
     if (!signalTrend.equals(SignalTrend.NEUTRAL) && this.getService().isActive()) {
-      final BigDecimal simple = this.getCandlestickService().getCandlesticksClose(this.getService().getSimplePeriod()).map(Candlestick::close)
-          .reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(this.getService().getSimplePeriod()), 10, RoundingMode.HALF_UP);
-      final BigDecimal exponential = Tools.getEMA(this.getService().getExponentialPeriod(),
-          this.getCandlestickService().getCandlesticksClose(this.getService().getMemorySize() - 5).map(Candlestick::close).toArray(BigDecimal[]::new))[0];
+      final int simplePeriod = this.getService().getSimplePeriod();
+      final BigDecimal simple = this.getCandlestickService().getCandlesticksClose(simplePeriod).map(Candlestick::close).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(simplePeriod), 10, RoundingMode.HALF_UP);
+      final int exponentialPeriod = this.getService().getExponentialPeriod();
+      final int memorySize = this.getService().getMemorySize();
+      final BigDecimal exponential = Tools.getEMA(exponentialPeriod, this.getCandlestickService().getCandlesticksClose(memorySize - 5).map(Candlestick::close).toArray(BigDecimal[]::new))[0];
 
       final boolean sell = signalTrend.equals(SignalTrend.STRONG_SELL) || signalTrend.equals(SignalTrend.SELL);
       final boolean buy = signalTrend.equals(SignalTrend.STRONG_BUY) || signalTrend.equals(SignalTrend.BUY);

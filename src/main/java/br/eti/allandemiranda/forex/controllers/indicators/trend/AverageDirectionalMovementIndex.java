@@ -50,7 +50,7 @@ public class AverageDirectionalMovementIndex implements Indicator {
   @Override
   public void run() {
     final Candlestick[] candlesticks = this.candlestickService.getCandlesticksClose(2 * this.getAdxService().getPeriod()).toArray(Candlestick[]::new);
-
+// pode criar um vetor fixo e fazer ele calcular paralelamente
     final BigDecimal[] trRow = IntStream.range(0, candlesticks.length - 1).mapToObj(i -> {
       final BigDecimal highCurrent = candlesticks[i].high();
       final BigDecimal lowCurrent = candlesticks[i].low();

@@ -20,14 +20,14 @@ public class CandlestickRepository {
   private final TreeSet<CandlestickEntity> dataBase = new TreeSet<>();
 
   /**
-   * Number of candlestick necessary to start the data process
+   * Number of candlesticks necessary to start the data process
    */
   @Value("${candlestick.repository.memory:41}")
   @Getter(AccessLevel.PUBLIC)
   private int memorySize;
 
   /**
-   * Check if the database contains the minimal number of candlestick necessary to start the data use.
+   * Check if the database contains the minimal number of candlesticks necessary to start the data use.
    *
    * @return If is ready to use the database
    */
@@ -36,8 +36,8 @@ public class CandlestickRepository {
   }
 
   /**
-   * To add a new candlestick data on the database by DateTime.
-   * If the DateTime exist, means that the candlestick exist, so we will update the price on candlestick.
+   * To add new candlestick data on the database by DateTime.
+   * If the DateTime exists, it means that the candlestick exists, so we will update the price on candlestick.
    * If not, we will create a new candlestick.
    *
    * @param candlestickDateTime Current time of candlestick

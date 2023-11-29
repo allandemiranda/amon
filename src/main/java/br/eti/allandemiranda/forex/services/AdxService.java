@@ -1,9 +1,9 @@
 package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.ADX;
+import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import br.eti.allandemiranda.forex.headers.AdxHeader;
 import br.eti.allandemiranda.forex.repositories.AdxRepository;
-import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
@@ -52,10 +52,23 @@ public class AdxService {
     return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
+  /**
+   * Add a new ADX value
+   *
+   * @param candlestickTime The last candlestick data time
+   * @param adx             The ADX value
+   * @param diPlus          The di+ value
+   * @param diMinus         The di- value
+   */
   public void addAdx(final @NotNull LocalDateTime candlestickTime, final @NotNull BigDecimal adx, final @NotNull BigDecimal diPlus, final @NotNull BigDecimal diMinus) {
     this.getRepository().add(candlestickTime, adx, diPlus, diMinus);
   }
 
+  /**
+   * Get the last ADX indicator
+   *
+   * @return the ADX indicator value
+   */
   public @NotNull ADX getAdx() {
     return this.getRepository().get();
   }

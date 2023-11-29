@@ -25,6 +25,14 @@ public class AdxRepository {
     this.setDateTime(LocalDateTime.MIN);
   }
 
+  /**
+   * Add a ADX indicator to the data base
+   *
+   * @param dateTime The date time
+   * @param adx      The ADX value
+   * @param diPlus   The di+ value
+   * @param diMinus  The di- value
+   */
   public void add(final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal adx, final @NotNull BigDecimal diPlus, final @NotNull BigDecimal diMinus) {
     this.setDateTime(dateTime);
     this.setValue(adx);
@@ -32,6 +40,11 @@ public class AdxRepository {
     this.setDiMinus(diMinus);
   }
 
+  /**
+   * Get last ADX value on the database
+   *
+   * @return The last ADX value
+   */
   public @NotNull ADX get() {
     return new ADX(this.getDateTime(), this.getValue(), this.getDiPlus(), this.getDiMinus());
   }

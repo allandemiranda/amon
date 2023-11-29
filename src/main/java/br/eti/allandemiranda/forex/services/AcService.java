@@ -1,9 +1,9 @@
 package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.AC;
+import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import br.eti.allandemiranda.forex.headers.AcHeader;
 import br.eti.allandemiranda.forex.repositories.AcRepository;
-import br.eti.allandemiranda.forex.enums.IndicatorTrend;
 import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileWriter;
@@ -48,10 +48,21 @@ public class AcService {
     return new DecimalFormat("#0.00000#").format(value.doubleValue()).replace(".", ",");
   }
 
-  public void addAc(final @NotNull LocalDateTime dataTime, final @NotNull BigDecimal ac) {
-    this.getRepository().add(dataTime, ac);
+  /**
+   * Add a new AC value
+   *
+   * @param candlestickTime The last candlestick data time
+   * @param ac              The AV value
+   */
+  public void addAc(final @NotNull LocalDateTime candlestickTime, final @NotNull BigDecimal ac) {
+    this.getRepository().add(candlestickTime, ac);
   }
 
+  /**
+   * Get the last AC indicator
+   *
+   * @return The AC indicator
+   */
   public AC[] getAc() {
     return this.getRepository().get();
   }

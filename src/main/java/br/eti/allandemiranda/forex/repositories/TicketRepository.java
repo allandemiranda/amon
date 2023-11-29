@@ -66,7 +66,9 @@ public class TicketRepository {
     if (ask > 0d) {
       this.setAsk(BigDecimal.valueOf(ask).setScale(this.getDigits(), RoundingMode.DOWN));
     }
-    this.setSpread(getPoints((this.getAsk().subtract(this.getBid())), this.getDigits()));
+    final BigDecimal price = this.getAsk().subtract(this.getBid());
+    final int points = getPoints(price, this.getDigits());
+    this.setSpread(points);
   }
 
   /**

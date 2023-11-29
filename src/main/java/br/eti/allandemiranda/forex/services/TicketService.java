@@ -57,7 +57,6 @@ public class TicketService {
       this.getRepository().update(dateTime, bid, ask);
       return true;
     } else {
-      //! TODO: Create a log information for debug of problem if the input of ticket information from outside service
       // log.warn("Bad input ticket dataTime={} bid={} ask={}", dateTime.format(DateTimeFormatter.ISO_DATE_TIME), bid, ask);
       return false;
     }

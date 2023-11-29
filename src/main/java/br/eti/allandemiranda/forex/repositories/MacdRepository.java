@@ -17,6 +17,13 @@ public class MacdRepository {
   private static final int MEMORY_SIZE = 3;
   private final TreeSet<MacdEntity> dataBase = new TreeSet<>();
 
+  /**
+   * Add the indicator to the repository
+   *
+   * @param dateTime The data time generated
+   * @param macd     The MACD value
+   * @param signal   The MACD signal
+   */
   public void add(final @NotNull LocalDateTime dateTime, final @NotNull BigDecimal macd, final @NotNull BigDecimal signal) {
     if (this.getDataBase().isEmpty() || dateTime.isAfter(this.getDataBase().first().getDateTime())) {
       final MacdEntity entity = new MacdEntity();
@@ -36,6 +43,11 @@ public class MacdRepository {
     }
   }
 
+  /**
+   * Get the array of MACD
+   *
+   * @return The Array of MACD
+   */
   public MACD @NotNull [] get() {
     return this.getDataBase().stream().map(this::toModel).toArray(MACD[]::new);
   }

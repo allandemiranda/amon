@@ -2,9 +2,9 @@ package br.eti.allandemiranda.forex.services;
 
 import br.eti.allandemiranda.forex.dtos.Candlestick;
 import br.eti.allandemiranda.forex.dtos.Ticket;
+import br.eti.allandemiranda.forex.enums.TimeFrame;
 import br.eti.allandemiranda.forex.exceptions.ServiceException;
 import br.eti.allandemiranda.forex.repositories.CandlestickRepository;
-import br.eti.allandemiranda.forex.enums.TimeFrame;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,15 +32,13 @@ public class CandlestickService {
   private static final int ONE_HOUR_MIN = 60;
   private static final int ONE_DAY_HOUR = 24;
   private static final int SKIP_CURRENT_CANDLESTICK = 1;
-
+  private final CandlestickRepository repository;
   /**
    * Time frame of chart
    */
   @Getter(AccessLevel.PUBLIC)
   @Value("${chart.timeframe:M15}")
   private String timeFrame;
-
-  private final CandlestickRepository repository;
 
   @Autowired
   protected CandlestickService(final CandlestickRepository repository) {
@@ -80,13 +78,14 @@ public class CandlestickService {
    * Get DateTime for a candlestick for time frame with low minute value
    *
    * @param ticketDateTime The Ticket DataTime request
-   * @param timeFrameMin   The low minute time frame request
+   * @param timeFrameMin   The low-minute time frame request
    * @return The DataTime of candlestick
    */
   private @NotNull LocalDateTime getDateTimeLowM(final @NotNull LocalDateTime ticketDateTime, final int timeFrameMin) {
-    final int[] minArray = IntStream.rangeClosed(0, ONE_HOUR_MIN / timeFrameMin).map(operand -> timeFrameMin * operand).toArray();
-    final int index = IntStream.range(TIME_FRAME_ONE, minArray.length).filter(i -> ticketDateTime.getMinute() < minArray[i]).findFirst()
-        .orElseThrow(IllegalStateException::new);
+    final int slotsInOneHour = ONE_HOUR_MIN / timeFrameMin;
+    final int[] minArray = IntStream.rangeClosed(0, slotsInOneHour).map(operand -> timeFrameMin * operand).toArray();
+    final int minute = ticketDateTime.getMinute();
+    final int index = IntStream.range(TIME_FRAME_ONE, minArray.length).filter(i -> minute < minArray[i]).findFirst().orElseThrow(IllegalStateException::new);
     return LocalDateTime.of(ticketDateTime.toLocalDate(), LocalTime.of(ticketDateTime.getHour(), minArray[index - TIME_FRAME_ONE]));
   }
 
@@ -98,10 +97,12 @@ public class CandlestickService {
    * @return The DataTime of candlestick
    */
   private @NotNull LocalDateTime getDateTimeLowH(final @NotNull LocalDateTime ticketDateTime, final int timeFrameHour) {
-    final int[] hourArray = IntStream.rangeClosed(0, ONE_DAY_HOUR / timeFrameHour).map(operand -> operand * timeFrameHour).toArray();
-    final int index = IntStream.range(TIME_FRAME_ONE, hourArray.length).filter(i -> ticketDateTime.getHour() < hourArray[i]).findFirst()
-        .orElseThrow(IllegalStateException::new);
-    return LocalDateTime.of(ticketDateTime.toLocalDate(), LocalTime.of(hourArray[index - TIME_FRAME_ONE], 0));
+    final int slotsInOneDayHour = ONE_DAY_HOUR / timeFrameHour;
+    final int[] hourArray = IntStream.rangeClosed(0, slotsInOneDayHour).map(operand -> operand * timeFrameHour).toArray();
+    final int hour = ticketDateTime.getHour();
+    final int index = IntStream.range(TIME_FRAME_ONE, hourArray.length).filter(i -> hour < hourArray[i]).findFirst().orElseThrow(IllegalStateException::new);
+    final LocalDate localDate = ticketDateTime.toLocalDate();
+    return LocalDateTime.of(localDate, LocalTime.of(hourArray[index - TIME_FRAME_ONE], 0));
   }
 
   /**
@@ -142,9 +143,9 @@ public class CandlestickService {
   }
 
   /**
-   * To add an Ticket date on the chart of candlesticks
+   * To add the Ticket date on the chart of candlesticks
    *
-   * @param ticket    The ticket to be added
+   * @param ticket The ticket to be added
    */
   public void addTicket(final @NotNull Ticket ticket) {
     final BigDecimal price = ticket.bid();
