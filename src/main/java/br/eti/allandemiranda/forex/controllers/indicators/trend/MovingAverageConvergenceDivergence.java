@@ -66,11 +66,16 @@ public class MovingAverageConvergenceDivergence implements Indicator {
     final int slowPeriod = this.getMacdService().getSlowPeriod();
     final int fastPeriod = this.getMacdService().getFastPeriod();
     final int macdPeriod = this.getMacdService().getMacdPeriod();
-    final BigDecimal[] closes = this.getCandlestickService().getCandlesticksClose(Math.max(slowPeriod, fastPeriod) + macdPeriod - 1).map(Candlestick::close)
-        .toArray(BigDecimal[]::new);
-    final BigDecimal[] fasts = Tools.getEMA(fastPeriod, closes);
-    final BigDecimal[] slows = Tools.getEMA(slowPeriod, closes);
-    final BigDecimal[] macds = IntStream.range(0, macdPeriod).mapToObj(i -> fasts[i].subtract(slows[i])).toArray(BigDecimal[]::new);
+    final Candlestick[] candlesticks = this.getCandlestickService().getCandlesticksClose(Math.max(slowPeriod, fastPeriod) + macdPeriod - 1).toArray(Candlestick[]::new);
+    final BigDecimal[] closes = new BigDecimal[candlesticks.length];
+    IntStream.range(0, closes.length).parallel().forEach(i -> closes[i] = candlesticks[i].close());
+    final BigDecimal[][] fasts = new BigDecimal[1][1];
+    final BigDecimal[][] slows = new BigDecimal[1][1];
+    final Thread fastPeriodThread = Thread.ofVirtual().unstarted(() -> fasts[0] = Tools.getEMA(fastPeriod, closes));
+    final Thread slowPeriodThread = Thread.ofVirtual().unstarted(() -> slows[0] = Tools.getEMA(slowPeriod, closes));
+    Tools.startThreadsUnstated(fastPeriodThread, slowPeriodThread);
+    final BigDecimal[] macds = new BigDecimal[macdPeriod];
+    IntStream.range(0, macdPeriod).parallel().forEach(i -> macds[i] = fasts[0][i].subtract(slows[0][i]));
     final BigDecimal signal = Arrays.stream(macds).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(macdPeriod), 10, RoundingMode.HALF_UP);
     final LocalDateTime candlestickTime = this.getCandlestickService().getLastCandlestick().dateTime();
     this.getMacdService().addMacd(candlestickTime, macds[0], signal);

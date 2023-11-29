@@ -15,14 +15,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class StringConfig {
+public class SpringConfig {
 
   private final GeneratorProcessor generatorProcessor;
   @Value("${config.mock.ticket.input}")
   private File inputFile;
 
   @Autowired
-  public StringConfig(GeneratorProcessor generatorProcessor) {
+  public SpringConfig(GeneratorProcessor generatorProcessor) {
     this.generatorProcessor = generatorProcessor;
   }
 
@@ -30,7 +30,7 @@ public class StringConfig {
   void processor() {
     // MOCKED
     try (final FileReader fileReader = new FileReader(inputFile); final CSVParser csvParser = CSVFormat.TDF.builder().build().parse(fileReader)) {
-      StreamSupport.stream(csvParser.spliterator(), false).skip(1).forEach(csvRecord -> {
+      StreamSupport.stream(csvParser.spliterator(), false).skip(1).forEachOrdered(csvRecord -> {
         String date = csvRecord.get(0);
         String time = csvRecord.get(1);
         String dataTime = date.replace(".", "-").concat("T").concat(time);

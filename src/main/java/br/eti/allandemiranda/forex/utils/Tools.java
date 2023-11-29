@@ -1,5 +1,6 @@
 package br.eti.allandemiranda.forex.utils;
 
+import br.eti.allandemiranda.forex.exceptions.ThreadToolException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
@@ -46,5 +47,22 @@ public class Tools {
       }
     }).toArray(BigDecimal[]::new);
     return invertArray(emaList);
+  }
+
+  /**
+   * Tool to help on thread management
+   *
+   * @param threads The threads
+   */
+  public static void startThreadsUnstated(@NotNull Thread... threads) {
+    Arrays.stream(threads).parallel().forEach(Thread::start);
+    Arrays.stream(threads).forEachOrdered(thread -> {
+      try {
+        thread.join();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new ThreadToolException(e);
+      }
+    });
   }
 }
