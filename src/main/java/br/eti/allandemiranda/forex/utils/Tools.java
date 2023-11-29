@@ -65,4 +65,15 @@ public class Tools {
       }
     });
   }
+
+  /**
+   * Convert the price in points
+   *
+   * @param price  The price
+   * @param digits The number of digits
+   * @return The number of points
+   */
+  public static int getPoints(final @NotNull BigDecimal price, final int digits) {
+    return price.multiply(BigDecimal.valueOf(Math.pow(10, digits))).intValue();
+  }
 }

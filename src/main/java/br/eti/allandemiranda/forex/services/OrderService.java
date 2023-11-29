@@ -82,6 +82,8 @@ public class OrderService {
   private double swapShort;
   @Value("${order.swap.rate.triple:WEDNESDAY}")
   private String swapRateTriple;
+  @Value("${order.open.trading.max:30}")
+  private int maxTradingDiff;
   @Value("${order.debug:true}")
   private boolean debugActive;
   @Value("${config.root.folder}")
@@ -127,14 +129,14 @@ public class OrderService {
    * @param ticket The current ticket
    * @param signal the current signal information
    */
-  public void insertTicketAndSignal(final @NotNull Ticket ticket, final @NotNull Signal signal) {
+  public void insertTicketAndSignal(final @NotNull Ticket ticket, final @NotNull Signal signal, final int tpDiff) {
     // Update open tickets
     this.updateTicket(Arrays.stream(this.getRepository().getOrders()).toList(), ticket, this.getTakeProfit(), this.getStopLoss(), BigDecimal.valueOf(this.getSwapLong()),
         BigDecimal.valueOf(this.getSwapShort()), DayOfWeek.valueOf(this.getSwapRateTriple())).forEach(order -> this.getRepository().updateOrder(order));
 
     // Check to open a new order
-    if (checkDataTime(ticket.dateTime())) {
-      final Optional<Order> openOrder = this.openOrder(ticket, signal, this.getMaxOpenPositions());
+    if (checkDataTime(ticket.dateTime()) && tpDiff >= this.getMaxTradingDiff()) {
+      final Optional<Order> openOrder = this.openOrder(ticket, signal, this.getMaxOpenPositions(), tpDiff);
       if (openOrder.isPresent()) {
         this.getRepository().addOrder(openOrder.get());
         this.setLastSignalOpenDateTime(signal.dataTime());
@@ -142,7 +144,7 @@ public class OrderService {
     }
 
     // Update the current balance
-    this.setCurrentBalance(getNewBalance(this.getRepository().getOrders(), this.getCurrentBalance()));
+    this.setCurrentBalance(this.getNewBalance(this.getRepository().getOrders(), this.getCurrentBalance()));
 
     // Print the close orders
     final Order[] orders = this.getRepository().getOrders();
@@ -201,7 +203,7 @@ public class OrderService {
       final OrderStatus orderStatus = getOrderStatus(takeProfit, stopLoss, currentProfit);
 
       // Update order
-      return new Order(openDateTime, order.signalDateTime(), order.signalTrend(), ticketDateTime, timeOpen, orderStatus, order.orderPosition(), order.openPrice(),
+      return new Order(openDateTime, order.signalDateTime(), order.signalTrend(), ticketDateTime, timeOpen, orderStatus, order.orderPosition(), order.tradingPerformanceDiff(), order.openPrice(),
           closePrice, highProfit, lowProfit, currentProfit, swapProfit);
     }).collect(Collectors.toCollection(ArrayList::new));
   }
@@ -312,19 +314,19 @@ public class OrderService {
    * @param maxOpenPositions The maximum number of open orders
    * @return The possible new order to open
    */
-  private @NotNull Optional<Order> openOrder(final @NotNull Ticket ticket, final @NotNull Signal signal, final int maxOpenPositions) {
+  private @NotNull Optional<Order> openOrder(final @NotNull Ticket ticket, final @NotNull Signal signal, final int maxOpenPositions, final int tpDiff) {
     final LocalDateTime signalDateTime = signal.dataTime();
     final SignalTrend trend = signal.trend();
     if (this.getRepository().numberOfOrdersOpen() < maxOpenPositions && ticket.spread() <= this.getMaxSpread() && signalDateTime.isAfter(
         this.getLastSignalOpenDateTime())) {
       if (this.isOpenOnlyStrong() && trend.equals(SignalTrend.STRONG_BUY)) {
-        return Optional.of(generateOpenOrder(ticket, signalDateTime, trend, OrderPosition.BUY));
+        return Optional.of(generateOpenOrder(ticket, signalDateTime, trend, OrderPosition.BUY, tpDiff));
       } else if (this.isOpenOnlyStrong() && trend.equals(SignalTrend.STRONG_SELL)) {
-        return Optional.of(generateOpenOrder(ticket, signalDateTime, trend, OrderPosition.SELL));
+        return Optional.of(generateOpenOrder(ticket, signalDateTime, trend, OrderPosition.SELL, tpDiff));
       } else if (!this.isOpenOnlyStrong() && (trend.equals(SignalTrend.STRONG_BUY) || trend.equals(SignalTrend.BUY))) {
-        return Optional.of(generateOpenOrder(ticket, signalDateTime, trend, OrderPosition.BUY));
+        return Optional.of(generateOpenOrder(ticket, signalDateTime, trend, OrderPosition.BUY, tpDiff));
       } else if (!this.isOpenOnlyStrong() && (trend.equals(SignalTrend.STRONG_SELL) || trend.equals(SignalTrend.SELL))) {
-        return Optional.of(generateOpenOrder(ticket, signalDateTime, trend, OrderPosition.SELL));
+        return Optional.of(generateOpenOrder(ticket, signalDateTime, trend, OrderPosition.SELL, tpDiff));
       }
     }
     return Optional.empty();
@@ -340,12 +342,12 @@ public class OrderService {
    * @return The new order
    */
   private @NotNull Order generateOpenOrder(final @NotNull Ticket ticket, final @NotNull LocalDateTime signalDateTime, final @NotNull SignalTrend trend,
-      final @NotNull OrderPosition orderPosition) {
+      final @NotNull OrderPosition orderPosition, final int tpDiff) {
     final LocalDateTime ticketDateTime = ticket.dateTime();
     final BigDecimal openPrice = orderPosition.equals(OrderPosition.BUY) ? ticket.ask() : ticket.bid();
     final BigDecimal closePrice = orderPosition.equals(OrderPosition.BUY) ? ticket.bid() : ticket.ask();
     final int spread = Math.negateExact(ticket.spread());
-    return new Order(ticketDateTime, signalDateTime, trend, ticketDateTime, TIME_OPEN, OrderStatus.OPEN, orderPosition, openPrice, closePrice, spread, spread, spread,
+    return new Order(ticketDateTime, signalDateTime, trend, ticketDateTime, TIME_OPEN, OrderStatus.OPEN, orderPosition, tpDiff, openPrice, closePrice, spread, spread, spread,
         BigDecimal.ZERO);
   }
 
@@ -405,7 +407,7 @@ public class OrderService {
       try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
         csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.signalDateTime().format(DateTimeFormatter.ISO_DATE_TIME),
             order.signalTrend(), order.lastUpdateDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.timeOpen(), order.orderStatus(), order.orderPosition(),
-            getNumberPrice(order.openPrice()), getNumberPrice(order.closePrice()), order.highProfit(), order.lowProfit(), order.currentProfit(),
+            order.tradingPerformanceDiff(), getNumberPrice(order.openPrice()), getNumberPrice(order.closePrice()), order.highProfit(), order.lowProfit(), order.currentProfit(),
             getNumberBalance(order.swapProfit()), getNumberBalance(currentBalance));
       }
     }

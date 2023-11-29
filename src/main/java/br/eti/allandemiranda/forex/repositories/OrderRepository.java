@@ -71,7 +71,7 @@ public class OrderRepository {
 
   private @NotNull Order toModel(final @NotNull OrderEntity entity) {
     return new Order(entity.getOpenDateTime(), entity.getSignalDateTime(), entity.getSignalTrend(), entity.getLastUpdateDateTime(), entity.getTimeOpen(),
-        entity.getOrderStatus(), entity.getOrderPosition(), entity.getOpenPrice(), entity.getClosePrice(), entity.getHighProfit(), entity.getLowProfit(),
+        entity.getOrderStatus(), entity.getOrderPosition(), entity.getTradingPerformanceDiff(), entity.getOpenPrice(), entity.getClosePrice(), entity.getHighProfit(), entity.getLowProfit(),
         entity.getCurrentProfit(), entity.getSwapProfit());
   }
 
@@ -84,6 +84,7 @@ public class OrderRepository {
     entity.setTimeOpen(order.timeOpen());
     entity.setOrderStatus(order.orderStatus());
     entity.setOrderPosition(order.orderPosition());
+    entity.setTradingPerformanceDiff(order.tradingPerformanceDiff());
     entity.setOpenPrice(order.openPrice());
     entity.setClosePrice(order.closePrice());
     entity.setHighProfit(order.highProfit());

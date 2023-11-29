@@ -32,6 +32,7 @@ public class OrderEntity implements Serializable, Comparable<OrderEntity> {
   private String timeOpen;
   private OrderStatus orderStatus;
   private OrderPosition orderPosition;
+  private int tradingPerformanceDiff;
   private BigDecimal openPrice;
   private BigDecimal closePrice;
   private int highProfit;

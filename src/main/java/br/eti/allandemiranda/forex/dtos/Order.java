@@ -11,6 +11,7 @@ import lombok.experimental.Accessors;
 @Accessors(fluent = true)
 public record Order(@NotNull LocalDateTime openDateTime, @NotNull LocalDateTime signalDateTime, @NotNull SignalTrend signalTrend,
                     @NotNull LocalDateTime lastUpdateDateTime, @NotNull String timeOpen, @NotNull OrderStatus orderStatus, @NotNull OrderPosition orderPosition,
+                    @NotNull int tradingPerformanceDiff,
                     @NotNull BigDecimal openPrice, @NotNull BigDecimal closePrice, int highProfit, int lowProfit, int currentProfit, @NotNull BigDecimal swapProfit) {
 
 }

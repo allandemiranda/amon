@@ -1,6 +1,7 @@
 package br.eti.allandemiranda.forex.repositories;
 
 import br.eti.allandemiranda.forex.dtos.Ticket;
+import br.eti.allandemiranda.forex.utils.Tools;
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -30,17 +31,6 @@ public class TicketRepository {
   private int digits;
 
   /**
-   * Convert the price in points
-   *
-   * @param price  The price
-   * @param digits The number of digits
-   * @return The number of points
-   */
-  private int getPoints(final @NotNull BigDecimal price, final int digits) {
-    return price.multiply(BigDecimal.valueOf(Math.pow(10, digits))).intValue();
-  }
-
-  /**
    * Default values to be instanced
    */
   @PostConstruct
@@ -67,7 +57,7 @@ public class TicketRepository {
       this.setAsk(BigDecimal.valueOf(ask).setScale(this.getDigits(), RoundingMode.DOWN));
     }
     final BigDecimal price = this.getAsk().subtract(this.getBid());
-    final int points = getPoints(price, this.getDigits());
+    final int points = Tools.getPoints(price, this.getDigits());
     this.setSpread(points);
   }
 
