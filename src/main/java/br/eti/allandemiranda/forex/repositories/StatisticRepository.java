@@ -125,8 +125,8 @@ public class StatisticRepository {
       final int lose = this.getDataBase().entrySet().stream().flatMapToInt(entry -> entry.getValue().values().stream().mapToInt(integerPair -> integerPair.getValue().get())).sum();
       final int total = win + lose;
       try {
-        csvPrinter.printRecord("WIN:", win, this.getNumber(BigDecimal.valueOf(win).divide(BigDecimal.valueOf(total), 5, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))), " %");
-        csvPrinter.printRecord("LOSE:", lose, this.getNumber(BigDecimal.valueOf(lose).divide(BigDecimal.valueOf(total), 5, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))), " %");
+        csvPrinter.printRecord("WIN:", win, this.getNumber(BigDecimal.valueOf(win).divide(BigDecimal.valueOf(total), 5, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))));
+        csvPrinter.printRecord("LOSE:", lose, this.getNumber(BigDecimal.valueOf(lose).divide(BigDecimal.valueOf(total), 5, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))));
         csvPrinter.printRecord("TOTAL:", total);
       } catch (IOException e) {
         throw new RuntimeException(e);
