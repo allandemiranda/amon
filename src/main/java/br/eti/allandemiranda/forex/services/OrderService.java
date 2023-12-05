@@ -82,8 +82,9 @@ public class OrderService {
   private double swapShort;
   @Value("${order.swap.rate.triple:WEDNESDAY}")
   private String swapRateTriple;
-  @Value("${order.open.trading.max:30}")
-  private int maxTradingDiff;
+  // The minimal diff between the lines that indicate trading to open a position
+  @Value("${order.open.trading.min:30}")
+  private int minTradingDiff;
   @Value("${order.debug:true}")
   private boolean debugActive;
   @Value("${config.root.folder}")
@@ -135,7 +136,7 @@ public class OrderService {
         BigDecimal.valueOf(this.getSwapShort()), DayOfWeek.valueOf(this.getSwapRateTriple())).forEach(order -> this.getRepository().updateOrder(order));
 
     // Check to open a new order
-    if (checkDataTime(ticket.dateTime()) && tpDiff >= this.getMaxTradingDiff()) {
+    if (checkDataTime(ticket.dateTime()) && tpDiff >= this.getMinTradingDiff()) {
       final Optional<Order> openOrder = this.openOrder(ticket, signal, this.getMaxOpenPositions(), tpDiff);
       if (openOrder.isPresent()) {
         this.getRepository().addOrder(openOrder.get());
