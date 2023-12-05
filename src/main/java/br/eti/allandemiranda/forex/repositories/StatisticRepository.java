@@ -7,6 +7,9 @@ import jakarta.annotation.PreDestroy;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -89,6 +92,10 @@ public class StatisticRepository {
     return new File(this.getOutputFolder(), OUTPUT_FILE_NAME);
   }
 
+  private @NotNull String getNumber(final @NotNull BigDecimal value) {
+    return new DecimalFormat("#0.0#").format(value.doubleValue()).replace(".", ",");
+  }
+
   @SneakyThrows
   private void updateDebugFile() {
     try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
@@ -118,8 +125,8 @@ public class StatisticRepository {
       final int lose = this.getDataBase().entrySet().stream().flatMapToInt(entry -> entry.getValue().values().stream().mapToInt(integerPair -> integerPair.getValue().get())).sum();
       final int total = win + lose;
       try {
-        csvPrinter.printRecord("WIN:", win, String.valueOf(((double) win /total) * 100.0).concat("%"));
-        csvPrinter.printRecord("LOSE:", lose, String.valueOf(((double) lose /total) * 100.0).concat("%"));
+        csvPrinter.printRecord("WIN:", win, this.getNumber(BigDecimal.valueOf(win).divide(BigDecimal.valueOf(total), 5, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))), " %");
+        csvPrinter.printRecord("LOSE:", lose, this.getNumber(BigDecimal.valueOf(lose).divide(BigDecimal.valueOf(total), 5, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))), " %");
         csvPrinter.printRecord("TOTAL:", total);
       } catch (IOException e) {
         throw new RuntimeException(e);
