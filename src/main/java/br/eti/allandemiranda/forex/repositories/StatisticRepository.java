@@ -66,7 +66,7 @@ public class StatisticRepository {
   @SneakyThrows
   private void printDebugHeader() {
     try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-      csvPrinter.printRecord("DAY", "TIME", "WIN", "LOSE");
+      csvPrinter.printRecord( "TIME", "MONDAY WIN", "TUESDAY WIN", "WEDNESDAY WIN", "THURSDAY WIN", "FRIDAY WIN", "#", "MONDAY LOSE", "TUESDAY LOSE", "WEDNESDAY LOSE", "THURSDAY LOSE", "FRIDAY LOSE");
     }
   }
 
@@ -92,14 +92,38 @@ public class StatisticRepository {
   @SneakyThrows
   private void updateDebugFile() {
     try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-      this.getDataBase().forEach((dayOfWeek, localTimePairTreeMap) -> localTimePairTreeMap.forEach((localTime, atomicIntegerAtomicIntegerPair) -> {
+      this.getDataBase().get(DayOfWeek.MONDAY).keySet().stream().map(time -> {
+        Object[] row = new Object[12];
+        row[0] = time.format(DateTimeFormatter.ofPattern("HH:mm"));
+        row[1] = this.getDataBase().get(DayOfWeek.MONDAY).get(time).getKey();
+        row[2] = this.getDataBase().get(DayOfWeek.TUESDAY).get(time).getKey();
+        row[3] = this.getDataBase().get(DayOfWeek.WEDNESDAY).get(time).getKey();
+        row[4] = this.getDataBase().get(DayOfWeek.THURSDAY).get(time).getKey();
+        row[5] = this.getDataBase().get(DayOfWeek.FRIDAY).get(time).getKey();
+        row[6] = "#";
+        row[7] = this.getDataBase().get(DayOfWeek.MONDAY).get(time).getValue();
+        row[8] = this.getDataBase().get(DayOfWeek.TUESDAY).get(time).getValue();
+        row[9] = this.getDataBase().get(DayOfWeek.WEDNESDAY).get(time).getValue();
+        row[10] = this.getDataBase().get(DayOfWeek.THURSDAY).get(time).getValue();
+        row[11] = this.getDataBase().get(DayOfWeek.FRIDAY).get(time).getValue();
+        return row;
+      }).forEachOrdered(objects -> {
         try {
-          csvPrinter.printRecord(dayOfWeek, localTime.format(DateTimeFormatter.ofPattern("HH:mm")), atomicIntegerAtomicIntegerPair.getKey().get(),
-              atomicIntegerAtomicIntegerPair.getValue().get());
+          csvPrinter.printRecord(objects);
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
-      }));
+      });
+      final int win = this.getDataBase().entrySet().stream().flatMapToInt(entry -> entry.getValue().values().stream().mapToInt(integerPair -> integerPair.getKey().get())).sum();
+      final int lose = this.getDataBase().entrySet().stream().flatMapToInt(entry -> entry.getValue().values().stream().mapToInt(integerPair -> integerPair.getValue().get())).sum();
+      final int total = win + lose;
+      try {
+        csvPrinter.printRecord("WIN:", win, String.valueOf(((double) win /total) * 100.0).concat("%"));
+        csvPrinter.printRecord("LOSE:", lose, String.valueOf(((double) lose /total) * 100.0).concat("%"));
+        csvPrinter.printRecord("TOTAL:", total);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 
