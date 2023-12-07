@@ -14,11 +14,13 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 @Controller
+@Slf4j
 @Getter(AccessLevel.PRIVATE)
 public class MovingAverageConvergenceDivergence implements Indicator {
 
@@ -45,39 +47,48 @@ public class MovingAverageConvergenceDivergence implements Indicator {
 
   @Override
   public @NotNull IndicatorTrend getSignal() {
-    final MACD[] macds = this.getMacdService().getMacd();
-    final BigDecimal price = this.getCandlestickService().getLastCandlestick().close();
-    if (macds.length > 1) {
-      if (macds[0].main().compareTo(macds[0].signal()) > 0 && isCross(macds)) {
-        this.getMacdService().updateDebugFile(IndicatorTrend.BUY, price);
-        return IndicatorTrend.BUY;
+    try {
+      final MACD[] macds = this.getMacdService().getMacd();
+      final BigDecimal price = this.getCandlestickService().getLastCandlestick().close();
+      if (macds.length > 1) {
+        if (macds[0].main().compareTo(macds[0].signal()) > 0 && isCross(macds)) {
+          this.getMacdService().updateDebugFile(IndicatorTrend.BUY, price);
+          return IndicatorTrend.BUY;
+        }
+        if (macds[0].main().compareTo(macds[0].signal()) < 0 && isCross(macds)) {
+          this.getMacdService().updateDebugFile(IndicatorTrend.SELL, price);
+          return IndicatorTrend.SELL;
+        }
       }
-      if (macds[0].main().compareTo(macds[0].signal()) < 0 && isCross(macds)) {
-        this.getMacdService().updateDebugFile(IndicatorTrend.SELL, price);
-        return IndicatorTrend.SELL;
-      }
+      this.getMacdService().updateDebugFile(IndicatorTrend.NEUTRAL, price);
+      return IndicatorTrend.NEUTRAL;
+    } catch (NullPointerException e) {
+      log.warn("Forcing set AC indicator NEUTRAL");
+      return IndicatorTrend.NEUTRAL;
     }
-    this.getMacdService().updateDebugFile(IndicatorTrend.NEUTRAL, price);
-    return IndicatorTrend.NEUTRAL;
   }
 
   @Override
   public void run() {
-    final int slowPeriod = this.getMacdService().getSlowPeriod();
-    final int fastPeriod = this.getMacdService().getFastPeriod();
-    final int macdPeriod = this.getMacdService().getMacdPeriod();
-    final Candlestick[] candlesticks = this.getCandlestickService().getCandlesticksClose(Math.max(slowPeriod, fastPeriod) + macdPeriod - 1).toArray(Candlestick[]::new);
-    final BigDecimal[] closes = new BigDecimal[candlesticks.length];
-    IntStream.range(0, closes.length).parallel().forEach(i -> closes[i] = candlesticks[i].close());
-    final BigDecimal[][] fasts = new BigDecimal[1][1];
-    final BigDecimal[][] slows = new BigDecimal[1][1];
-    final Thread fastPeriodThread = Thread.ofVirtual().unstarted(() -> fasts[0] = Tools.getEMA(fastPeriod, closes));
-    final Thread slowPeriodThread = Thread.ofVirtual().unstarted(() -> slows[0] = Tools.getEMA(slowPeriod, closes));
-    Tools.startThreadsUnstated(fastPeriodThread, slowPeriodThread);
-    final BigDecimal[] macds = new BigDecimal[macdPeriod];
-    IntStream.range(0, macdPeriod).parallel().forEach(i -> macds[i] = fasts[0][i].subtract(slows[0][i]));
-    final BigDecimal signal = Arrays.stream(macds).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(macdPeriod), 10, RoundingMode.HALF_UP);
-    final LocalDateTime candlestickTime = this.getCandlestickService().getLastCandlestick().dateTime();
-    this.getMacdService().addMacd(candlestickTime, macds[0], signal);
+    try{
+      final int slowPeriod = this.getMacdService().getSlowPeriod();
+      final int fastPeriod = this.getMacdService().getFastPeriod();
+      final int macdPeriod = this.getMacdService().getMacdPeriod();
+      final Candlestick[] candlesticks = this.getCandlestickService().getCandlesticksClose(Math.max(slowPeriod, fastPeriod) + macdPeriod - 1).toArray(Candlestick[]::new);
+      final BigDecimal[] closes = new BigDecimal[candlesticks.length];
+      IntStream.range(0, closes.length).parallel().forEach(i -> closes[i] = candlesticks[i].close());
+      final BigDecimal[][] fasts = new BigDecimal[1][1];
+      final BigDecimal[][] slows = new BigDecimal[1][1];
+      final Thread fastPeriodThread = Thread.ofVirtual().unstarted(() -> fasts[0] = Tools.getEMA(fastPeriod, closes));
+      final Thread slowPeriodThread = Thread.ofVirtual().unstarted(() -> slows[0] = Tools.getEMA(slowPeriod, closes));
+      Tools.startThreadsUnstated(fastPeriodThread, slowPeriodThread);
+      final BigDecimal[] macds = new BigDecimal[macdPeriod];
+      IntStream.range(0, macdPeriod).parallel().forEach(i -> macds[i] = fasts[0][i].subtract(slows[0][i]));
+      final BigDecimal signal = Arrays.stream(macds).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(macdPeriod), 10, RoundingMode.HALF_UP);
+      final LocalDateTime candlestickTime = this.getCandlestickService().getLastCandlestick().dateTime();
+      this.getMacdService().addMacd(candlestickTime, macds[0], signal);
+  } catch (Exception e) {
+    log.warn("Can't generate MACD indicator: {}", e.getMessage());
+  }
   }
 }
