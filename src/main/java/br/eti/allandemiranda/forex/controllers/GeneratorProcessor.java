@@ -4,8 +4,6 @@ import br.eti.allandemiranda.forex.controllers.chart.ChartProcessor;
 import br.eti.allandemiranda.forex.controllers.indicators.IndicatorsProcessor;
 import br.eti.allandemiranda.forex.controllers.order.OrderProcessor;
 import br.eti.allandemiranda.forex.services.TicketService;
-import br.eti.allandemiranda.forex.utils.Tools;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.AccessLevel;
@@ -46,14 +44,9 @@ public class GeneratorProcessor {
     final double askFixed = Objects.isNull(ask) ? 0d : ask;
     final boolean updatedData = this.getTicketService().updateData(dateTime, bidFixed, askFixed);
     if (updatedData) {
-      if(this.getTicketService().getTicket().spread() < a) {
-        a = this.getTicketService().getTicket().spread();
-        System.out.println(a);
-      }
       this.getChartProcessor().run();
       this.getIndicatorsProcessor().run();
       this.getOrderProcessor().run();
     }
   }
-  int a = 9999;
 }
