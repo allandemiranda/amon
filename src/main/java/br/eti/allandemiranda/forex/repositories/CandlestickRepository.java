@@ -18,6 +18,8 @@ import org.springframework.stereotype.Repository;
 public class CandlestickRepository {
 
   private final TreeSet<CandlestickEntity> dataBase = new TreeSet<>();
+  @Getter(AccessLevel.PUBLIC)
+  private long numberOfBar = 0L;
 
   /**
    * Number of candlesticks necessary to start the data process
@@ -64,6 +66,7 @@ public class CandlestickRepository {
       if (this.getDataBase().size() > this.getMemorySize()) {
         this.getDataBase().pollLast();
       }
+      numberOfBar++;
     }
   }
 

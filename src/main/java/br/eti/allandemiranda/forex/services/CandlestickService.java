@@ -45,6 +45,10 @@ public class CandlestickService {
     this.repository = repository;
   }
 
+  public long getNumberBar() {
+    return this.getRepository().getNumberOfBar();
+  }
+
   /**
    * Get the candlestick DataTime to which Ticket DataTime belongs
    *

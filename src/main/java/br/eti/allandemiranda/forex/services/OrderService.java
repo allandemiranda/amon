@@ -83,7 +83,7 @@ public class OrderService {
   @Value("${order.swap.rate.triple:WEDNESDAY}")
   private String swapRateTriple;
   // The minimal diff between the lines that indicate trading to open a position
-  @Value("${order.open.trading.min:30}")
+  @Value("${order.open.trading.min:-1}")
   private int minTradingDiff;
   @Value("${order.debug:true}")
   private boolean debugActive;
@@ -93,6 +93,8 @@ public class OrderService {
   private LocalDateTime lastSignalOpenDateTime = LocalDateTime.MIN;
   @Setter(AccessLevel.PRIVATE)
   private BigDecimal currentBalance = BigDecimal.ZERO;
+  @Setter(AccessLevel.PRIVATE)
+  private BigDecimal lastOpenBalance = BigDecimal.ZERO;
 
   @Autowired
   protected OrderService(final OrderRepository repository, final StatisticRepository statisticRepository) {
@@ -145,15 +147,16 @@ public class OrderService {
     }
 
     // Update the current balance
-    this.setCurrentBalance(this.getNewBalance(this.getRepository().getOrders(), this.getCurrentBalance()));
+    this.setCurrentBalance(this.getNewBalance(this.getRepository().getOrders(), this.getCurrentBalance(), this.getLastOpenBalance()));
 
     // Print the close orders
     final Order[] orders = this.getRepository().getOrders();
-    Arrays.stream(orders).filter(order -> !order.orderStatus().equals(OrderStatus.OPEN)).forEachOrdered(order -> updateDebugFile(order, this.getCurrentBalance()));
-    Arrays.stream(orders).filter(order -> order.orderStatus().equals(OrderStatus.CLOSE_TP))
-        .forEachOrdered(order -> this.getStatisticRepository().addResultWin(order.openDateTime()));
-    Arrays.stream(orders).filter(order -> order.orderStatus().equals(OrderStatus.CLOSE_SL))
-        .forEachOrdered(order -> this.getStatisticRepository().addResultLose(order.openDateTime()));
+    if(this.isDebugActive()) {
+      Arrays.stream(orders).filter(order -> !order.orderStatus().equals(OrderStatus.OPEN)).forEachOrdered(order -> this.updateDebugFile(order, this.getCurrentBalance()));
+    }
+    Arrays.stream(orders).filter(order -> order.orderStatus().equals(OrderStatus.CLOSE_TP)).forEachOrdered(order -> this.getStatisticRepository().addResultWin(order.openDateTime()));
+    Arrays.stream(orders).filter(order -> order.orderStatus().equals(OrderStatus.CLOSE_SL)).forEachOrdered(order -> this.getStatisticRepository().addResultLose(order.openDateTime()));
+    this.getStatisticRepository().setBalance(this.getCurrentBalance());
 
     // Remove che closed orders
     this.getRepository().removeCloseOrders();
@@ -165,10 +168,14 @@ public class OrderService {
    * @param orders The full orders on this roand
    * @return The new current balance
    */
-  private @NotNull BigDecimal getNewBalance(final Order @NotNull [] orders, final @NotNull BigDecimal prevBalance) {
+  private @NotNull BigDecimal getNewBalance(final Order @NotNull [] orders, final @NotNull BigDecimal prevBalance, final @NotNull BigDecimal lastOpenBalance) {
+    final BigDecimal currentOpenProfit = Arrays.stream(orders).filter(order -> order.orderStatus().equals(OrderStatus.OPEN))
+        .map(order -> order.swapProfit().add(BigDecimal.valueOf(order.currentProfit()))).reduce(BigDecimal.ZERO, BigDecimal::add);
+    BigDecimal balance = currentOpenProfit.subtract(lastOpenBalance).add(prevBalance);
+    this.setLastOpenBalance(currentOpenProfit);
     final BigDecimal currentCloseProfit = Arrays.stream(orders).filter(order -> !order.orderStatus().equals(OrderStatus.OPEN))
         .map(order -> order.swapProfit().add(BigDecimal.valueOf(order.currentProfit()))).reduce(BigDecimal.ZERO, BigDecimal::add);
-    return prevBalance.add(currentCloseProfit);
+    return balance.add(currentCloseProfit);
   }
 
   /**
@@ -404,13 +411,11 @@ public class OrderService {
 
   @SneakyThrows
   private void updateDebugFile(final @NotNull Order order, final @NotNull BigDecimal currentBalance) {
-    if (this.isDebugActive()) {
-      try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-        csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.signalDateTime().format(DateTimeFormatter.ISO_DATE_TIME),
-            order.signalTrend(), order.lastUpdateDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.timeOpen(), order.orderStatus(), order.orderPosition(),
-            order.tradingPerformanceDiff(), getNumberPrice(order.openPrice()), getNumberPrice(order.closePrice()), order.highProfit(), order.lowProfit(), order.currentProfit(),
-            getNumberBalance(order.swapProfit()), getNumberBalance(currentBalance));
-      }
+    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+      csvPrinter.printRecord(order.openDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.signalDateTime().format(DateTimeFormatter.ISO_DATE_TIME),
+          order.signalTrend(), order.lastUpdateDateTime().format(DateTimeFormatter.ISO_DATE_TIME), order.timeOpen(), order.orderStatus(), order.orderPosition(),
+          order.tradingPerformanceDiff(), getNumberPrice(order.openPrice()), getNumberPrice(order.closePrice()), order.highProfit(), order.lowProfit(), order.currentProfit(),
+          getNumberBalance(order.swapProfit()), getNumberBalance(currentBalance));
     }
   }
 }

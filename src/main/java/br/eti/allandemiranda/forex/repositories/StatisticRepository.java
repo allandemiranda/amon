@@ -6,7 +6,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -14,7 +13,6 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.List;
@@ -41,10 +39,46 @@ public class StatisticRepository {
   //! This is a temporary class to generate temporary statistic values for performance of results
   //! This class needs to be removed at the end of this project
 
-  private static final String OUTPUT_FILE_NAME = "statistic.csv";
+  @Value("${config.statistic.fileName}")
+  private String fileName;
   private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
   private final CandlestickService candlestickService;
   private final TreeMap<DayOfWeek, TreeMap<LocalTime, Pair<AtomicInteger, AtomicInteger>>> dataBase = new TreeMap<>();
+  @Value("${chart.timeframe:M15}")
+  private String timeFrame;
+  @Value("${order.open.monday.start:00:00:00}")
+  private String mondayStart;
+  @Value("${order.open.monday.end:23:59:59}")
+  private String mondayEnd;
+  @Value("${order.open.tuesday.start:00:00:00}")
+  private String tuesdayStart;
+  @Value("${order.open.tuesday.end:23:59:59}")
+  private String tuesdayEnd;
+  @Value("${order.open.wednesday.start:00:00:00}")
+  private String wednesdayStart;
+  @Value("${order.open.wednesday.end:23:59:59}")
+  private String wednesdayEnd;
+  @Value("${order.open.thursday.start:00:00:00}")
+  private String thursdayStart;
+  @Value("${order.open.thursday.end:23:59:59}")
+  private String thursdayEnd;
+  @Value("${order.open.friday.start:00:00:00}")
+  private String fridayStart;
+  @Value("${order.open.friday.end:23:59:59}")
+  private String fridayEnd;
+  @Value("${order.open.spread.max:12}")
+  private int maxSpread;
+  @Value("${order.safe.take-profit:150}")
+  private int takeProfit;
+  @Value("${order.safe.stop-loss:100}")
+  private int stopLoss;
+  @Value("${order.open.trading.min:-1}")
+  private int minTradingDiff;
+  @Value("${order.open.onlyStrong:false}")
+  private boolean isOpenOnlyStrong;
+  private BigDecimal highBalance = BigDecimal.ZERO;
+  private BigDecimal lowBalance = BigDecimal.ZERO;
+
   @Value("${config.root.folder}")
   private File outputFolder;
 
@@ -63,13 +97,21 @@ public class StatisticRepository {
         dayOfWeek -> this.getDataBase().put(dayOfWeek,
             localTimeList.parallelStream().map(localTime -> new SimpleEntry<>(localTime, Pair.of(new AtomicInteger(0), new AtomicInteger(0))))
                 .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue, (a, b) -> a, TreeMap::new))));
-    this.printDebugHeader();
+  }
+
+  public void setBalance(final @NotNull BigDecimal balance) {
+    if (balance.compareTo(this.getHighBalance()) > 0) {
+      this.setHighBalance(balance);
+    } else if (balance.compareTo(this.getLowBalance()) < 0) {
+      this.setLowBalance(balance);
+    }
   }
 
   @SneakyThrows
   private void printDebugHeader() {
     try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-      csvPrinter.printRecord( "TIME", "MONDAY WIN", "TUESDAY WIN", "WEDNESDAY WIN", "THURSDAY WIN", "FRIDAY WIN", "#", "MONDAY LOSE", "TUESDAY LOSE", "WEDNESDAY LOSE", "THURSDAY LOSE", "FRIDAY LOSE");
+      csvPrinter.printRecord("*TIME FRAME", "*SLOT OPEN", "*TP", "*SL", "*MAX SPREAD", "*MIN TRADING", "*ONLY STRONG", "WIN %", "TOTAL POSITION", "CONSISTENCE %", "NUMBER OF BAR",
+          "LOW POINT", "HIGH POINT");
     }
   }
 
@@ -85,11 +127,12 @@ public class StatisticRepository {
 
   @PreDestroy
   private void preDestroy() {
+//    this.printDebugHeader();
     this.updateDebugFile();
   }
 
   private @NotNull File getOutputFile() {
-    return new File(this.getOutputFolder(), OUTPUT_FILE_NAME);
+    return new File(this.getOutputFolder(), fileName.concat(".csv"));
   }
 
   private @NotNull String getNumber(final @NotNull BigDecimal value) {
@@ -98,40 +141,35 @@ public class StatisticRepository {
 
   @SneakyThrows
   private void updateDebugFile() {
-    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), true); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-      this.getDataBase().get(DayOfWeek.MONDAY).keySet().stream().map(time -> {
-        Object[] row = new Object[12];
-        row[0] = time.format(DateTimeFormatter.ofPattern("HH:mm"));
-        row[1] = this.getDataBase().get(DayOfWeek.MONDAY).get(time).getKey();
-        row[2] = this.getDataBase().get(DayOfWeek.TUESDAY).get(time).getKey();
-        row[3] = this.getDataBase().get(DayOfWeek.WEDNESDAY).get(time).getKey();
-        row[4] = this.getDataBase().get(DayOfWeek.THURSDAY).get(time).getKey();
-        row[5] = this.getDataBase().get(DayOfWeek.FRIDAY).get(time).getKey();
-        row[6] = "#";
-        row[7] = this.getDataBase().get(DayOfWeek.MONDAY).get(time).getValue();
-        row[8] = this.getDataBase().get(DayOfWeek.TUESDAY).get(time).getValue();
-        row[9] = this.getDataBase().get(DayOfWeek.WEDNESDAY).get(time).getValue();
-        row[10] = this.getDataBase().get(DayOfWeek.THURSDAY).get(time).getValue();
-        row[11] = this.getDataBase().get(DayOfWeek.FRIDAY).get(time).getValue();
-        return row;
-      }).forEachOrdered(objects -> {
-        try {
-          csvPrinter.printRecord(objects);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      });
-      final int win = this.getDataBase().entrySet().stream().flatMapToInt(entry -> entry.getValue().values().stream().mapToInt(integerPair -> integerPair.getKey().get())).sum();
-      final int lose = this.getDataBase().entrySet().stream().flatMapToInt(entry -> entry.getValue().values().stream().mapToInt(integerPair -> integerPair.getValue().get())).sum();
+    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), false); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+      final int win = this.getDataBase().entrySet().stream().flatMapToInt(entry -> entry.getValue().values().stream().mapToInt(integerPair -> integerPair.getKey().get()))
+          .sum();
+      final int lose = this.getDataBase().entrySet().stream()
+          .flatMapToInt(entry -> entry.getValue().values().stream().mapToInt(integerPair -> integerPair.getValue().get())).sum();
       final int total = win + lose;
-      try {
-        csvPrinter.printRecord("WIN:", win, this.getNumber(BigDecimal.valueOf(win).divide(BigDecimal.valueOf(total), 5, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))));
-        csvPrinter.printRecord("LOSE:", lose, this.getNumber(BigDecimal.valueOf(lose).divide(BigDecimal.valueOf(total), 5, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))));
-        csvPrinter.printRecord("TOTAL:", total);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
+      final BigDecimal winPorc = BigDecimal.valueOf(win).divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+
+      final BigDecimal consistence = BigDecimal.valueOf(total).divide(BigDecimal.valueOf(this.getCandlestickService().getNumberBar()), 2, RoundingMode.HALF_UP)
+          .multiply(BigDecimal.valueOf(100));
+
+      csvPrinter.printRecord(this.getTimeFrame(), this.getSlotOpen(), this.getTakeProfit(), this.getStopLoss(), this.getMaxSpread(), this.getMinTradingDiff(), this.isOpenOnlyStrong(),
+          this.getNumber(winPorc), total, this.getNumber(consistence), this.getCandlestickService().getNumberBar(), this.getLowBalance(), this.getHighBalance());
     }
+  }
+
+  private String getSlotOpen() {
+    if (!this.getMondayStart().equals(this.getMondayEnd())) {
+      return DayOfWeek.MONDAY.toString().concat(" ").concat(this.getMondayStart()).concat(" - ").concat(this.getMondayEnd());
+    } else if (!this.getTuesdayStart().equals(this.getTuesdayEnd())) {
+      return DayOfWeek.TUESDAY.toString().concat(" ").concat(this.getTuesdayStart()).concat(" - ").concat(this.getTuesdayEnd());
+    } else if (!this.getWednesdayStart().equals(this.getWednesdayEnd())) {
+      return DayOfWeek.WEDNESDAY.toString().concat(" ").concat(this.getWednesdayStart()).concat(" - ").concat(this.getWednesdayEnd());
+    } else if (!this.getThursdayStart().equals(this.getThursdayEnd())) {
+      return DayOfWeek.THURSDAY.toString().concat(" ").concat(this.getThursdayStart()).concat(" - ").concat(this.getThursdayEnd());
+    } else if (!this.getFridayStart().equals(this.getFridayEnd())) {
+      return DayOfWeek.FRIDAY.toString().concat(" ").concat(this.getFridayStart()).concat(" - ").concat(this.getFridayEnd());
+    }
+    return "ERROR!";
   }
 
 }
