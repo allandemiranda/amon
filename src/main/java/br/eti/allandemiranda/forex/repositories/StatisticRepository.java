@@ -39,11 +39,11 @@ public class StatisticRepository {
   //! This is a temporary class to generate temporary statistic values for performance of results
   //! This class needs to be removed at the end of this project
 
-  @Value("${config.statistic.fileName}")
-  private String fileName;
   private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
   private final CandlestickService candlestickService;
   private final TreeMap<DayOfWeek, TreeMap<LocalTime, Pair<AtomicInteger, AtomicInteger>>> dataBase = new TreeMap<>();
+  @Value("${config.statistic.fileName}")
+  private String fileName;
   @Value("${chart.timeframe:M15}")
   private String timeFrame;
   @Value("${order.open.monday.start:00:00:00}")
@@ -110,8 +110,8 @@ public class StatisticRepository {
   @SneakyThrows
   private void printDebugHeader() {
     try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-      csvPrinter.printRecord("*TIME FRAME", "*SLOT OPEN", "*TP", "*SL", "*MAX SPREAD", "*MIN TRADING", "*ONLY STRONG", "WIN %", "TOTAL POSITION", "CONSISTENCE %", "NUMBER OF BAR",
-          "LOW POINT", "HIGH POINT");
+      csvPrinter.printRecord("*TIME FRAME", "*SLOT OPEN", "*TP", "*SL", "*MAX SPREAD", "*MIN TRADING", "*ONLY STRONG", "WIN %", "TOTAL POSITION", "CONSISTENCE %",
+          "NUMBER OF BAR", "LOW POINT", "HIGH POINT");
     }
   }
 
@@ -141,19 +141,23 @@ public class StatisticRepository {
 
   @SneakyThrows
   private void updateDebugFile() {
-    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile(), false); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
       final int win = this.getDataBase().entrySet().stream().flatMapToInt(entry -> entry.getValue().values().stream().mapToInt(integerPair -> integerPair.getKey().get()))
           .sum();
       final int lose = this.getDataBase().entrySet().stream()
           .flatMapToInt(entry -> entry.getValue().values().stream().mapToInt(integerPair -> integerPair.getValue().get())).sum();
       final int total = win + lose;
-      final BigDecimal winPorc = BigDecimal.valueOf(win).divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
 
-      final BigDecimal consistence = BigDecimal.valueOf(total).divide(BigDecimal.valueOf(this.getCandlestickService().getNumberBar()), 2, RoundingMode.HALF_UP)
-          .multiply(BigDecimal.valueOf(100));
+      final BigDecimal winPorc =
+          win == 0 ? BigDecimal.ZERO : BigDecimal.valueOf(win).divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
 
-      csvPrinter.printRecord(this.getTimeFrame(), this.getSlotOpen(), this.getTakeProfit(), this.getStopLoss(), this.getMaxSpread(), this.getMinTradingDiff(), this.isOpenOnlyStrong(),
-          this.getNumber(winPorc), total, this.getNumber(consistence), this.getCandlestickService().getNumberBar(), this.getLowBalance(), this.getHighBalance());
+      final long numberBar = this.getCandlestickService().getNumberBar();
+
+      final BigDecimal consistence = total == 0 || numberBar == 0L ? BigDecimal.ZERO
+          : BigDecimal.valueOf(total).divide(BigDecimal.valueOf(numberBar), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+
+      csvPrinter.printRecord(this.getTimeFrame(), this.getSlotOpen(), this.getTakeProfit(), this.getStopLoss(), this.getMaxSpread(), this.getMinTradingDiff(),
+          this.isOpenOnlyStrong(), this.getNumber(winPorc), total, this.getNumber(consistence), numberBar, this.getLowBalance(), this.getHighBalance());
     }
   }
 
