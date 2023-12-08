@@ -162,15 +162,15 @@ public class StatisticRepository {
   }
 
   private String getSlotOpen() {
-    if (!this.getMondayStart().equals(this.getMondayEnd())) {
+    if (!this.getMondayStart().equals("00:00:01")) {
       return DayOfWeek.MONDAY.toString().concat(" ").concat(this.getMondayStart()).concat(" - ").concat(this.getMondayEnd());
-    } else if (!this.getTuesdayStart().equals(this.getTuesdayEnd())) {
+    } else if (!this.getTuesdayStart().equals("00:00:01")) {
       return DayOfWeek.TUESDAY.toString().concat(" ").concat(this.getTuesdayStart()).concat(" - ").concat(this.getTuesdayEnd());
-    } else if (!this.getWednesdayStart().equals(this.getWednesdayEnd())) {
+    } else if (!this.getWednesdayStart().equals("00:00:01")) {
       return DayOfWeek.WEDNESDAY.toString().concat(" ").concat(this.getWednesdayStart()).concat(" - ").concat(this.getWednesdayEnd());
-    } else if (!this.getThursdayStart().equals(this.getThursdayEnd())) {
+    } else if (!this.getThursdayStart().equals("00:00:01")) {
       return DayOfWeek.THURSDAY.toString().concat(" ").concat(this.getThursdayStart()).concat(" - ").concat(this.getThursdayEnd());
-    } else if (!this.getFridayStart().equals(this.getFridayEnd())) {
+    } else if (!this.getFridayStart().equals("00:00:01")) {
       return DayOfWeek.FRIDAY.toString().concat(" ").concat(this.getFridayStart()).concat(" - ").concat(this.getFridayEnd());
     }
     return "ERROR!";
