@@ -78,6 +78,7 @@ public class StatisticRepository {
   private boolean isOpenOnlyStrong;
   private BigDecimal highBalance = BigDecimal.ZERO;
   private BigDecimal lowBalance = BigDecimal.ZERO;
+  private BigDecimal curentBalance = BigDecimal.ZERO;
 
   @Value("${config.root.folder}")
   private File outputFolder;
@@ -105,13 +106,14 @@ public class StatisticRepository {
     } else if (balance.compareTo(this.getLowBalance()) < 0) {
       this.setLowBalance(balance);
     }
+    this.setCurentBalance(balance);
   }
 
   @SneakyThrows
   private void printDebugHeader() {
     try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
       csvPrinter.printRecord("*TIME FRAME", "*SLOT OPEN", "*TP", "*SL", "*MAX SPREAD", "*MIN TRADING", "*ONLY STRONG", "WIN %", "TOTAL POSITION", "CONSISTENCE %",
-          "NUMBER OF BAR", "LOW POINT", "HIGH POINT");
+          "NUMBER OF BAR", "LOW POINT", "HIGH POINT", "FINAL BALANCE");
     }
   }
 
@@ -157,7 +159,7 @@ public class StatisticRepository {
           : BigDecimal.valueOf(total).divide(BigDecimal.valueOf(numberBar), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
 
       csvPrinter.printRecord(this.getTimeFrame(), this.getSlotOpen(), this.getTakeProfit(), this.getStopLoss(), this.getMaxSpread(), this.getMinTradingDiff(),
-          this.isOpenOnlyStrong(), this.getNumber(winPorc), total, this.getNumber(consistence), numberBar, this.getLowBalance(), this.getHighBalance());
+          this.isOpenOnlyStrong(), this.getNumber(winPorc), total, this.getNumber(consistence), numberBar, this.getLowBalance(), this.getHighBalance(), this.getCurentBalance());
     }
   }
 
