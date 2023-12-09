@@ -68,26 +68,6 @@ public class SpringConfig {
 
   @Bean
   void processor() {
-
-    log.info("config.statistic.fileName={}", this.getFileName());
-    log.info("chart.timeframe={}", this.getTimeFrame());
-    log.info("order.open.onlyStrong={}", this.isOpenOnlyStrong());
-    log.info("order.open.monday.start={}", this.getMondayStart());
-    log.info("order.open.monday.end={}", this.getMondayEnd());
-    log.info("order.open.tuesday.start={}", this.getTuesdayStart());
-    log.info("order.open.tuesday.end={}", this.getTuesdayEnd());
-    log.info("order.open.wednesday.start={}", this.getWednesdayStart());
-    log.info("order.open.wednesday.end={}", this.getWednesdayEnd());
-    log.info("order.open.thursday.start={}", this.getThursdayStart());
-    log.info("order.open.thursday.end={}", this.getThursdayEnd());
-    log.info("order.open.friday.start={}", this.getFridayStart());
-    log.info("order.open.friday.end={}", this.getFridayEnd());
-    log.info("order.open.spread.max={}", this.getMaxSpread());
-    log.info("order.safe.take-profit={}", this.getTakeProfit());
-    log.info("order.safe.stop-loss={}", this.getStopLoss());
-    log.info("order.open.trading.min={}", this.getMinTradingDiff());
-
-
     // MOCKED
     try (final FileReader fileReader = new FileReader(this.getInputFile()); final CSVParser csvParser = CSVFormat.TDF.builder().build().parse(fileReader)) {
       StreamSupport.stream(csvParser.spliterator(), false).skip(1).forEachOrdered(csvRecord -> {

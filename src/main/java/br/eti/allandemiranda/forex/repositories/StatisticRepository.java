@@ -24,6 +24,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.tuple.Pair;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 @Getter(AccessLevel.PRIVATE)
 @Setter(AccessLevel.PRIVATE)
+@Slf4j
 public class StatisticRepository {
 
   //! This is a temporary class to generate temporary statistic values for performance of results
@@ -135,6 +137,7 @@ public class StatisticRepository {
   private void preDestroy() {
 //    this.printDebugHeader();
     this.updateDebugFile();
+    log.info("BALANCE={}", this.getCurrentBalance());
   }
 
   private @NotNull File getOutputFile() {
