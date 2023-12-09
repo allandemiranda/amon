@@ -36,9 +36,13 @@ import org.springframework.stereotype.Repository;
 @Getter(AccessLevel.PRIVATE)
 @Setter(AccessLevel.PRIVATE)
 public class StatisticRepository {
+
   //! This is a temporary class to generate temporary statistic values for performance of results
   //! This class needs to be removed at the end of this project
 
+  public static final String TIME_START = "00:00:01";
+  public static final String ERROR = "ERROR!";
+  public static final String STR = " - ";
   private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
   private final CandlestickService candlestickService;
   private final TreeMap<DayOfWeek, TreeMap<LocalTime, Pair<AtomicInteger, AtomicInteger>>> dataBase = new TreeMap<>();
@@ -112,8 +116,8 @@ public class StatisticRepository {
   @SneakyThrows
   private void printDebugHeader() {
     try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-      csvPrinter.printRecord("*TIME FRAME", "*SLOT OPEN", "*TP", "*SL", "*MAX SPREAD", "*MIN TRADING", "*ONLY STRONG", "WIN %", "TOTAL POSITION", "CONSISTENCE %",
-          "NUMBER OF BAR", "LOW POINT", "HIGH POINT", "FINAL BALANCE");
+      csvPrinter.printRecord("*TIME FRAME", "*SLOT OPEN DAY", "*SLOT OPEN TIME", "*TP", "*SL", "*MAX SPREAD", "*MIN TRADING", "*ONLY STRONG", "WIN %", "WIN", "LOSE",
+          "TOTAL POSITION", "CONSISTENCE %", "NUMBER OF BAR", "LOW POINT", "HIGH POINT", "FINAL BALANCE");
     }
   }
 
@@ -158,24 +162,25 @@ public class StatisticRepository {
       final BigDecimal consistence = total == 0 || numberBar == 0L ? BigDecimal.ZERO
           : BigDecimal.valueOf(total).divide(BigDecimal.valueOf(numberBar), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
 
-      csvPrinter.printRecord(this.getTimeFrame(), this.getSlotOpen(), this.getTakeProfit(), this.getStopLoss(), this.getMaxSpread(), this.getMinTradingDiff(),
-          this.isOpenOnlyStrong(), this.getNumber(winPorc), total, this.getNumber(consistence), numberBar, this.getLowBalance(), this.getHighBalance(), this.getCurentBalance());
+      csvPrinter.printRecord(this.getTimeFrame(), this.getSlotOpen().getKey(), this.getSlotOpen().getValue(), this.getTakeProfit(), this.getStopLoss(),
+          this.getMaxSpread(), this.getMinTradingDiff(), this.isOpenOnlyStrong(), this.getNumber(winPorc), win, lose, total, this.getNumber(consistence), numberBar,
+          this.getNumber(this.getLowBalance()), this.getNumber(this.getHighBalance()), this.getNumber(this.getCurentBalance()));
     }
   }
 
-  private String getSlotOpen() {
-    if (!this.getMondayStart().equals("00:00:01")) {
-      return DayOfWeek.MONDAY.toString().concat(" ").concat(this.getMondayStart()).concat(" - ").concat(this.getMondayEnd());
-    } else if (!this.getTuesdayStart().equals("00:00:01")) {
-      return DayOfWeek.TUESDAY.toString().concat(" ").concat(this.getTuesdayStart()).concat(" - ").concat(this.getTuesdayEnd());
-    } else if (!this.getWednesdayStart().equals("00:00:01")) {
-      return DayOfWeek.WEDNESDAY.toString().concat(" ").concat(this.getWednesdayStart()).concat(" - ").concat(this.getWednesdayEnd());
-    } else if (!this.getThursdayStart().equals("00:00:01")) {
-      return DayOfWeek.THURSDAY.toString().concat(" ").concat(this.getThursdayStart()).concat(" - ").concat(this.getThursdayEnd());
-    } else if (!this.getFridayStart().equals("00:00:01")) {
-      return DayOfWeek.FRIDAY.toString().concat(" ").concat(this.getFridayStart()).concat(" - ").concat(this.getFridayEnd());
+  private @NotNull Pair<String, String> getSlotOpen() {
+    if (!this.getMondayStart().equals(TIME_START)) {
+      return Pair.of(DayOfWeek.MONDAY.toString(), (this.getMondayStart()).concat(STR).concat(this.getMondayEnd()));
+    } else if (!this.getTuesdayStart().equals(TIME_START)) {
+      return Pair.of(DayOfWeek.TUESDAY.toString(), (this.getTuesdayStart()).concat(STR).concat(this.getTuesdayEnd()));
+    } else if (!this.getWednesdayStart().equals(TIME_START)) {
+      return Pair.of(DayOfWeek.WEDNESDAY.toString(), (this.getWednesdayStart()).concat(STR).concat(this.getWednesdayEnd()));
+    } else if (!this.getThursdayStart().equals(TIME_START)) {
+      return Pair.of(DayOfWeek.THURSDAY.toString(), (this.getThursdayStart()).concat(STR).concat(this.getThursdayEnd()));
+    } else if (!this.getFridayStart().equals(TIME_START)) {
+      return Pair.of(DayOfWeek.FRIDAY.toString(), (this.getFridayStart()).concat(STR).concat(this.getFridayEnd()));
     }
-    return "ERROR!";
+    return Pair.of(ERROR, ERROR);
   }
 
 }
