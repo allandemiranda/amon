@@ -40,9 +40,9 @@ public class StatisticRepository {
   //! This is a temporary class to generate temporary statistic values for performance of results
   //! This class needs to be removed at the end of this project
 
-  public static final String TIME_START = "00:00:01";
-  public static final String ERROR = "ERROR!";
-  public static final String STR = " - ";
+  private static final String TIME_START = "00:00:01";
+  private static final String ERROR = "ERROR!";
+  private static final String STR = " - ";
   private static final CSVFormat CSV_FORMAT = CSVFormat.TDF.builder().build();
   private final CandlestickService candlestickService;
   private final TreeMap<DayOfWeek, TreeMap<LocalTime, Pair<AtomicInteger, AtomicInteger>>> dataBase = new TreeMap<>();
@@ -82,7 +82,7 @@ public class StatisticRepository {
   private boolean isOpenOnlyStrong;
   private BigDecimal highBalance = BigDecimal.ZERO;
   private BigDecimal lowBalance = BigDecimal.ZERO;
-  private BigDecimal curentBalance = BigDecimal.ZERO;
+  private BigDecimal currentBalance = BigDecimal.ZERO;
 
   @Value("${config.root.folder}")
   private File outputFolder;
@@ -110,16 +110,16 @@ public class StatisticRepository {
     } else if (balance.compareTo(this.getLowBalance()) < 0) {
       this.setLowBalance(balance);
     }
-    this.setCurentBalance(balance);
+    this.setCurrentBalance(balance);
   }
 
-  @SneakyThrows
-  private void printDebugHeader() {
-    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
-      csvPrinter.printRecord("*TIME FRAME", "*SLOT OPEN DAY", "*SLOT OPEN TIME", "*TP", "*SL", "*MAX SPREAD", "*MIN TRADING", "*ONLY STRONG", "WIN %", "WIN", "LOSE",
-          "TOTAL POSITION", "CONSISTENCE %", "NUMBER OF BAR", "LOW POINT", "HIGH POINT", "FINAL BALANCE");
-    }
-  }
+//  @SneakyThrows
+//  private void printDebugHeader() {
+//    try (final FileWriter fileWriter = new FileWriter(this.getOutputFile()); final CSVPrinter csvPrinter = CSV_FORMAT.print(fileWriter)) {
+//      csvPrinter.printRecord("*TIME FRAME", "*SLOT OPEN DAY", "*SLOT OPEN TIME", "*TP", "*SL", "*MAX SPREAD", "*MIN TRADING", "*ONLY STRONG", "WIN %", "WIN", "LOSE",
+//          "TOTAL POSITION", "CONSISTENCE %", "NUMBER OF BAR", "LOW POINT", "HIGH POINT", "FINAL BALANCE");
+//    }
+//  }
 
   public void addResultWin(final @NotNull LocalDateTime localDateTime) {
     final LocalDateTime candleDateTime = this.getCandlestickService().getCandleDateTime(localDateTime, TimeFrame.valueOf(this.getCandlestickService().getTimeFrame()));
@@ -164,7 +164,7 @@ public class StatisticRepository {
 
       csvPrinter.printRecord(this.getTimeFrame(), this.getSlotOpen().getKey(), this.getSlotOpen().getValue(), this.getTakeProfit(), this.getStopLoss(),
           this.getMaxSpread(), this.getMinTradingDiff(), this.isOpenOnlyStrong(), this.getNumber(winPorc), win, lose, total, this.getNumber(consistence), numberBar,
-          this.getNumber(this.getLowBalance()), this.getNumber(this.getHighBalance()), this.getNumber(this.getCurentBalance()));
+          this.getNumber(this.getLowBalance()), this.getNumber(this.getHighBalance()), this.getNumber(this.getCurrentBalance()));
     }
   }
 
