@@ -137,7 +137,7 @@ public class StatisticRepository {
   private void preDestroy() {
 //    this.printDebugHeader();
     this.updateDebugFile();
-    log.info("BALANCE={}", this.getCurrentBalance());
+    log.info("=BALANCE={}=BALANCE=", this.getCurrentBalance());
   }
 
   private @NotNull File getOutputFile() {
