@@ -137,7 +137,6 @@ public class StatisticRepository {
   private void preDestroy() {
 //    this.printDebugHeader();
     this.updateDebugFile();
-    log.info("=BALANCE={}=BALANCE=", this.getCurrentBalance());
   }
 
   private @NotNull File getOutputFile() {
@@ -168,6 +167,10 @@ public class StatisticRepository {
       csvPrinter.printRecord(this.getTimeFrame(), this.getSlotOpen().getKey(), this.getSlotOpen().getValue(), this.getTakeProfit(), this.getStopLoss(),
           this.getMaxSpread(), this.getMinTradingDiff(), this.isOpenOnlyStrong(), this.getNumber(winPorc), win, lose, total, this.getNumber(consistence), numberBar,
           this.getNumber(this.getLowBalance()), this.getNumber(this.getHighBalance()), this.getNumber(this.getCurrentBalance()));
+
+      log.info("=BALANCE={}=BALANCE=", this.getCurrentBalance());
+      log.info("=WIN={}=WIN=", win);
+      log.info("=LOSE={}=LOSE=", lose);
     }
   }
 
